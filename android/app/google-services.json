@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809175137030",
+    "project_id": "beej-se-bazar-krishigyanai",
+    "storage_bucket": "beej-se-bazar-krishigyanai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809175137030:android:6df77a4013e9b9f467fc87",
+        "android_client_info": {
+          "package_name": "com.beejsebazar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD27UONlhOAAnNpXvu3K4As50gPU0Dao4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

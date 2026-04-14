@@ -1,0 +1,24 @@
+<resources>
+    <!-- Farmer Brand: Golden Mustard -->
+    <color name="farmer_primary">#C9A80C</color>
+    <color name="farmer_primary_dark">#A88B0A</color>
+    <color name="farmer_primary_light">#d3b10e</color>
+
+    <!-- FPO Brand: Steel Blue -->
+    <color name="fpo_primary">#4E8FA8</color>
+    <color name="fpo_primary_dark">#3D7A93</color>
+    <color name="fpo_primary_light">#a6c6d5</color>
+
+    <!-- Staff Brand: Warm Gold -->
+    <color name="staff_primary">#BBA93C</color>
+    <color name="staff_primary_dark">#9E8D2E</color>
+    <color name="staff_primary_light">#d8c96c</color>
+
+    <!-- Shared -->
+    <color name="primary">#C9A80C</color>
+    <color name="primary_dark">#A88B0A</color>
+    <color name="primary_light">#d3b10e</color>
+    <color name="accent">#BBA93C</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

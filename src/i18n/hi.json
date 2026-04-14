@@ -1,0 +1,34 @@
+{
+  "add_product": {
+    "title": "उत्पाद जोड़ें",
+    "product_name": "उत्पाद का नाम",
+    "product_name_placeholder": "उत्पाद का नाम दर्ज करें",
+    "product_image": "उत्पाद की तस्वीर",
+    "select_image": "तस्वीर चुनें",
+    "description": "विवरण",
+    "description_placeholder": "उत्पाद का विवरण दर्ज करें",
+    "brand": "ब्रांड",
+    "select_source": "ब्रांड दर्ज करें",
+    "mrp": "एमआरपी",
+    "mrp_placeholder": "एमआरपी दर्ज करें",
+    "quantity": "मात्रा",
+    "unit": "इकाई",
+    "select": "चुनें",
+    "purchase_date": "खरीद तिथि",
+    "expiry_date": "समाप्ति तिथि",
+    "save": "सेव करें"
+  },
+  "inventory": {
+    "title": "इन्वेंटरी और इनपुट",
+    "add_product": "उत्पाद जोड़ें",
+    "brand": "ब्रांड",
+    "mrp": "एमआरपी"
+  },
+  "marketplace": {
+    "title": "मार्केटप्लेस",
+    "subtitle": "खेती के लिए उच्च गुणवत्ता के इनपुट खरीदें",
+    "search": "उत्पाद खोजें..."
+  },
+  "error": "त्रुटि",
+  "fill_required_fields": "कृपया सभी आवश्यक जानकारी भरें"
+}
