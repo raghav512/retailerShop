@@ -114,7 +114,7 @@ const MyFarms = ({ navigation }) => {
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={24} color="#1F2937" />
+          <Icon name="arrow-back" size={24} color={FARMER_COLORS.textOnPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('my_farms.title')}</Text>
         <View style={{ width: 24 }} />
@@ -218,75 +218,79 @@ const MyFarms = ({ navigation }) => {
 
 export default MyFarms;
 
-/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: FARMER_COLORS.tint,
   },
   headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
+    height: 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
-    elevation: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    backgroundColor: FARMER_COLORS.primary,
+    elevation: 6,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    zIndex: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 3 },
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#1F2937",
+    color: FARMER_COLORS.textOnPrimary,
+    letterSpacing: 0.5,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   loader: {
     flex: 1,
+    marginTop: 60,
   },
-
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 40,
+    marginTop: -40,
   },
   emptyText: {
-    fontSize: 16,
-    color: "#999",
+    fontSize: 15,
+    color: FARMER_COLORS.textSecondary,
+    fontWeight: "500",
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-
   listContainer: {
-    padding: 16,
+    padding: 20,
     paddingTop: 24,
   },
-
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: FARMER_COLORS.tintMid,
   },
   cardHeader: {
     flexDirection: "row",
@@ -296,67 +300,84 @@ const styles = StyleSheet.create({
   farmName: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#1F2937",
+    color: FARMER_COLORS.textPrimary,
     marginBottom: 6,
+    letterSpacing: 0.4,
+    lineHeight: 24,
   },
   farmArea: {
     fontSize: 14,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     fontWeight: "500",
+    letterSpacing: 0.3,
   },
-
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
   actionsModal: {
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: FARMER_COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -4 },
   },
   actionsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: FARMER_COLORS.tintMid,
   },
   actionsTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "700",
-    color: "#1F2937",
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.5,
   },
   actionItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
+    paddingHorizontal: 4,
     gap: 16,
+    borderRadius: 12,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionText: {
     fontSize: 16,
-    color: "#374151",
+    color: FARMER_COLORS.textPrimary,
     fontWeight: "600",
+    letterSpacing: 0.3,
   },
-
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: FARMER_COLORS.primaryLight,
+    bottom: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: FARMER_COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 6,
+    elevation: 10,
+    shadowColor: FARMER_COLORS.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
   },
 });

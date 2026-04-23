@@ -268,24 +268,24 @@ export default MyOrders;
 
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 0,
   },
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: FARMER_COLORS.background,
   },
 
   header: {
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
+    backgroundColor: FARMER_COLORS.surface,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    paddingBottom: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 3,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     zIndex: 10,
   },
@@ -299,54 +299,60 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FEF9E7",
+    borderRadius: 12,
+    backgroundColor: FARMER_COLORS.tintCard,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.15)',
   },
 
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1F2937",
-    letterSpacing: 0.5,
+    fontSize: 20,
+    fontWeight: "700",
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
 
   searchBox: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: FARMER_COLORS.tintCard,
     borderRadius: 16,
     marginTop: 20,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    height: 50,
+    height: 52,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.15)',
   },
 
   searchIcon: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     resizeMode: "contain",
-    tintColor: "#9CA3AF"
+    tintColor: FARMER_COLORS.textSecondary,
   },
 
   searchInput: {
     flex: 1,
     paddingHorizontal: 12,
-    color: "#111827",
+    color: FARMER_COLORS.textPrimary,
     fontSize: 15,
   },
 
   orderCard: {
-    backgroundColor: "#ffffff",
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 18,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
+    backgroundColor: FARMER_COLORS.surface,
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 20,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
 
   orderHeader: {
@@ -357,13 +363,14 @@ const styles = StyleSheet.create({
 
   orderId: {
     fontWeight: "700",
-    color: "#1F2937",
-    fontSize: 15,
+    color: FARMER_COLORS.textPrimary,
+    fontSize: 16,
+    letterSpacing: 0.2,
   },
 
   date: {
     fontSize: 13,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     marginBottom: 12,
     fontWeight: "500",
   },
@@ -371,23 +378,25 @@ const styles = StyleSheet.create({
   paymentMethodContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
+    backgroundColor: FARMER_COLORS.tintCard,
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.2)',
   },
   
   paymentMethodText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0284C7',
+    color: FARMER_COLORS.accent,
   },
 
   statusBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
   },
 
@@ -396,7 +405,7 @@ const styles = StyleSheet.create({
   },
 
   pendingBg: {
-    backgroundColor: "#e2f0c9",
+    backgroundColor: FARMER_COLORS.secondary,
   },
 
   statusText: {
@@ -411,51 +420,58 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#374151"
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.2,
   },
 
   itemQty: {
     fontSize: 13,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     marginTop: 2,
   },
 
   totalAmount: {
     fontWeight: "700",
-    fontSize: 15,
-    color: "#374151"
+    fontSize: 16,
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.2,
   },
 
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 14,
-    paddingTop: 14,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: 'rgba(142, 171, 83, 0.12)',
   },
 
   downloadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: FARMER_COLORS.primaryLight,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
 
   downloadBtnText: {
-    color: '#fff',
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: 13,
     fontWeight: '700',
   },
 
   noData: {
     textAlign: "center",
-    marginTop: 40,
-    color: "#6B7280",
+    marginTop: 48,
+    color: FARMER_COLORS.textSecondary,
     fontSize: 15,
-    fontWeight: "500"
+    fontWeight: "500",
   },
 });

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useCallback } from "react";
+﻿import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,27 +10,27 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import apiService from "../../../Redux/apiService";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import Images from "../../../assets/Images/Images";
-import { useTranslation } from "react-i18next";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+} from 'react-native';
+import apiService from '../../../Redux/apiService';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import Images from '../../../assets/Images/Images';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
-
-
 
 const MarketPlace = () => {
   const [cartCount, setCartCount] = useState(0);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [categories, setCategories] = useState([{ key: "All", labelKey: "all", icon: "apps" }]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [categories, setCategories] = useState([
+    { key: 'All', labelKey: 'all', icon: 'apps' },
+  ]);
   const navigation = useNavigation();
   const { t } = useTranslation();
 
-  // All 8 categories from FPO Add Product
+  // All 8 categories from Distributor Add Product
   const ALL_CATEGORIES = [
     { key: 'fertilizers', labelKey: 'fertilizers', icon: 'grass' },
     { key: 'seeds', labelKey: 'seeds', icon: 'eco' },
@@ -56,21 +56,21 @@ const MarketPlace = () => {
   const fetchMarketplaceItems = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Fetch marketplace items and all products in parallel
       const [itemsResponse, allProducts] = await Promise.all([
         apiService.GetMarketplaceItems(),
-        apiService.GetFPOProduct()
+        apiService.GetFPOProduct(),
       ]);
-      
+
       const items = itemsResponse?.data || [];
-      
+
       // Enrich items with productCategory by matching with products
       const enrichedItems = items.map(item => {
         // Try to find matching product by image
         const itemImage = item.productImages?.[0];
         let matchedProduct = null;
-        
+
         if (itemImage && allProducts) {
           matchedProduct = allProducts.find(p => {
             const productImages = p.productImages || [];
@@ -80,38 +80,39 @@ const MarketPlace = () => {
             });
           });
         }
-        
+
         // If not found by image, try by brand + name
         if (!matchedProduct && item.brand && item.itemName && allProducts) {
           const itemBrand = item.brand.toLowerCase();
           const itemNameParts = item.itemName.toLowerCase().split(' ');
-          
+
           matchedProduct = allProducts.find(p => {
             const productBrand = (p.brand || '').toLowerCase();
             const productName = (p.productName || '').toLowerCase();
             const brandMatch = productBrand === itemBrand;
-            const nameMatch = itemNameParts.some(part => 
-              part.length > 2 && productName.includes(part)
+            const nameMatch = itemNameParts.some(
+              part => part.length > 2 && productName.includes(part),
             );
             return brandMatch && nameMatch;
           });
         }
-        
+
         // Add productCategory to item
         return {
           ...item,
-          productCategory: matchedProduct?.productCategory || item.productCategory || ''
+          productCategory:
+            matchedProduct?.productCategory || item.productCategory || '',
         };
       });
-      
+
       setProducts(enrichedItems);
-      
+
       // Use all 8 predefined categories
       const allCategoriesList = [
-        { key: "All", labelKey: "all", icon: "apps" },
-        ...ALL_CATEGORIES
+        { key: 'All', labelKey: 'all', icon: 'apps' },
+        ...ALL_CATEGORIES,
       ];
-      
+
       setCategories(allCategoriesList);
     } catch (error) {
       console.error('Error fetching marketplace items:', error);
@@ -121,14 +122,21 @@ const MarketPlace = () => {
     }
   }, []);
 
-  useEffect(() => { fetchMarketplaceItems(); }, [fetchMarketplaceItems]);
-  useFocusEffect(useCallback(() => { fetchCartCount(); }, [fetchCartCount]));
+  useEffect(() => {
+    fetchMarketplaceItems();
+  }, [fetchMarketplaceItems]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCartCount();
+    }, [fetchCartCount]),
+  );
 
   // ── Group flat items by productId (or productName if no productId)
   const groupedProducts = useMemo(() => {
     const groups = {};
     products.forEach(item => {
-      const key = item.productId || item.productName || item.brand || item.itemId;
+      const key =
+        item.productId || item.productName || item.brand || item.itemId;
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     });
@@ -138,20 +146,24 @@ const MarketPlace = () => {
   // ── Filter groups by search and category
   const filteredGroups = useMemo(() => {
     let filtered = groupedProducts;
-    
+
     // Filter by category
-    if (selectedCategory !== "All") {
+    if (selectedCategory !== 'All') {
       filtered = filtered.filter(group => {
         return group.some(item => {
-          const itemCategory = (item.productCategory || '').toUpperCase().trim();
+          const itemCategory = (item.productCategory || '')
+            .toUpperCase()
+            .trim();
           const selectedCat = selectedCategory.toUpperCase().trim();
-          return itemCategory === selectedCat || 
-                 itemCategory.includes(selectedCat) ||
-                 selectedCat.includes(itemCategory);
+          return (
+            itemCategory === selectedCat ||
+            itemCategory.includes(selectedCat) ||
+            selectedCat.includes(itemCategory)
+          );
         });
       });
     }
-    
+
     // Filter by search
     if (search) {
       const searchLower = search.toLowerCase();
@@ -160,82 +172,95 @@ const MarketPlace = () => {
           const name = (item.itemName || '').toLowerCase();
           const brand = (item.brand || '').toLowerCase();
           const category = (item.productCategory || '').toLowerCase();
-          return name.includes(searchLower) || brand.includes(searchLower) || category.includes(searchLower);
-        })
+          return (
+            name.includes(searchLower) ||
+            brand.includes(searchLower) ||
+            category.includes(searchLower)
+          );
+        }),
       );
     }
-    
+
     return filtered;
   }, [search, groupedProducts, selectedCategory]);
 
   // ── Each "item" passed by FlatList is a group (array of variants)
-  const renderItem = useCallback(({ item: group }) => {
-    const first = group[0]; // representative item for the card
-    const imageUrl = typeof first.productImages?.[0] === 'string'
-      ? first.productImages[0]
-      : first.productImages?.[0]?.url;
+  const renderItem = useCallback(
+    ({ item: group }) => {
+      const first = group[0]; // representative item for the card
+      const imageUrl =
+        typeof first.productImages?.[0] === 'string'
+          ? first.productImages[0]
+          : first.productImages?.[0]?.url;
 
-    // Price range label
-    const prices = group.map(i => i.price).sort((a, b) => a - b);
-    const priceLabel = prices.length > 1
-      ? `₹${prices[0]} – ₹${prices[prices.length - 1]}`
-      : `₹${prices[0]}`;
+      // Price range label
+      const prices = group.map(i => i.price).sort((a, b) => a - b);
+      const priceLabel =
+        prices.length > 1
+          ? `₹${prices[0]} – ₹${prices[prices.length - 1]}`
+          : `₹${prices[0]}`;
 
-    return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => {
-          navigation.navigate('MarketplaceProductDetails', {
-            items: group,
-            productId: first.productId,
-            productName: first.productName,
-          });
-        }}
-        activeOpacity={0.8}
-      >
-        <View style={styles.imageContainer}>
-          {imageUrl ? (
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.productImage}
-              onError={() => console.log('Image load error')}
-            />
-          ) : (
-            <View style={styles.placeholderIconWrapper}>
-              <Icon name="inventory-2" size={36} color="#BDBDBD" />
-            </View>
-          )}
+      return (
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => {
+            navigation.navigate('MarketplaceProductDetails', {
+              items: group,
+              productId: first.productId,
+              productName: first.productName,
+            });
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.imageContainer}>
+            {imageUrl ? (
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.productImage}
+                onError={() => console.log('Image load error')}
+              />
+            ) : (
+              <View style={styles.placeholderIconWrapper}>
+                <Icon name="inventory-2" size={36} color="#BDBDBD" />
+              </View>
+            )}
 
-          {/* Group / Variants Badge */}
-          {group.length > 1 && (
-            <View style={styles.variantCountBadge}>
-              <Text style={styles.variantCountText}>{group.length} {t('marketplace.variants')}</Text>
-            </View>
-          )}
+            {/* Group / Variants Badge */}
+            {group.length > 1 && (
+              <View style={styles.variantCountBadge}>
+                <Text style={styles.variantCountText}>
+                  {group.length} {t('marketplace.variants')}
+                </Text>
+              </View>
+            )}
 
-          {/* Category Badge overlaying image */}
-          {first.productCategory && (
-            <View style={styles.categoryPillOverlay}>
-              <Text style={styles.categoryPillText}>
-                {t(`product_categories.${first.productCategory.toLowerCase()}`)}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.cardInfo}>
-          <Text style={styles.productName} numberOfLines={2}>
-            {first.itemName || 'N/A'}
-          </Text>
-          <Text style={styles.brandText}>{first.brand || 'No Brand'}</Text>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceText}>{priceLabel}</Text>
+            {/* Category Badge overlaying image */}
+            {first.productCategory && (
+              <View style={styles.categoryPillOverlay}>
+                <Text style={styles.categoryPillText}>
+                  {t(
+                    `product_categories.${first.productCategory.toLowerCase()}`,
+                  )}
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.unitText}>{first.unit}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation, t]);
+
+          <View style={styles.cardInfo}>
+            <Text style={styles.productName} numberOfLines={2}>
+              {first.itemName || 'N/A'}
+            </Text>
+            <Text style={styles.brandText}>{first.brand || 'No Brand'}</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.priceText}>{priceLabel}</Text>
+            </View>
+            <Text style={styles.unitText}>{first.unit}</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [navigation, t],
+  );
 
   return (
     <View style={styles.container}>
@@ -247,19 +272,24 @@ const MarketPlace = () => {
             style={styles.iconCircleBtn}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back-ios" size={20} color="#1A1A1A" style={{ marginLeft: 6 }} />
+            <Icon
+              name="arrow-back-ios"
+              size={20}
+              color={FARMER_COLORS.textOnPrimary}
+              style={{ marginLeft: 6 }}
+            />
           </TouchableOpacity>
 
           <View style={styles.headerTitleBox}>
-            <Text style={styles.headerTitle}>{t("marketplace.title")}</Text>
-            <Text style={styles.headerSub}>{t("marketplace.subtitle")}</Text>
+            <Text style={styles.headerTitle}>{t('marketplace.title')}</Text>
+            <Text style={styles.headerSub}>{t('marketplace.subtitle')}</Text>
           </View>
 
           <TouchableOpacity
             style={styles.iconCircleBtn}
             onPress={() => navigation.navigate('Cart')}
           >
-            <Icon name="shopping-cart" size={22} color="#1A1A1A" />
+            <Icon name="shopping-cart" size={22} color={FARMER_COLORS.textOnPrimary} />
             {cartCount > 0 && (
               <View style={styles.badgeIndicator}>
                 <Text style={styles.badgeNum}>{cartCount}</Text>
@@ -270,12 +300,17 @@ const MarketPlace = () => {
 
         {/* FLOATING SEARCH BOX */}
         <View style={styles.searchContainer}>
-          <Icon name="search" size={22} color="#9CA3AF" style={styles.searchIcon} />
+          <Icon
+            name="search"
+            size={22}
+            color="#E8F5E9"
+            style={styles.searchIcon}
+          />
           <TextInput
-            placeholder={t("marketplace.search")}
+            placeholder={t('marketplace.search')}
             value={search}
             onChangeText={setSearch}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
             style={styles.searchInput}
           />
         </View>
@@ -288,7 +323,7 @@ const MarketPlace = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScrollContainer}
         >
-          {categories.map((category) => {
+          {categories.map(category => {
             const isActive = selectedCategory === category.key;
             return (
               <TouchableOpacity
@@ -300,10 +335,10 @@ const MarketPlace = () => {
                 ]}
                 activeOpacity={0.7}
               >
-                <Icon 
-                  name={category.icon} 
-                  size={18} 
-                  color={isActive ? "#fff" : "#6B7280"} 
+                <Icon
+                  name={category.icon}
+                  size={18}
+                  color={isActive ? FARMER_COLORS.textOnPrimary : FARMER_COLORS.textSecondary}
                 />
                 <Text
                   style={[
@@ -311,7 +346,9 @@ const MarketPlace = () => {
                     isActive ? styles.chipTextActive : styles.chipTextInactive,
                   ]}
                 >
-                  {category.key === 'All' ? t('marketplace.all') : t(`product_categories.${category.labelKey}`)}
+                  {category.key === 'All'
+                    ? t('marketplace.all')
+                    : t(`product_categories.${category.labelKey}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -328,16 +365,24 @@ const MarketPlace = () => {
         <View style={styles.stateContainer}>
           <Icon name="search-off" size={60} color="#D1D5DB" />
           <Text style={styles.emptyStateText}>
-            {selectedCategory !== "All" 
-              ? t('marketplace.no_products_cat', { category: t(`product_categories.${categories.find(c => c.key === selectedCategory)?.labelKey}`) }) 
+            {selectedCategory !== 'All'
+              ? t('marketplace.no_products_cat', {
+                  category: t(
+                    `product_categories.${
+                      categories.find(c => c.key === selectedCategory)?.labelKey
+                    }`,
+                  ),
+                })
               : t('marketplace.no_products')}
           </Text>
-          {selectedCategory !== "All" && (
-            <TouchableOpacity 
+          {selectedCategory !== 'All' && (
+            <TouchableOpacity
               style={styles.clearFilterButton}
-              onPress={() => setSelectedCategory("All")}
+              onPress={() => setSelectedCategory('All')}
             >
-              <Text style={styles.clearFilterBtnText}>{t('marketplace.clear_filter')}</Text>
+              <Text style={styles.clearFilterBtnText}>
+                {t('marketplace.clear_filter')}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -360,89 +405,93 @@ export default MarketPlace;
 
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 0,
   },
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8", // Matched with FarmerHome changes
+    backgroundColor: FARMER_COLORS.background,
   },
-  
-  /* TOP BAR - SLEEK LIGHT DESIGN */
+
+  /* TOP BAR */
   topBar: {
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    zIndex: 10, // Ensure shadow appears over lists
+    paddingBottom: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    zIndex: 10,
   },
   headerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   iconCircleBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitleBox: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#1F2937",
+    fontWeight: '800',
+    color: FARMER_COLORS.textOnPrimary,
     letterSpacing: 0.5,
   },
   headerSub: {
     fontSize: 12,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSubOnPrimary,
     marginTop: 2,
-    fontWeight: "500",
+    fontWeight: '500',
+    opacity: 0.95,
   },
   badgeIndicator: {
-    position: "absolute",
+    position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: "#EF4444",
+    backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFF",
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: FARMER_COLORS.primary,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   badgeNum: {
-    color: "#FFF",
+    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: "bold",
+    fontWeight: '700',
   },
 
   /* SEARCH BOX */
   searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   searchIcon: {
     marginRight: 10,
@@ -450,123 +499,132 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#1F2937",
-    fontWeight: "500",
+    color: FARMER_COLORS.textOnPrimary,
+    fontWeight: '500',
   },
 
   /* CATEGORY CHIPS */
   categorySection: {
-    marginTop: 15,
-    marginBottom: 5,
+    marginTop: 20,
+    marginBottom: 8,
   },
   categoryScrollContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     gap: 12,
   },
   categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 44,
     paddingHorizontal: 18,
     borderRadius: 22,
     gap: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
   chipInactive: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(142, 171, 83, 0.2)',
   },
   chipActive: {
-    backgroundColor: FARMER_COLORS.primaryLight, // Farmer App Brand
+    backgroundColor: FARMER_COLORS.primary,
     borderWidth: 1,
-    borderColor: FARMER_COLORS.primaryLight,
+    borderColor: FARMER_COLORS.primary,
   },
   categoryChipText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   chipTextInactive: {
-    color: "#4B5563",
+    color: FARMER_COLORS.textSecondary,
   },
   chipTextActive: {
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
   },
 
   /* LIST STYLES */
   productListContainer: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
   },
   productRow: {
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
 
-  /* MODERN PRODUCT CARD */
+  /* PRODUCT CARD */
   card: {
-    width: "48%",
-    backgroundColor: "#ffffff",
+    width: '48%',
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 20,
     padding: 12,
     marginBottom: 16,
-    elevation: 3,
-    shadowColor: "#000",
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
     shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   imageContainer: {
-    width: "100%",
+    width: '100%',
     height: 120,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 14,
+    backgroundColor: 'rgba(142, 171, 83, 0.05)',
+    borderRadius: 16,
     marginBottom: 12,
-    overflow: "hidden",
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.1)',
   },
   productImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   placeholderIconWrapper: {
-    opacity: 0.5,
+    opacity: 0.3,
   },
   variantCountBadge: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: "rgba(17, 24, 39, 0.75)",
-    backdropFilter: "blur(4px)",
+    backgroundColor: 'rgba(142, 171, 83, 0.95)',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   variantCountText: {
     fontSize: 10,
-    color: "#fff",
-    fontWeight: "600",
+    color: FARMER_COLORS.textOnPrimary,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   categoryPillOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: "#059669", // Emerald Green for tags
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    backgroundColor: FARMER_COLORS.accent,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   categoryPillText: {
     fontSize: 9,
-    color: "#fff",
-    fontWeight: "700",
-    textTransform: "uppercase",
+    color: FARMER_COLORS.textOnPrimary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   cardInfo: {
@@ -574,59 +632,66 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
+    fontWeight: '700',
+    color: FARMER_COLORS.textPrimary,
     marginBottom: 4,
     lineHeight: 20,
+    letterSpacing: 0.2,
   },
   brandText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     marginBottom: 8,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
   priceText: {
     fontSize: 16,
-    fontWeight: "800",
-    color: FARMER_COLORS.primaryLight, // Farmer Brand Color
+    fontWeight: '800',
+    color: FARMER_COLORS.primary,
+    letterSpacing: 0.3,
   },
   unitText: {
     fontSize: 11,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    color: FARMER_COLORS.textTertiary,
+    fontWeight: '500',
   },
 
   /* EMPTY & LOADING STATES */
   stateContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingTop: 80,
     paddingHorizontal: 40,
   },
   emptyStateText: {
     fontSize: 15,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     marginTop: 16,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
   },
   clearFilterButton: {
     marginTop: 24,
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   clearFilterBtnText: {
-    color: "#fff",
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
-

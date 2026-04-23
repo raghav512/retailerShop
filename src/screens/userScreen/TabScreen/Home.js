@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,38 +9,57 @@ import {
   TouchableOpacity,
   ScrollView,
   AppState,
-} from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { useTranslation } from "react-i18next";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import notifee, { EventType } from '@notifee/react-native';
 import messaging from '@react-native-firebase/messaging';
-import apiService from "../../../Redux/apiService";
-import LanguageSwitcher from "../../../common/reusableComponent/LanguageSwitcher";
-import { STAFF_COLORS } from '../../../colorsList/ColorList';
-
+import apiService from '../../../Redux/apiService';
+import LanguageSwitcher from '../../../common/reusableComponent/LanguageSwitcher';
+import { STAFF_COLORS, COLORS } from '../../../colorsList/ColorList';
 
 /* ---------------- DUMMY DATA (API READY) ---------------- */
 
 /* ---------------- DUMMY DATA (API READY) ---------------- */
 
 const STATS = [
-  { id: "1", key: "today_procurements", value: "24", icon: "document-text" },
-  { id: "2", key: "pending_quality", value: "8", icon: "time" },
-  { id: "3", key: "pending_payments", value: "12", icon: "cash" },
+  { id: '1', key: 'today_procurements', value: '24', icon: 'document-text' },
+  { id: '2', key: 'pending_quality', value: '8', icon: 'time' },
+  { id: '3', key: 'pending_payments', value: '12', icon: 'cash' },
 ];
 
 const QUICK_ACTIONS = [
-  { id: "1", key: "home.view_listing", route: "Listing", icon: "list" },
-  { id: "2", key: "home.create_listing", route: "StaffCreateListing", icon: "add" },
-  { id: "3", key: "home.farmers", route: "Farmers", icon: "people" },
-  { id: "4", key: "home.community", route: "StaffCommunity", icon: "megaphone" },
+  {
+    id: '1',
+    key: 'home.inquiry',
+    route: 'Inquiry',
+    icon: 'chatbubble-outline',
+  },
+  {
+    id: '2',
+    key: 'home.attendance',
+    route: 'Attendance',
+    icon: 'calendar-outline',
+  },
+  {
+    id: '3',
+    key: 'home.orders',
+    route: 'Orders',
+    icon: 'document-text-outline',
+  },
+  {
+    id: '4',
+    key: 'home.task_assigned',
+    route: 'TaskAssigned',
+    icon: 'clipboard-outline',
+  },
 ];
 
 const Home = () => {
-  const navigation = useNavigation()
-    const { t } = useTranslation(); // 🌍
+  const navigation = useNavigation();
+  const { t } = useTranslation(); // 🌍
   const [stats, setStats] = useState([]);
   const [procurements, setProcurements] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -49,34 +68,37 @@ const Home = () => {
   useFocusEffect(
     useCallback(() => {
       const loadCount = async () => {
-        const count = await AsyncStorage.getItem("unreadCount");
+        const count = await AsyncStorage.getItem('unreadCount');
         setUnreadCount(count ? parseInt(count, 10) : 0);
       };
       loadCount();
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
     // 1. Listen for background-to-foreground app state changes
-    const subscription = AppState.addEventListener("change", async (nextAppState) => {
-      if (nextAppState === "active") {
-        const stored = await AsyncStorage.getItem("unreadCount");
-        setUnreadCount(stored ? parseInt(stored, 10) : 0);
-      }
-    });
+    const subscription = AppState.addEventListener(
+      'change',
+      async nextAppState => {
+        if (nextAppState === 'active') {
+          const stored = await AsyncStorage.getItem('unreadCount');
+          setUnreadCount(stored ? parseInt(stored, 10) : 0);
+        }
+      },
+    );
 
     // 2. Notifee foreground event
     const unsubscribeNotifee = notifee.onForegroundEvent(async ({ type }) => {
       if (type === EventType.DELIVERED) {
-        const stored = await AsyncStorage.getItem("unreadCount");
+        const stored = await AsyncStorage.getItem('unreadCount');
         setUnreadCount(stored ? parseInt(stored, 10) : 0);
       }
     });
 
     // 3. FCM foreground message event
-    const unsubscribeFCM = messaging().onMessage(async (remoteMessage) => {
+    const unsubscribeFCM = messaging().onMessage(async remoteMessage => {
       if (remoteMessage?.data?.type === 'ADMIN_BROADCAST') {
-        setUnreadCount((prev) => prev + 1);
+        setUnreadCount(prev => prev + 1);
       }
     });
 
@@ -92,85 +114,85 @@ const Home = () => {
     setStats(STATS);
   }, []);
 
+  const mapPurchaseForUI = item => {
+    const cropNames =
+      item.crops && item.crops.length > 0
+        ? item.crops.map(c => c.cropName).join(', ')
+        : 'N/A';
 
-const mapPurchaseForUI = (item) => {
-  const cropNames = item.crops && item.crops.length > 0
-    ? item.crops.map(c => c.cropName).join(', ')
-    : 'N/A';
+    const totalQty =
+      item.crops && item.crops.length > 0
+        ? item.crops.reduce((acc, c) => acc + (c.quantity || 0), 0)
+        : 0;
 
-  const totalQty = item.crops && item.crops.length > 0
-    ? item.crops.reduce((acc, c) => acc + (c.quantity || 0), 0)
-    : 0;
-
-  let farmerName = "Farmer";
-  if (item.farmer && typeof item.farmer === 'object') {
-    farmerName = `${item.farmer.firstName || ""} ${item.farmer.lastName || ""}`.trim();
-  } else if (item.farmerName) {
-    farmerName = item.farmerName;
-  }
-
-  return {
-    id: item._id,
-    farmer: farmerName || "Unknown",
-    code: item._id ? item._id.slice(-6).toUpperCase() : '',
-    crop: cropNames,
-    quantity: `${totalQty} quintal`,
-    amount: `₹${item.totalAmount || 0}`,
-    date: item.procurementDate ? new Date(item.procurementDate).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }) : 'N/A',
-    status: item.status || "completed", 
-  };
-};
-
-
-useEffect(() => {
-  const fetchHomeData = async () => {
-    try {
-      const response = await apiService.GetStaffPurches();
-      console.log("HOME PURCHASE DATA 👉", response);
-
-      const mapped = response.map(mapPurchaseForUI);
-
-      // same card UI, just backend data
-      setProcurements(mapped.slice(0, 3));
-
-      // same stats UI
-      setStats([
-        {
-          id: "1",
-          key: "today_procurements",
-          value: response.length.toString(),
-          icon: "document-text",
-        },
-        {
-          id: "2",
-          key: "pending_quality",
-          value: "0",
-          icon: "time",
-        },
-        {
-          id: "3",
-          key: "pending_payments",
-          value: "0",
-          icon: "cash",
-        },
-      ]);
-    } catch (error) {
-      console.log("HOME API ERROR 👉", error);
+    let farmerName = 'Farmer';
+    if (item.farmer && typeof item.farmer === 'object') {
+      farmerName = `${item.farmer.firstName || ''} ${
+        item.farmer.lastName || ''
+      }`.trim();
+    } else if (item.farmerName) {
+      farmerName = item.farmerName;
     }
+
+    return {
+      id: item._id,
+      farmer: farmerName || 'Unknown',
+      code: item._id ? item._id.slice(-6).toUpperCase() : '',
+      crop: cropNames,
+      quantity: `${totalQty} quintal`,
+      amount: `₹${item.totalAmount || 0}`,
+      date: item.procurementDate
+        ? new Date(item.procurementDate).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })
+        : 'N/A',
+      status: item.status || 'completed',
+    };
   };
 
-  fetchHomeData();
-}, []);
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const response = await apiService.GetStaffPurches();
+        console.log('HOME PURCHASE DATA 👉', response);
 
+        const mapped = response.map(mapPurchaseForUI);
+
+        // same card UI, just backend data
+        setProcurements(mapped.slice(0, 3));
+
+        // same stats UI
+        setStats([
+          {
+            id: '1',
+            key: 'today_procurements',
+            value: response.length.toString(),
+            icon: 'document-text',
+          },
+          {
+            id: '2',
+            key: 'pending_quality',
+            value: '0',
+            icon: 'time',
+          },
+          {
+            id: '3',
+            key: 'pending_payments',
+            value: '0',
+            icon: 'cash',
+          },
+        ]);
+      } catch (error) {
+        console.log('HOME API ERROR 👉', error);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
 
   /* ---------------- RENDERERS ---------------- */
-
-  const primaryActions = QUICK_ACTIONS.slice(0, 2);
-  const secondaryActions = QUICK_ACTIONS.slice(2);
 
   const renderProcurement = ({ item }) => (
     <View style={styles.procCard}>
@@ -179,7 +201,10 @@ useEffect(() => {
           {item.farmer} <Text style={styles.procCode}>— {item.code}</Text>
         </Text>
         <View style={styles.completedBadge}>
-          <Text style={styles.completedText}> {t(`status.${item.status.toLowerCase()}`)}</Text>
+          <Text style={styles.completedText}>
+            {' '}
+            {t(`status.${item.status.toLowerCase()}`)}
+          </Text>
         </View>
       </View>
       <Text style={styles.procCrop}>
@@ -187,11 +212,11 @@ useEffect(() => {
       </Text>
       <View style={styles.procFooter}>
         <View>
-          <Text style={styles.procLabel}>{t("Common.amount")}</Text>
+          <Text style={styles.procLabel}>{t('Common.amount')}</Text>
           <Text style={styles.procAmount}>{item.amount}</Text>
         </View>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.procLabel}>{t("Common.date")}</Text>
+        <View style={styles.procDateWrap}>
+          <Text style={styles.procLabel}>{t('Common.date')}</Text>
           <Text style={styles.procDate}>{item.date}</Text>
         </View>
       </View>
@@ -199,34 +224,41 @@ useEffect(() => {
   );
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
 
       {/* MODERN GLASS TOP-BAR JUST LIKE FARMER HOME */}
       <View style={styles.headerSpacer} />
       <View style={styles.topBar}>
         <View style={styles.greetingBox}>
-          <Text style={styles.helloText}>{t("home.title")}</Text>
-          <Text style={styles.subText}>{t("home.subtitle")}</Text>
+          <Text style={styles.helloText}>{t('home.title')}</Text>
+          <Text style={styles.subText}>{t('home.subtitle')}</Text>
         </View>
 
         <View style={styles.headerRight}>
-          <LanguageSwitcher iconColor="#4A4A4A" style={styles.iconBtn} />
-          
+          <LanguageSwitcher
+            iconColor={STAFF_COLORS.accent}
+            style={styles.iconBtn}
+          />
+
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={async () => {
-              await AsyncStorage.setItem("unreadCount", "0");
-              setUnreadCount(0); 
-              navigation.navigate("Broadcasts");
+              await AsyncStorage.setItem('unreadCount', '0');
+              setUnreadCount(0);
+              navigation.navigate('Broadcasts');
             }}
           >
-            <Icon name="notifications" size={24} color="#4A4A4A" />
+            <Icon name="notifications" size={24} color={STAFF_COLORS.accent} />
 
             {unreadCount > 0 && (
               <View style={styles.badgeIndicator}>
                 <Text style={styles.badgeNum}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </Text>
               </View>
             )}
@@ -234,79 +266,94 @@ useEffect(() => {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.container}>
           <View style={styles.statsRow}>
-            {stats.map((item) => (
+            {stats.map(item => (
               <View key={item.id} style={styles.statCard}>
                 <View style={styles.statIconWrapper}>
-                  <Icon name={item.icon} size={22} color={STAFF_COLORS.primary} />
+                  <Icon
+                    name={item.icon}
+                    size={22}
+                    color={STAFF_COLORS.primary}
+                  />
                 </View>
                 <Text style={styles.statValue}>{item.value}</Text>
-                <Text style={styles.statLabel}>
-                  {t(`stats.${item.key}`)}
-                </Text>
+                <Text style={styles.statLabel}>{t(`stats.${item.key}`)}</Text>
               </View>
             ))}
           </View>
 
           {/* EXPLORE SECTION - REPLACES BUTTON ROWS */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("quick_actions", "Quick Actions")}</Text>
+            <Text style={styles.sectionTitle}>
+              {t('quick_actions', 'Quick Actions')}
+            </Text>
           </View>
 
-          <View style={styles.primaryActionsContainer}>
-            {primaryActions.map((item, index) => (
-              <TouchableOpacity 
-                key={item.id} 
-                style={[styles.primaryCard, index === 0 ? styles.focusedCard : styles.lightCard]}
-                onPress={() => navigation.navigate(item.route)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.primaryIconWrapper, index === 0 ? styles.focusedIcon : styles.lightIcon]}>
-                  <Icon name={item.icon} size={28} color={index === 0 ? "#fff" : STAFF_COLORS.primary} />
-                </View>
-                <Text style={[styles.primaryCardText, index === 0 ? {color: "#fff"} : {color: "#1F2937"}]}>
-                  {t(item.key)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <View style={styles.quickActionsGrid}>
+            {QUICK_ACTIONS.map((item, index) => {
+              const isFocused = index === 0;
 
-          <View style={styles.secondaryActionsWrapper}>
-            {secondaryActions.map((item) => (
-              <TouchableOpacity 
-                key={item.id} 
-                style={styles.secondaryItem} 
-                onPress={() => navigation.navigate(item.route)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.circularIcon, {borderColor: STAFF_COLORS.primary + "30"}]}>
-                  <Icon name={item.icon} size={24} color={STAFF_COLORS.primary} />
-                </View>
-                <Text style={styles.secondaryItemText} numberOfLines={2}>
-                  {t(item.key)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.quickActionCard,
+                    isFocused && styles.quickActionCardFocused,
+                  ]}
+                  onPress={() => navigation.navigate(item.route)}
+                  activeOpacity={0.82}
+                >
+                  <View
+                    style={[
+                      styles.quickActionIcon,
+                      isFocused && styles.quickActionIconFocused,
+                    ]}
+                  >
+                    <Icon
+                      name={item.icon}
+                      size={26}
+                      color={
+                        isFocused ? STAFF_COLORS.accent : STAFF_COLORS.primary
+                      }
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.quickActionText,
+                      isFocused && styles.quickActionTextFocused,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {t(item.key)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* RECENT */}
-          <View style={[styles.sectionHeader, { marginTop: 10 }]}>
-            <Text style={styles.sectionTitle}>{t("home.recent_procurements")}</Text>
+          <View style={[styles.sectionHeader, styles.recentSectionHeader]}>
+            <Text style={styles.sectionTitle}>
+              {t('home.recent_procurements')}
+            </Text>
           </View>
 
           <View style={styles.nestedWrapper}>
             <FlatList
               data={procurements}
-              keyExtractor={(item) => item.id}
+              keyExtractor={item => item.id}
               renderItem={renderProcurement}
               scrollEnabled={false}
             />
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -317,289 +364,279 @@ export default Home;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: STAFF_COLORS.tint,
   },
   scrollContent: {
     paddingBottom: 40,
   },
   container: {
-    paddingTop: 16,
+    paddingTop: 12,
   },
 
-  /* TOP BAR - SLEEK LIGHT DESIGN */
+  /* TOP BAR - Premium Branded Header */
   headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
+    height: 0,
+    backgroundColor: STAFF_COLORS.primaryLight,
   },
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
+    paddingTop: 20,
+    paddingBottom: 24,
+    backgroundColor: STAFF_COLORS.primaryLight,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    elevation: 6,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
     zIndex: 10,
+    marginBottom: 8,
   },
   greetingBox: {
     flex: 1,
   },
   helloText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1A1A1A",
-    letterSpacing: 0.5,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: STAFF_COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
   subText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: STAFF_COLORS.accent,
     marginTop: 4,
-    fontWeight: "500",
+    fontWeight: '600',
   },
   headerRight: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   iconBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: STAFF_COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: STAFF_COLORS.tintMid,
   },
   badgeIndicator: {
-    position: "absolute",
+    position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: "#EF4444",
+    backgroundColor: COLORS.error,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
-    borderColor: "#FFF",
+    borderColor: STAFF_COLORS.surface,
   },
   badgeNum: {
-    color: "#FFF",
+    color: COLORS.white,
     fontSize: 10,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
 
-  /* STATS */
+  /* STATS - Compact Premium Cards */
   statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    marginBottom: 10,
-    marginTop: 5,
+    marginBottom: 16,
+    marginTop: 8,
     gap: 10,
   },
   statCard: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
+    backgroundColor: STAFF_COLORS.surface,
+    borderRadius: 16,
     padding: 16,
-    alignItems: "center",
-    elevation: 4,
-    shadowColor: "#000",
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: STAFF_COLORS.primary,
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: STAFF_COLORS.tintMid,
   },
   statIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FAF7E8",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: STAFF_COLORS.primary + '08',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: STAFF_COLORS.primary + '18',
   },
   statValue: {
-    color: "#1F2937",
-    fontSize: 20,
-    fontWeight: "800",
+    color: STAFF_COLORS.textPrimary,
+    fontSize: 24,
+    fontWeight: '700',
   },
   statLabel: {
-    color: "#6B7280",
+    color: STAFF_COLORS.textSecondary,
     fontSize: 11,
-    marginTop: 4,
-    textAlign: "center",
-    fontWeight: "500",
+    marginTop: 3,
+    textAlign: 'center',
+    fontWeight: '600',
   },
 
-  /* PRIMARY ACTIONS CONTAINER */
+  /* QUICK ACTIONS - Equal Size Cards */
   sectionHeader: {
     paddingHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 16,
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  recentSectionHeader: {
+    marginTop: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-    letterSpacing: 0.2,
+    fontSize: 17,
+    fontWeight: '700',
+    color: STAFF_COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
-  primaryActionsContainer: {
-    flexDirection: "row",
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    gap: 15,
   },
-  primaryCard: {
-    flex: 1,
-    borderRadius: 24,
-    padding: 20,
-    elevation: 5,
-    shadowColor: "#000",
+  quickActionCard: {
+    width: '48%',
+    minHeight: 128,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    elevation: 4,
+    shadowColor: STAFF_COLORS.primary,
     shadowOpacity: 0.1,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    height: 130,
-    justifyContent: "space-between",
-  },
-  focusedCard: {
-    backgroundColor: STAFF_COLORS.primary, // Staff Brand Accent
-  },
-  lightCard: {
-    backgroundColor: "#FFFFFF",
-  },
-  primaryIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  focusedIcon: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-  },
-  lightIcon: {
-    backgroundColor: "#FAF7E8", // Staff Brand Tint
-  },
-  primaryCardText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  /* SECONDARY ACTIONS GRID */
-  secondaryActionsWrapper: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 10,
-    marginTop: 15,
-    justifyContent: "flex-start",
-  },
-  secondaryItem: {
-    width: "25%",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  circularIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    justifyContent: 'space-between',
     borderWidth: 1,
+    borderColor: STAFF_COLORS.tintMid,
+    backgroundColor: STAFF_COLORS.tintCard,
+    marginBottom: 12,
   },
-  secondaryItemText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4B5563",
-    textAlign: "center",
-    paddingHorizontal: 4,
+  quickActionCardFocused: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderColor: STAFF_COLORS.accent + '30',
+  },
+  quickActionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: STAFF_COLORS.surface,
+    borderWidth: 1,
+    borderColor: STAFF_COLORS.primary + '20',
+  },
+  quickActionIconFocused: {
+    backgroundColor: STAFF_COLORS.textOnPrimary + '55',
+    borderColor: STAFF_COLORS.textOnPrimary + '88',
+  },
+  quickActionText: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    color: STAFF_COLORS.textPrimary,
+    lineHeight: 21,
+  },
+  quickActionTextFocused: {
+    color: STAFF_COLORS.accent,
   },
 
   nestedWrapper: {
     paddingHorizontal: 16,
   },
-  
-  /* RECENT PROCUREMENTS CARD */
+
+  /* RECENT PROCUREMENTS CARD - Compact */
   procCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    elevation: 3,
-    shadowColor: "#000",
+    backgroundColor: STAFF_COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: STAFF_COLORS.primary,
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: STAFF_COLORS.primary + '12',
   },
   procHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   procName: {
-    fontWeight: "700",
+    fontWeight: '700',
     fontSize: 14,
-    color: "#111827",
+    color: STAFF_COLORS.textPrimary,
   },
   procCode: {
     fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
+    color: STAFF_COLORS.textSecondary,
+    fontWeight: '500',
   },
   completedBadge: {
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: COLORS.successLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.success + '30',
   },
   completedText: {
-    fontSize: 10,
-    color: "#16A34A",
-    fontWeight: "700",
-    textTransform: "uppercase",
+    fontSize: 9,
+    color: COLORS.success,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   procCrop: {
-    fontSize: 13,
-    color: "#4B5563",
-    fontWeight: "500",
-    marginBottom: 14,
+    fontSize: 12,
+    color: STAFF_COLORS.textSecondary,
+    fontWeight: '500',
+    marginBottom: 10,
   },
   procFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: STAFF_COLORS.primary + '10',
+  },
+  procDateWrap: {
+    alignItems: 'flex-end',
   },
   procLabel: {
-    fontSize: 11,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    fontSize: 10,
+    color: COLORS.textMuted,
+    fontWeight: '500',
   },
   procAmount: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: '700',
     color: STAFF_COLORS.primary,
-    marginTop: 2,
+    marginTop: 3,
   },
   procDate: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    marginTop: 2,
+    fontWeight: '600',
+    color: STAFF_COLORS.textPrimary,
+    marginTop: 3,
   },
 });

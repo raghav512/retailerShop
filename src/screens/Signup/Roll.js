@@ -1,98 +1,109 @@
-﻿import React, { useState } from "react";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import Images from '../../assets/Images/Images';
+import { useNavigation } from '@react-navigation/native';
+import { setUserData } from '../../Redux/Storage';
+import { useTranslation } from 'react-i18next';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import Images from "../../assets/Images/Images";
-import { useNavigation } from "@react-navigation/native";
-import { setUserData } from "../../Redux/Storage";
-import { useTranslation } from "react-i18next";
-import { FARMER_COLORS, FPO_COLORS, STAFF_COLORS } from "../../colorsList/ColorList";
+  FARMER_COLORS,
+  FPO_COLORS,
+  STAFF_COLORS,
+  RETAILER_COLORS,
+} from '../../colorsList/ColorList';
 
 const Roll = () => {
   const navigation = useNavigation();
-       const { t } = useTranslation(); // 🌍
+  const { t } = useTranslation(); // 🌍
   const [selectedRole, setSelectedRole] = useState(null);
-  
-  
+
   const roles = [
     {
-      id: "farmer",
-      name: t("role_farmer"),
-      desc: t("role_farmer_desc"),
-      icon: "👨‍🌾",
+      id: 'farmer',
+      name: t('role_farmer'),
+      desc: t('role_farmer_desc'),
+      icon: '👨‍🌾',
       bgColor: FARMER_COLORS.primaryLight,
     },
     {
-      id: "staff",
-      name: t("role_staff"),
-      desc: t("role_staff_desc"),
-      icon: "🚜",
+      id: 'staff',
+      name: t('role_staff'),
+      desc: t('role_staff_desc'),
+      icon: '🚜',
       bgColor: STAFF_COLORS.primaryLight,
     },
     {
-      id: "fpo",
-      name: t("role_fpo"),
-      desc: t("role_fpo_desc"),
-      icon: "🏢",
+      id: 'retailer',
+      name: t('role_retailer'),
+      desc: t('role_retailer_desc'),
+      icon: '🏪',
+      bgColor: RETAILER_COLORS.primaryLight, // Tailwind's emerald-400
+    },
+    {
+      id: 'distributor',
+      name: t('role_fpo'),
+      desc: t('role_fpo_desc'),
+      icon: '🏢',
       bgColor: FPO_COLORS.primaryLight,
     },
   ];
 
-  const selectedRoleData = roles.find((r) => r.id === selectedRole);
-  const activeColor = selectedRoleData ? selectedRoleData.bgColor : STAFF_COLORS.primary;
+  const selectedRoleData = roles.find(r => r.id === selectedRole);
+  const activeColor = selectedRoleData
+    ? selectedRoleData.bgColor
+    : STAFF_COLORS.primary;
 
-const handleContinue = async () => {
-  if (!selectedRole) return;
+  const handleContinue = async () => {
+    if (!selectedRole) return;
 
-  // save selected role
-  await setUserData(selectedRole);
-console.log("selectedRole", selectedRole);
+    // save selected role
+    await setUserData(selectedRole);
+    console.log('selectedRole', selectedRole);
 
-  // role-based navigation
-  if (selectedRole === "farmer") {
-    navigation.navigate("Login", { roleId: "farmer" });
-    return;
-  }
+    // role-based navigation
+    if (selectedRole === 'farmer') {
+      navigation.navigate('Login', { roleId: 'farmer' });
+      return;
+    }
 
-  if (selectedRole === "staff") {
-    navigation.navigate("StafLogin", { roleId: "staff" });
-    return;
-  }
+    if (selectedRole === 'staff') {
+      navigation.navigate('StafLogin', { roleId: 'staff' });
+      return;
+    }
 
-  if (selectedRole === "fpo") {
-    navigation.navigate("FPOLogin", { roleId: "fpo" });
-    return;
-  }
-};
+    if (selectedRole === 'distributor') {
+      navigation.navigate('FPOLogin', { roleId: 'distributor' });
+      return;
+    }
 
+    if (selectedRole === 'retailer') {
+      navigation.navigate('RetailerLogin', { roleId: 'retailer' });
+      return;
+    }
+  };
 
-// const handleContinue =
-//  async () => {
-//   if (!selectedRole) return;
+  // const handleContinue =
+  //  async () => {
+  //   if (!selectedRole) return;
 
-//   // save selected role
-//   await setUserData(selectedRole);
+  //   // save selected role
+  //   await setUserData(selectedRole);
 
-//   // ONLY ONE LOGIN SCREEN
-//   navigation.navigate("Login", { roleId: selectedRole });
-// };
+  //   // ONLY ONE LOGIN SCREEN
+  //   navigation.navigate("Login", { roleId: selectedRole });
+  // };
 
-  const handleRoleSelect = (roleId) => {
+  const handleRoleSelect = roleId => {
     setSelectedRole(roleId);
   };
 
   return (
     <View style={styles.container}>
       {/* HEADER */}
-      <Text style={styles.title}>{t("role_welcome")}</Text>
-      <Text style={styles.subtitle}>{t("role_subtitle")}</Text>
+      <Text style={styles.title}>{t('role_welcome')}</Text>
+      <Text style={styles.subtitle}>{t('role_subtitle')}</Text>
 
       {/* ROLE OPTIONS */}
-      {roles.map((role) => (
+      {roles.map(role => (
         <TouchableOpacity
           key={role.id}
           style={[
@@ -107,12 +118,7 @@ console.log("selectedRole", selectedRole);
         >
           <View style={styles.leftContent}>
             {/* ICON WITH COLOR BACKGROUND */}
-            <View
-              style={[
-                styles.iconBox,
-                { backgroundColor: role.bgColor },
-              ]}
-            >
+            <View style={[styles.iconBox, { backgroundColor: role.bgColor }]}>
               <Text style={styles.icon}>{role.icon}</Text>
             </View>
 
@@ -135,7 +141,9 @@ console.log("selectedRole", selectedRole);
       <TouchableOpacity
         style={[
           styles.continueButton,
-          selectedRole ? { backgroundColor: activeColor } : styles.disabledContinueButton,
+          selectedRole
+            ? { backgroundColor: activeColor }
+            : styles.disabledContinueButton,
         ]}
         onPress={handleContinue}
         activeOpacity={selectedRole ? 0.7 : 1}
@@ -147,19 +155,16 @@ console.log("selectedRole", selectedRole);
             !selectedRole && styles.disabledContinueText,
           ]}
         >
-          {t("continue")}
+          {t('continue')}
         </Text>
       </TouchableOpacity>
 
-      <Text style={styles.footerText}>
-         {t("role_footer")}
-      </Text>
+      <Text style={styles.footerText}>{t('role_footer')}</Text>
     </View>
   );
 };
 
 export default Roll;
-
 
 const styles = StyleSheet.create({
   headerSpacer: {
@@ -167,46 +172,46 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     paddingHorizontal: 22,
     paddingTop: 40,
   },
 
   title: {
     fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   },
 
   subtitle: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
+    color: '#6B7280',
+    textAlign: 'center',
     marginTop: 6,
     marginBottom: 24,
   },
 
   optionBox: {
-    width: "100%",
+    width: '100%',
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   leftContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   iconBox: {
     height: 48,
     width: 48,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 14,
   },
 
@@ -216,12 +221,12 @@ const styles = StyleSheet.create({
 
   optionText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: '600',
+    color: '#111827',
   },
   optionDesc: {
     fontSize: 13,
-    color: "#6B7280",
+    color: '#6B7280',
     marginTop: 2,
   },
 
@@ -230,32 +235,31 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginTop: 24,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
 
   disabledContinueButton: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: '#D1D5DB',
   },
 
   continueText: {
-    textAlign: "center",
-    color: "#fff",
+    textAlign: 'center',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   disabledContinueText: {
-    color: "#9CA3AF",
+    color: '#9CA3AF',
   },
 
   footerText: {
     fontSize: 12,
-    color: "#9CA3AF",
-    textAlign: "center",
+    color: '#9CA3AF',
+    textAlign: 'center',
     marginTop: 12,
   },
 });
-

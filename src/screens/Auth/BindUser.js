@@ -1,20 +1,17 @@
 ﻿import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  ActivityIndicator,
-} from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import TabStackuser from '../userScreen/Tabs/Stack';
-import Tabfarmer from '../farmer/Tabfarmer'
+import Tabfarmer from '../farmer/Tabfarmer';
 import { getUserData } from '../../Redux/Storage';
-import TabFPO from "../../screens/FPOScreen/TabFPO";
+import TabFPO from '../../screens/FPOScreen/TabFPO';
+import TabRetailer from '../RetailerScreen/TabRetailer';
 
 const BindUser = () => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // useEffect(() => {
   //   const getRole = async () => {
   //     try {
@@ -32,30 +29,27 @@ const BindUser = () => {
   //   getRole();
   // }, []);
 
-
   useEffect(() => {
-  const getRole = async () => {
-    try {
-      const user = await getUserData();
+    const getRole = async () => {
+      try {
+        const user = await getUserData();
 
-      console.log("STORED USER 👉", user);
+        console.log('STORED USER 👉', user);
 
-      const normalizedRole =
-        user?.role?.toLowerCase?.() || "staff";
+        const normalizedRole = user?.role?.toLowerCase?.() || 'staff';
 
-      setRole(normalizedRole);
-    } catch (error) {
-      console.log("Error fetching role:", error);
-      setRole("staff");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setRole(normalizedRole);
+      } catch (error) {
+        console.log('Error fetching role:', error);
+        setRole('staff');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  getRole();
-}, []);
+    getRole();
+  }, []);
 
- 
   if (loading) {
     return (
       <SafeAreaView style={styles.loaderContainer}>
@@ -67,27 +61,23 @@ const BindUser = () => {
   // 🔹 Role based rendering
   const renderByRole = () => {
     switch (role) {
-  case "farmer":
-    return <Tabfarmer />;
-  case "staff":
-    return <TabStackuser />;
-  case "fpo":
-    return <TabFPO />;
-  default:
-    return <TabStackuser />;
-}
-
+      case 'farmer':
+        return <Tabfarmer />;
+      case 'staff':
+        return <TabStackuser />;
+      case 'distributor':
+        return <TabFPO />;
+      case 'retailer':
+        return <TabRetailer />;
+      default:
+        return <TabStackuser />;
+    }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {renderByRole()}
-    </SafeAreaView>
-  );
+  return <SafeAreaView style={styles.container}>{renderByRole()}</SafeAreaView>;
 };
 
 export default BindUser;
-
 
 const styles = StyleSheet.create({
   headerSpacer: {
@@ -104,4 +94,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 });
-

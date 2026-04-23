@@ -84,9 +84,9 @@ android {
         }
     }
 
-    namespace "com.beejsebazar"
+    namespace "com.retailmanagementshop"
     defaultConfig {
-        applicationId "com.beejsebazar"
+        applicationId "com.retailmanagementshop"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 6
@@ -102,6 +102,7 @@ android {
     }
     buildTypes {
         debug {
+            versionNameSuffix "-debug"
         }
         release {
             signingConfig signingConfigs.release
@@ -116,7 +117,6 @@ dependencies {
     implementation("com.facebook.react:react-android")
 
     implementation 'com.google.android.gms:play-services-auth:21.0.0'
-    implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.1'
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

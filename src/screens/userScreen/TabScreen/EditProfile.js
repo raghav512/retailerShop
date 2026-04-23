@@ -9,6 +9,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -19,20 +21,35 @@ import { launchImageLibrary } from "react-native-image-picker";
 import { API_BASE_URL } from "../../../config";
 import { getAccessToken } from "../../../Redux/Storage";
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
+import { validateFirstName, validateLastName, validateEmail } from '../../../utils/validation';
 
 const THEME = STAFF_COLORS.primary;
 
-const EditProfile = () => {
+const EditProfile = ({ route }) => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const params = route?.params || {};
 
   const [formData, setFormData] = useState({ firstName: "", lastName: "", emailId: "" });
+  const [errors, setErrors] = useState({ firstName: "", lastName: "", emailId: "" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageNew, setProfileImageNew] = useState(null);
 
-  useEffect(() => { fetchProfile(); }, []);
+  useEffect(() => {
+    if (params.firstName || params.lastName || params.emailId) {
+      setFormData({
+        firstName: params.firstName || "",
+        lastName: params.lastName || "",
+        emailId: params.emailId || ""
+      });
+    }
+    if (params.profileImage) {
+      setProfileImage(params.profileImage);
+    }
+    fetchProfile();
+  }, []);
 
   const fetchProfile = async () => {
     try {
@@ -75,6 +92,23 @@ const EditProfile = () => {
   };
 
   const handleUpdate = async () => {
+    const firstNameValidation = validateFirstName(formData.firstName);
+    const lastNameValidation = validateLastName(formData.lastName);
+    const emailValidation = validateEmail(formData.emailId, { required: false });
+
+    const newErrors = {
+      firstName: firstNameValidation.isValid ? "" : firstNameValidation.message,
+      lastName: lastNameValidation.isValid ? "" : lastNameValidation.message,
+      emailId: emailValidation.isValid ? "" : emailValidation.message,
+    };
+
+    setErrors(newErrors);
+
+    if (newErrors.firstName || newErrors.lastName || newErrors.emailId) {
+      showAlert({ type: "error", title: t("edit_profile.error"), message: t("edit_profile.validation_error") });
+      return;
+    }
+
     try {
       setLoading(true);
       const token = await getAccessToken();
@@ -95,7 +129,11 @@ const EditProfile = () => {
   const initials = `${formData.firstName?.[0] || ""}${formData.lastName?.[0] || ""}`.toUpperCase();
 
   return (
-    <View style={styles.safeArea}>
+    <KeyboardAvoidingView 
+      style={styles.safeArea}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
 
       {/* HEADER */}
@@ -150,45 +188,74 @@ const EditProfile = () => {
 
 
           <Text style={styles.label}>{t("edit_profile.first_name")}</Text>
-          <View style={styles.inputWrapper}>
+          <View style={[styles.inputWrapper, errors.firstName && styles.inputError]}>
             <Icon name="person-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               value={formData.firstName}
-              onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+              onChangeText={(text) => {
+                setFormData(prev => ({ ...prev, firstName: text }));
+                if (errors.firstName) setErrors(prev => ({ ...prev, firstName: "" }));
+              }}
+              onBlur={() => {
+                const validation = validateFirstName(formData.firstName);
+                if (!validation.isValid) {
+                  setErrors(prev => ({ ...prev, firstName: validation.message }));
+                }
+              }}
               placeholder={t("edit_profile.enter_first_name")}
               placeholderTextColor="#9CA3AF"
             />
           </View>
+          {errors.firstName ? <Text style={styles.errorText}>{errors.firstName}</Text> : null}
 
 
           <Text style={styles.label}>{t("edit_profile.last_name")}</Text>
-          <View style={styles.inputWrapper}>
+          <View style={[styles.inputWrapper, errors.lastName && styles.inputError]}>
             <Icon name="person-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               value={formData.lastName}
-              onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+              onChangeText={(text) => {
+                setFormData(prev => ({ ...prev, lastName: text }));
+                if (errors.lastName) setErrors(prev => ({ ...prev, lastName: "" }));
+              }}
+              onBlur={() => {
+                const validation = validateLastName(formData.lastName);
+                if (!validation.isValid) {
+                  setErrors(prev => ({ ...prev, lastName: validation.message }));
+                }
+              }}
               placeholder={t("edit_profile.enter_last_name")}
               placeholderTextColor="#9CA3AF"
             />
           </View>
+          {errors.lastName ? <Text style={styles.errorText}>{errors.lastName}</Text> : null}
 
 
           <Text style={styles.label}>{t("edit_profile.email")}</Text>
-          <View style={styles.inputWrapper}>
+          <View style={[styles.inputWrapper, errors.emailId && styles.inputError]}>
             <Icon name="mail-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               value={formData.emailId}
-              onChangeText={(text) => setFormData({ ...formData, emailId: text })}
+              onChangeText={(text) => {
+                setFormData(prev => ({ ...prev, emailId: text }));
+                if (errors.emailId) setErrors(prev => ({ ...prev, emailId: "" }));
+              }}
+              onBlur={() => {
+                const validation = validateEmail(formData.emailId, { required: false });
+                if (!validation.isValid) {
+                  setErrors(prev => ({ ...prev, emailId: validation.message }));
+                }
+              }}
               placeholder={t("edit_profile.enter_email")}
               placeholderTextColor="#9CA3AF"
               keyboardType="email-address"
-
               autoCapitalize="none"
             />
           </View>
+          {errors.emailId ? <Text style={styles.errorText}>{errors.emailId}</Text> : null}
         </View>
 
         {/* UPDATE BUTTON */}
@@ -210,7 +277,7 @@ const EditProfile = () => {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -281,9 +348,11 @@ const styles = StyleSheet.create({
 
   /* BUTTON */
   updateBtn: {
-    backgroundColor: "#1F2937", height: 56, borderRadius: 24,
+    backgroundColor: STAFF_COLORS.primary, height: 56, borderRadius: 24,
     flexDirection: "row", justifyContent: "center", alignItems: "center",
     elevation: 6, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
   },
   updateText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  inputError: { borderColor: "#EF4444" },
+  errorText: { fontSize: 12, color: "#EF4444", marginTop: -12, marginBottom: 12, marginLeft: 4 },
 });

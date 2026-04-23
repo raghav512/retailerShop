@@ -4,6 +4,7 @@ import React from 'react'
 import Login from "../Signup/Login"
 import FPOLogin from '../FPOScreen/FPOSignup/FPOLogin'
 import StafLogin from "../userScreen/StafSignin/StafLogin"
+import RetailerLogin from '../RetailerScreen/RetailerSignup/RetailerLogin'
 import First from "../Signup/First"
 import BuyAndSell from "../Signup/BuyAndSell"
 import Getgovt from "../Signup/Getgovt"
@@ -28,6 +29,7 @@ const BindAuth = () => {
     <Stack.Screen name="Login" component={Login} />
      <Stack.Screen name="FPOLogin" component={FPOLogin} />
     <Stack.Screen name="StafLogin" component={StafLogin} />
+    <Stack.Screen name="RetailerLogin" component={RetailerLogin} />
     <Stack.Screen name="Signup" component={Signup} />
     <Stack.Screen name="FpoRegistration" component={FpoRegistration} />
     <Stack.Screen name="EmployeeRegistration" component={EmployeeRegistration} />

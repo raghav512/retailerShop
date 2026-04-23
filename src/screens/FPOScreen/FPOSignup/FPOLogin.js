@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-} from "react-native";
-import { showAlert } from "../../../common/reusableComponent/CustomAlert";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
+  ImageBackground,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { showAlert } from '../../../common/reusableComponent/CustomAlert';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import apiService from "../../../Redux/apiService";
+import apiService from '../../../Redux/apiService';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const FPOLogin = () => {
@@ -20,20 +22,23 @@ const FPOLogin = () => {
   const { t } = useTranslation();
 
   // 🔹 State
-  const [loginType, setLoginType] = useState("mobile"); // gst | mobile
+  const [loginType, setLoginType] = useState('mobile'); // gst | mobile
   // const [gst, setGst] = useState("");
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobile] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
 
   // 🔹 Role handling
-  const roleId = route.params?.roleId || "fpo";
+  const roleId = route.params?.roleId || 'distributor';
 
   // 🔹 Role name mapping
-  const roleName = 
-    roleId === "fpo" ? t("role_fpo") :
-    roleId === "staff" ? t("role_staff") :
-    roleId === "farmer" ? t("role_farmer") : 
-    t("role_user");
+  const roleName =
+    roleId === 'distributor'
+      ? t('role_fpo')
+      : roleId === 'staff'
+      ? t('role_staff')
+      : roleId === 'farmer'
+      ? t('role_farmer')
+      : t('role_user');
 
   // 🔹 Validations
   // const isValidGST = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gst.trim());
@@ -41,7 +46,7 @@ const FPOLogin = () => {
 
   // 🔹 Login button validation
   const canLogin = isValidMobile;
-  // const canLogin = 
+  // const canLogin =
   //   (loginType === "mobile" && isValidMobile) ||
   //   (loginType === "gst" && isValidGST);
 
@@ -56,31 +61,36 @@ const FPOLogin = () => {
     try {
       // Prepare OTP payload based on login type
       const payload = { mobile: mobile.trim() };
-      // const payload = loginType === "mobile" 
+      // const payload = loginType === "mobile"
       //   ? { mobile: mobile.trim() }
       //   : { gst: gst.trim() };
-      
+
       // Add role if needed by your API
       payload.role = roleId;
-      
-      console.log("Sending OTP with payload:", payload);
-      
+
+      console.log('Sending OTP with payload:', payload);
+
       // Call SendOtp API
       const response = await apiService.SendOtp(payload);
-      
-      console.log("OTP response:", response);
-      
+
+      console.log('OTP response:', response);
+
       // Check if OTP was sent successfully
-      if (response && (response.success === true || response.status === "success" || response.message?.includes("sent"))) {
+      if (
+        response &&
+        (response.success === true ||
+          response.status === 'success' ||
+          response.message?.includes('sent'))
+      ) {
         // Navigate to OTPData page with necessary params
-        navigation.navigate("OTPData", {
+        navigation.navigate('OTPData', {
           mobile: mobile.trim(),
           // ...(loginType === "mobile" ? { mobile: mobile.trim() } : { gst: gst.trim() }),
           roleId: roleId,
           loginType: loginType, // Pass which type was used
-          fromScreen: "FPOLogin",
+          fromScreen: 'FPOLogin',
         });
-        
+
         // Optional: Show success message
         // Alert.alert(
         //   t("success"),
@@ -88,47 +98,53 @@ const FPOLogin = () => {
         // );
       } else {
         // Handle API response that doesn't indicate success
-        showAlert({ type: 'error', title: t("error"), message: response?.message || response?.error || t("otp_send_failed") });
+        showAlert({
+          type: 'error',
+          title: t('error'),
+          message: response?.message || response?.error || t('otp_send_failed'),
+        });
       }
     } catch (error) {
-      console.log("Send OTP failed:", error);
-      
+      console.log('Send OTP failed:', error);
+
       // Better error handling
-      let errorMessage = t("something_went_wrong");
-      
+      let errorMessage = t('something_went_wrong');
+
       if (error.response) {
         // Server responded with error
-        console.log("Error response data:", error.response.data);
-        errorMessage = error.response.data?.message || 
-                      error.response.data?.error || 
-                      `Error ${error.response.status}`;
+        console.log('Error response data:', error.response.data);
+        errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          `Error ${error.response.status}`;
       } else if (error.request) {
         // Request made but no response
-        errorMessage = t("network_error");
+        errorMessage = t('network_error');
       } else {
         // Something else happened
-        errorMessage = error.message || t("something_went_wrong");
+        errorMessage = error.message || t('something_went_wrong');
       }
 
-      showAlert({ type: 'error', title: t("error"), message: errorMessage });
+      showAlert({ type: 'error', title: t('error'), message: errorMessage });
     } finally {
       setOtpLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <ImageBackground
+        source={{ uri: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=90' }}
+        style={styles.container}
+        resizeMode="cover"
+      >
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.iconCircle}>
           <Icon name="business-outline" size={28} color="#fff" />
         </View>
-        <Text style={styles.title}>
-          {t("fpo_login", { role: roleName })}
-        </Text>
-        <Text style={styles.subtitle}>
-          {t("fpo_login_subtitle")}
-        </Text>
+        <Text style={styles.title}>{t('fpo_login', { role: roleName })}</Text>
+        <Text style={styles.subtitle}>{t('fpo_login_subtitle')}</Text>
       </View>
 
       {/* TOGGLE - Mobile/GST */}
@@ -182,28 +198,35 @@ const FPOLogin = () => {
       <View style={styles.form}>
         {/* Dynamic field based on login type */}
         {/* {loginType === "mobile" ? ( */}
-          <>
-            <Text style={styles.label}>{t("mobile_number")}</Text>
-            <View style={[
+        <>
+          <Text style={styles.label}>{t('mobile_number')}</Text>
+          <View
+            style={[
               styles.inputBox,
-              mobile.length > 0 && !isValidMobile && styles.errorInput
-            ]}>
-              <Icon name="call-outline" size={18} color="#6B7280" style={{marginRight: 8}} />
-              <TextInput
-                placeholder={t("enter_mobile")}
-                placeholderTextColor="#9CA3AF"
-                keyboardType="numeric"
-                maxLength={10}
-                value={mobile}
-                onChangeText={setMobile}
-                style={styles.inputField}
-                editable={!otpLoading}
-              />
-              {mobile.length > 0 && !isValidMobile && (
-                <Icon name="alert-circle-outline" size={18} color="red" />
-              )}
-            </View>
-          </>
+              mobile.length > 0 && !isValidMobile && styles.errorInput,
+            ]}
+          >
+            <Icon
+              name="call-outline"
+              size={18}
+              color="#6B7280"
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              placeholder={t('enter_mobile')}
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              maxLength={10}
+              value={mobile}
+              onChangeText={setMobile}
+              style={styles.inputField}
+              editable={!otpLoading}
+            />
+            {mobile.length > 0 && !isValidMobile && (
+              <Icon name="alert-circle-outline" size={18} color="red" />
+            )}
+          </View>
+        </>
         {/* ) : (
           <>
             <Text style={styles.label}>{t("gst_number")}</Text>
@@ -241,13 +264,11 @@ const FPOLogin = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <ActivityIndicator size="small" color="#fff" />
               <Text style={[styles.loginText, { marginLeft: 8 }]}>
-                {t("sending_otp")}
+                {t('sending_otp')}
               </Text>
             </View>
           ) : (
-            <Text style={styles.loginText}>
-              {t("login_with_otp")}
-            </Text>
+            <Text style={styles.loginText}>{t('login_with_otp')}</Text>
           )}
         </TouchableOpacity>
 
@@ -264,25 +285,28 @@ const FPOLogin = () => {
         </View>
         */}
       </View>
-    </View>
+      </ImageBackground>
+    </SafeAreaView>
   );
 };
 
 export default FPOLogin;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   headerSpacer: {
     height: 6,
   },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
 
   header: {
-    backgroundColor: "#EDF4FF",
+    backgroundColor: '#EDF4FF',
     paddingVertical: 40,
-    alignItems: "center",
+    alignItems: 'center',
   },
 
   iconCircle: {
@@ -290,41 +314,41 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: FPO_COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
   },
 
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: '700',
     color: FPO_COLORS.primary,
   },
 
   subtitle: {
     fontSize: 13,
-    color: "#475569",
+    color: '#475569',
     marginTop: 4,
   },
 
   toggleRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     margin: 20,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: '#F1F5F9',
     borderRadius: 12,
   },
 
   toggleBtn: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: 12,
   },
 
   toggleActive: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -332,8 +356,8 @@ const styles = StyleSheet.create({
 
   toggleText: {
     fontSize: 14,
-    color: "#64748B",
-    fontWeight: "600",
+    color: '#64748B',
+    fontWeight: '600',
   },
 
   toggleTextActive: {
@@ -346,61 +370,61 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 14,
-    color: "#374151",
+    color: '#374151',
     marginBottom: 6,
-    fontWeight: "500",
+    fontWeight: '500',
   },
 
   inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: '#CBD5E1',
     borderRadius: 14,
     paddingHorizontal: 14,
     marginBottom: 20,
     height: 50,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
 
   inputField: {
     flex: 1,
     fontSize: 14,
-    color: "#111827",
+    color: '#111827',
     paddingVertical: 8,
   },
 
   errorInput: {
-    borderColor: "#EF4444",
+    borderColor: '#EF4444',
   },
 
   loginBtn: {
     backgroundColor: FPO_COLORS.primary,
     paddingVertical: 16,
     borderRadius: 14,
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 16,
     marginTop: 10,
   },
 
   disabledBtn: {
-    backgroundColor: "#BFDBFE",
+    backgroundColor: '#BFDBFE',
   },
 
   loginText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   registerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 10,
   },
 
   registerText: {
     color: FPO_COLORS.primary,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

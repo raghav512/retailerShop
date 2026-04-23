@@ -15,6 +15,11 @@ import { useTranslation } from "react-i18next";
 import { State, City } from 'country-state-city';
 import Icon from "react-native-vector-icons/Ionicons";
 import apiService from "../../../Redux/apiService";
+import {
+  validateState,
+  validateDistrict,
+  validateVillage,
+} from "../../../utils/validation";
 
 
 const Screen2 = () => {
@@ -32,6 +37,7 @@ const Screen2 = () => {
   const [stateSearch, setStateSearch] = useState("");
   const [districtSearch, setDistrictSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const indianStates = State.getStatesOfCountry('IN');
   const [districts, setDistricts] = useState([]);
@@ -45,16 +51,39 @@ const Screen2 = () => {
   );
 
   const handleSubmit = async () => {
-    if (!selectedState || !selectedDistrict || !village) {
-      showAlert({ type: 'warning', title: t("error"), message: t("fill_required_fields") });
+    const newErrors = {};
+
+    // Validate State
+    const stateValidation = validateState(selectedState);
+    if (!stateValidation.isValid) {
+      newErrors.state = stateValidation.message;
+    }
+
+    // Validate District
+    const districtValidation = validateDistrict(selectedDistrict);
+    if (!districtValidation.isValid) {
+      newErrors.district = districtValidation.message;
+    }
+
+    // Validate Village
+    const villageValidation = validateVillage(village);
+    if (!villageValidation.isValid) {
+      newErrors.village = villageValidation.message;
+    }
+
+    // Check if there are any errors
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      showAlert({ type: 'warning', title: t("error"), message: firstError });
       return;
     }
 
     const finalPayload = {
       ...screen1Data,
-      state: selectedState,
-      district: selectedDistrict,
-      village: village,
+      state: selectedState.trim(),
+      district: selectedDistrict.trim(),
+      village: village.trim(),
       role: "Farmer",
     };
 
@@ -120,14 +149,20 @@ const Screen2 = () => {
          {/* STATE */}
         <Text style={styles.label}>{t("state")} *</Text>
         <TouchableOpacity
-          style={styles.dropdown}
-          onPress={() => setShowStates(!showStates)}
+          style={[styles.dropdown, errors.state && styles.inputError]}
+          onPress={() => {
+            setShowStates(!showStates);
+            if (errors.state) {
+              setErrors({ ...errors, state: null });
+            }
+          }}
         >
           <Text style={styles.dropdownText}>
             {selectedState || t("select_state")}
           </Text>
           <Text style={styles.dropdownIcon}>⌄</Text>
         </TouchableOpacity>
+        {errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
 
         {/* STATE LIST */}
         {showStates && (
@@ -153,6 +188,9 @@ const Screen2 = () => {
                     setSelectedDistrict("");
                     const cities = City.getCitiesOfState('IN', item.isoCode);
                     setDistricts(cities);
+                    if (errors.state) {
+                      setErrors({ ...errors, state: null });
+                    }
                   }}
                 >
                   <Text style={styles.dropdownItemText}>{item.name}</Text>
@@ -166,14 +204,20 @@ const Screen2 = () => {
         {/* DISTRICT */}
         <Text style={styles.label}>{t("district")} *</Text>
         <TouchableOpacity
-          style={styles.dropdown}
-          onPress={() => setShowDistricts(!showDistricts)}
+          style={[styles.dropdown, errors.district && styles.inputError]}
+          onPress={() => {
+            setShowDistricts(!showDistricts);
+            if (errors.district) {
+              setErrors({ ...errors, district: null });
+            }
+          }}
         >
           <Text style={styles.dropdownText}>
             {selectedDistrict || t("select_district")}
           </Text>
           <Text style={styles.dropdownIcon}>⌄</Text>
         </TouchableOpacity>
+        {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
 
         {/* DISTRICT LIST */}
         {showDistricts && (
@@ -195,6 +239,9 @@ const Screen2 = () => {
                     setSelectedDistrict(item.name);
                     setShowDistricts(false);
                     setDistrictSearch("");
+                    if (errors.district) {
+                      setErrors({ ...errors, district: null });
+                    }
                   }}
                 >
                   <Text style={styles.dropdownItemText}>{item.name}</Text>
@@ -210,10 +257,22 @@ const Screen2 = () => {
         <TextInput
           placeholder={t("enter_village")}
           placeholderTextColor="#999"
-          style={styles.input}
+          style={[styles.input, errors.village && styles.inputError]}
           value={village}
-          onChangeText={setVillage}
+          onChangeText={(text) => {
+            setVillage(text);
+            if (errors.village) {
+              setErrors({ ...errors, village: null });
+            }
+          }}
+          onBlur={() => {
+            const validation = validateVillage(village);
+            if (!validation.isValid) {
+              setErrors({ ...errors, village: validation.message });
+            }
+          }}
         />
+        {errors.village && <Text style={styles.errorText}>{errors.village}</Text>}
       </View>
 
       {/* SUBMIT BUTTON */}
@@ -388,6 +447,16 @@ progressBarFill: {
     backgroundColor: "#FAFAFA",
     fontSize: 14,
     color: "#333",
+  },
+  inputError: {
+    borderColor: "#EF4444",
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 
   continueBtn: {

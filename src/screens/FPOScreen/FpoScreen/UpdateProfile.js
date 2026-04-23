@@ -9,6 +9,8 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import { useTranslation } from "react-i18next";
@@ -18,9 +20,18 @@ import { launchImageLibrary } from "react-native-image-picker";
 import { API_BASE_URL } from "../../../config";
 import { getAccessToken } from "../../../Redux/Storage";
 import { FPO_COLORS } from '../../../colorsList/ColorList';
+import { 
+  validateFirstName, 
+  validateLastName, 
+  validateEmail, 
+  validateMobileNumber 
+} from '../../../utils/validation';
+import { State, City } from 'country-state-city';
 
 const THEME = FPO_COLORS.primary;
 const GENDERS = ["male", "female"];
+
+const INDIAN_STATES = State.getStatesOfCountry('IN');
 
 const SECTIONS = [
   {
@@ -46,8 +57,6 @@ const SECTIONS = [
     icon: "location",
     fields: [
       { key: "village",  label: "village",  icon: "home-outline",    keyboard: "default" },
-      { key: "district", label: "district", icon: "map-outline",     keyboard: "default" },
-      { key: "state",    label: "state",    icon: "earth-outline",   keyboard: "default" },
     ],
   },
 ];
@@ -59,33 +68,120 @@ const UpdateProfile = () => {
   const { profileData } = route.params;
 
   const [form, setForm] = useState({
-    firstName: profileData?.firstName || "",
-    lastName:  profileData?.lastName  || "",
-    emailId:   profileData?.emailId   || "",
-    phone:     profileData?.phone     || "",
-    gender:    profileData?.gender    || "",
-    shopName:  profileData?.shopName  || "",
-    gstNumber: profileData?.gstNumber || "",
-    village:   profileData?.village   || "",
-    district:  profileData?.district  || "",
-    state:     profileData?.state     || "",
+    firstName: "",
+    lastName:  "",
+    emailId:   "",
+    phone:     "",
+    gender:    "",
+    shopName:  "",
+    gstNumber: "",
+    village:   "",
+    district:  "",
+    state:     "",
   });
 
+  const [errors, setErrors] = useState({});
   const [profileImage, setProfileImage]     = useState(null);
   const [profileImageNew, setProfileImageNew] = useState(null);
   const [uploading, setUploading]           = useState(false);
   const [showGender, setShowGender]         = useState(false);
+  const [showState, setShowState]           = useState(false);
+  const [showDistrict, setShowDistrict]     = useState(false);
   const [loading, setLoading]               = useState(false);
+  const [selectedStateCode, setSelectedStateCode] = useState(null);
+  const [districts, setDistricts]           = useState([]);
+  const [stateSearch, setStateSearch]       = useState("");
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [isFetching, setIsFetching]         = useState(false);
 
   useEffect(() => {
-    if (profileData?.profileImage) {
-      const img = profileData.profileImage;
-      if (typeof img === "object" && img.url) setProfileImage(img.url);
-      else if (typeof img === "string" && img !== "null" && img !== "undefined") setProfileImage(img);
+    if (profileData) {
+      setIsFetching(true);
+      setForm({
+        firstName: profileData.firstName || "",
+        lastName:  profileData.lastName  || "",
+        emailId:   profileData.emailId   || "",
+        phone:     profileData.phone     || "",
+        gender:    profileData.gender    || "",
+        shopName:  profileData.shopName  || "",
+        gstNumber: profileData.gstNumber || "",
+        village:   profileData.village   || "",
+        district:  profileData.district  || "",
+        state:     profileData.state     || "",
+      });
+      
+      if (profileData.state) {
+        const stateObj = INDIAN_STATES.find(s => s.name === profileData.state);
+        if (stateObj) {
+          setSelectedStateCode(stateObj.isoCode);
+          const stateCities = City.getCitiesOfState('IN', stateObj.isoCode);
+          setDistricts(stateCities);
+        }
+      }
+      
+      if (profileData.profileImage) {
+        const img = profileData.profileImage;
+        if (typeof img === "object" && img.url) setProfileImage(img.url);
+        else if (typeof img === "string" && img !== "null" && img !== "undefined") setProfileImage(img);
+      }
+      
+      setTimeout(() => setIsFetching(false), 300);
     }
-  }, [profileData]);
+  }, []);
 
-  const handleChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const handleChange = (key, value) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors(prev => ({ ...prev, [key]: "" }));
+  };
+
+  const handleStateSelect = (state) => {
+    setForm(prev => ({ ...prev, state: state.name, district: "" }));
+    setSelectedStateCode(state.isoCode);
+    const stateCities = City.getCitiesOfState('IN', state.isoCode);
+    setDistricts(stateCities);
+    setShowState(false);
+    setStateSearch("");
+  };
+
+  const filteredStates = stateSearch.trim() 
+    ? INDIAN_STATES.filter(state => 
+        state.name.toLowerCase().includes(stateSearch.toLowerCase())
+      )
+    : INDIAN_STATES;
+
+  const filteredDistricts = districtSearch.trim()
+    ? districts.filter(district => 
+        district.name.toLowerCase().includes(districtSearch.toLowerCase())
+      )
+    : districts;
+
+  const validateField = (key, value) => {
+    let validation;
+    switch(key) {
+      case 'firstName':
+        validation = validateFirstName(value);
+        break;
+      case 'lastName':
+        validation = validateLastName(value);
+        break;
+      case 'emailId':
+        validation = validateEmail(value, { required: false });
+        break;
+      case 'phone':
+        validation = validateMobileNumber(value);
+        break;
+      default:
+        return;
+    }
+    if (!validation.isValid) {
+      setErrors(prev => ({ ...prev, [key]: validation.message }));
+    }
+  };
+
+  const hasFormChanges = () => {
+    if (!profileData) return true;
+    return Object.keys(form).some(key => form[key] !== (profileData[key] || ""));
+  };
 
   const pickImage = async () => {
     launchImageLibrary(
@@ -114,9 +210,28 @@ const UpdateProfile = () => {
   };
 
   const handleUpdate = async () => {
-    if (!form.firstName || !form.lastName || !form.emailId || !form.phone || !form.shopName || !form.gstNumber) {
-      showAlert({ type: "warning", title: t("error"), message: t("fill_required_fields") }); return;
+    const firstNameValidation = validateFirstName(form.firstName);
+    const lastNameValidation = validateLastName(form.lastName);
+    const emailValidation = validateEmail(form.emailId, { required: false });
+    const phoneValidation = validateMobileNumber(form.phone);
+
+    const newErrors = {
+      firstName: firstNameValidation.isValid ? "" : firstNameValidation.message,
+      lastName: lastNameValidation.isValid ? "" : lastNameValidation.message,
+      emailId: emailValidation.isValid ? "" : emailValidation.message,
+      phone: phoneValidation.isValid ? "" : phoneValidation.message,
+    };
+
+    if (!form.shopName) newErrors.shopName = "Shop name is required";
+    if (!form.gstNumber) newErrors.gstNumber = "GST number is required";
+
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some(err => err)) {
+      showAlert({ type: "warning", title: t("error"), message: t("fill_required_fields") });
+      return;
     }
+
     setLoading(true);
     try {
       const token = await getAccessToken();
@@ -153,6 +268,14 @@ const UpdateProfile = () => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {isFetching ? (
+          <View style={{ paddingVertical: 100, alignItems: "center" }}>
+            <ActivityIndicator size="large" color={THEME} />
+            <Text style={{ marginTop: 12, color: "#9CA3AF", fontSize: 14 }}>Loading profile...</Text>
+          </View>
+        ) : (
+          <>
 
         {/* AVATAR SECTION */}
         <View style={styles.avatarSection}>
@@ -216,30 +339,72 @@ const UpdateProfile = () => {
             {section.fields.map((field) => (
               <View key={field.key}>
                 <Text style={styles.label}>{t(field.label)}</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, errors[field.key] && styles.inputError]}>
                   <Ionicons name={field.icon} size={17} color="#9CA3AF" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     value={form[field.key]}
                     onChangeText={(v) => handleChange(field.key, v)}
+                    onBlur={() => validateField(field.key, form[field.key])}
                     keyboardType={field.keyboard}
                     maxLength={field.maxLen}
                     placeholder={t(field.label)}
                     placeholderTextColor="#9CA3AF"
-                    autoCapitalize="none"
+                    autoCapitalize={field.key === 'emailId' ? 'none' : 'words'}
+                    editable={!isFetching}
                   />
                 </View>
+                {errors[field.key] ? <Text style={styles.errorText}>{errors[field.key]}</Text> : null}
               </View>
             ))}
           </View>
         ))}
 
+        {/* STATE & DISTRICT SELECTOR */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIcon}><Ionicons name="earth" size={15} color={THEME} /></View>
+            <Text style={styles.sectionTitle}>State & District</Text>
+          </View>
+          
+          <Text style={styles.label}>{t("state")}</Text>
+          <TouchableOpacity style={styles.select} onPress={() => setShowState(true)}>
+            <View style={styles.selectLeft}>
+              <Ionicons name="earth-outline" size={17} color="#9CA3AF" style={{ marginRight: 10 }} />
+              <Text style={[styles.selectText, form.state && { color: "#1F2937" }]}>
+                {form.state || t("select_state")}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down-outline" size={18} color={THEME} />
+          </TouchableOpacity>
+
+          <Text style={styles.label}>{t("district")}</Text>
+          <TouchableOpacity 
+            style={styles.select} 
+            onPress={() => {
+              if (form.state) {
+                setShowDistrict(true);
+              } else {
+                showAlert({ type: "warning", title: "Warning", message: "Please select state first" });
+              }
+            }}
+          >
+            <View style={styles.selectLeft}>
+              <Ionicons name="map-outline" size={17} color="#9CA3AF" style={{ marginRight: 10 }} />
+              <Text style={[styles.selectText, form.district && { color: "#1F2937" }]}>
+                {form.district || t("select_district")}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down-outline" size={18} color={THEME} />
+          </TouchableOpacity>
+        </View>
+
         {/* SAVE BUTTON */}
         <TouchableOpacity
-          style={[styles.submitBtn, loading && { opacity: 0.7 }]}
+          style={[styles.submitBtn, (loading || !hasFormChanges()) && { opacity: 0.5 }]}
           onPress={handleUpdate}
           activeOpacity={0.85}
-          disabled={loading}
+          disabled={loading || !hasFormChanges()}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -250,8 +415,141 @@ const UpdateProfile = () => {
             </>
           )}
         </TouchableOpacity>
+        </>
+        )}
 
       </ScrollView>
+
+      {/* STATE MODAL */}
+      <Modal visible={showState} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select State</Text>
+              <TouchableOpacity onPress={() => {
+                setShowState(false);
+                setStateSearch("");
+              }}>
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+            
+            {/* SEARCH INPUT */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#9CA3AF" style={{ marginRight: 10 }} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search state..."
+                placeholderTextColor="#9CA3AF"
+                value={stateSearch}
+                onChangeText={setStateSearch}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {stateSearch ? (
+                <TouchableOpacity onPress={() => setStateSearch("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            <FlatList
+              data={filteredStates}
+              keyExtractor={(item) => item.isoCode}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => handleStateSelect(item)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.modalOptionText}>{item.name}</Text>
+                  {form.state === item.name && <Ionicons name="checkmark" size={20} color={THEME} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={{ padding: 20, alignItems: "center" }}>
+                  <Ionicons name="search-outline" size={40} color="#E5E7EB" />
+                  <Text style={{ color: "#9CA3AF", marginTop: 8 }}>No states found</Text>
+                </View>
+              }
+              initialNumToRender={15}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* DISTRICT MODAL */}
+      <Modal visible={showDistrict} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity onPress={() => {
+                setShowDistrict(false);
+                setDistrictSearch("");
+              }}>
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+            
+            {/* SEARCH INPUT */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#9CA3AF" style={{ marginRight: 10 }} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                placeholderTextColor="#9CA3AF"
+                value={districtSearch}
+                onChangeText={setDistrictSearch}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {districtSearch ? (
+                <TouchableOpacity onPress={() => setDistrictSearch("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {districts.length > 0 ? (
+              <FlatList
+                data={filteredDistricts}
+                keyExtractor={(item, index) => `${item.name}-${index}`}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => {
+                      handleChange("district", item.name);
+                      setShowDistrict(false);
+                      setDistrictSearch("");
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.modalOptionText}>{item.name}</Text>
+                    {form.district === item.name && <Ionicons name="checkmark" size={20} color={THEME} />}
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                  <View style={{ padding: 20, alignItems: "center" }}>
+                    <Ionicons name="search-outline" size={40} color="#E5E7EB" />
+                    <Text style={{ color: "#9CA3AF", marginTop: 8 }}>No districts found</Text>
+                  </View>
+                }
+                initialNumToRender={15}
+                maxToRenderPerBatch={10}
+                windowSize={10}
+              />
+            ) : (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <Ionicons name="location-outline" size={40} color="#E5E7EB" />
+                <Text style={{ color: "#9CA3AF", marginTop: 8 }}>No districts available</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -338,4 +636,21 @@ const styles = StyleSheet.create({
     elevation: 6, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
   },
   submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  inputError: { borderColor: "#EF4444" },
+  errorText: { fontSize: 12, color: "#EF4444", marginTop: -10, marginBottom: 10, marginLeft: 4 },
+
+  /* MODAL */
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalContent: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "70%" },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, borderBottomWidth: 1, borderColor: "#E5E7EB" },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#1F2937" },
+  searchContainer: {
+    flexDirection: "row", alignItems: "center",
+    marginHorizontal: 16, marginVertical: 12,
+    paddingHorizontal: 14, height: 48,
+    backgroundColor: "#F3F4F6", borderRadius: 12,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: "#1F2937", padding: 0 },
+  modalOption: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottomWidth: 0.5, borderColor: "#F3F4F6" },
+  modalOptionText: { fontSize: 15, color: "#1F2937" },
 });

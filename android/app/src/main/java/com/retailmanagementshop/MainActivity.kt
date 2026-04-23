@@ -1,4 +1,4 @@
-package com.beejsebazar
+package com.retailmanagementshop
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

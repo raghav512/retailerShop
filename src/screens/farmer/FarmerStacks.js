@@ -115,10 +115,11 @@ export const FarmerStackProfile = () => {
     <Suspense fallback={<LoadingIndicator />}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="FarmerProfile" component={FarmerProfile} />
-        <Stack.Screen name="PersonalDetails" component={ScreenOne} />
-        <Stack.Screen name="AddressDetails" component={ScreenSecond} />
-        <Stack.Screen name="FarmerCategory" component={ScreenThird} />
-        <Stack.Screen name="CropsGrown" component={ScreenFourth} />
+        <Stack.Screen name="ScreenOne" component={ScreenOne} />
+        <Stack.Screen name="ScreenSecond" component={ScreenSecond} />
+        <Stack.Screen name="ScreenThird" component={ScreenThird} />
+        <Stack.Screen name="ScreenFourth" component={ScreenFourth} />
+        <Stack.Screen name="ScreenFifth" component={ScreenSixth} />
         <Stack.Screen name="ScreenSixth" component={ScreenSixth} />
         <Stack.Screen name="ScreenSeventh" component={ScreenSeventh} />
         <Stack.Screen name="PrivateFiles" component={PrivateFiles} />

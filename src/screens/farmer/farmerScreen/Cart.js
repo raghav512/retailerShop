@@ -13,7 +13,6 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [cartData, setCartData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [couponCode, setCouponCode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
 
   const fetchCart = useCallback(async () => {
@@ -39,14 +38,10 @@ const Cart = () => {
     }, [fetchCart])
   );
 
-  // Base frontend mathematical calculation for when the backend doesn't explicitly return totals
   const calculatedSubTotal = cartItems.reduce((sum, item) => sum + ((item.expectedPrice || 0) * (item.quantity || 1)), 0);
 
-  // Use exact backend provided totals, falling back to basic calculation when no coupon/backend total is returned
   const subTotal = cartData?.subTotal || calculatedSubTotal;
-  const discountAmount = cartData?.discountAmount || cartData?.discount || 0;
-  const appliedCoupon = cartData?.appliedCoupon || cartData?.couponCode || null;
-  const totalAmount = cartData?.totalAmount || cartData?.finalAmount || cartData?.totalPrice || Math.max(0, subTotal - discountAmount);
+  const totalAmount = cartData?.totalAmount || cartData?.finalAmount || cartData?.totalPrice || subTotal;
 
   const handleRemove = async (itemId) => {
     console.log('🗑️ Removing item:', itemId);
@@ -124,8 +119,6 @@ const Cart = () => {
     try {
       const response = await apiService.updateCart({ itemId, quantity: newQty });
       console.log('✅ Update successful');
-      // Keep the optimistic local update — don't overwrite with response
-      // as it may not carry full image data
     } catch (error) {
       console.log('❌ Update failed:', error.response?.data || error.message);
 
@@ -140,24 +133,7 @@ const Cart = () => {
     }
   };
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode) return;
-    try {
-      setLoading(true);
-      const res = await apiService.applyCoupon({ couponCode });
-      console.log('✅ Coupon applied:', res);
-      showAlert({ type: 'success', title: t('success') || 'Success', message: t('cart.coupon_success') });
-      await fetchCart();
-    } catch (error) {
-      console.log('❌ Coupon error:', error.response?.data || error.message);
-      showAlert({ type: 'error', title: t('error') || 'Error', message: t('cart.coupon_fail') });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const renderItem = ({ item }) => {
-    // productImages can be string[] (new API) or {url}[] (old API)
     const rawImage = item.item?.productImages?.[0] ?? item.item?.sourceRef?.productImages?.[0];
     const imageUrl = typeof rawImage === 'string' ? rawImage : rawImage?.url;
 
@@ -213,7 +189,7 @@ const Cart = () => {
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+          <Icon name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("cart.title")}</Text>
         {cartItems.length > 0 ? (
@@ -246,45 +222,6 @@ const Cart = () => {
             showsVerticalScrollIndicator={false}
           />
           <View style={styles.footer}>
-            <View style={styles.couponContainer}>
-              <TextInput
-                style={styles.couponInput}
-                placeholder="SAVE10"
-                value={couponCode}
-                onChangeText={setCouponCode}
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="characters"
-                editable={!appliedCoupon}
-              />
-              <TouchableOpacity
-                style={[styles.applyBtn, appliedCoupon && styles.applyBtnDisabled]}
-                onPress={handleApplyCoupon}
-                disabled={!!appliedCoupon}
-              >
-                <Text style={styles.applyBtnText}>
-                  {appliedCoupon ? t("cart.applied") : t("cart.apply")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {appliedCoupon && (
-                <Text style={styles.appliedCouponText}>
-                  {t('cart.coupon_applied_success', { coupon: appliedCoupon })}
-                </Text>
-            )}
-
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>{t("cart.subtotal")}</Text>
-              <Text style={styles.totalPrice}>₹{subTotal.toFixed(2)}</Text>
-            </View>
-            
-            {discountAmount > 0 && (
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{t("cart.discount")}</Text>
-                <Text style={styles.discountPrice}>-₹{discountAmount.toFixed(2)}</Text>
-              </View>
-            )}
-
             <View style={[styles.totalRow, styles.finalTotalRow]}>
               <Text style={styles.finalTotalLabel}>{t("cart.total")}</Text>
               <Text style={styles.finalTotalPrice}>₹{totalAmount.toFixed(2)}</Text>
@@ -320,9 +257,8 @@ const Cart = () => {
                 try {
                   setLoading(true);
                   
-                  // Profile Validation
                   const profile = await apiService.getProfileDetails();
-                  const userData = profile?.data || profile; // Backend might return {data: ...} or just the object
+                  const userData = profile?.data || profile;
                   
                   if (!userData?.firstName || !userData?.lastName) {
                     setLoading(false);
@@ -361,24 +297,24 @@ export default Cart;
 
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 0,
   },
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: FARMER_COLORS.background,
   },
   header: {
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    paddingBottom: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -387,95 +323,104 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FEF9E7",
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     justifyContent: "center",
     alignItems: "center",
   },
   clearBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1F2937",
-    letterSpacing: 0.5,
+    fontSize: 20,
+    fontWeight: "700",
+    color: FARMER_COLORS.textOnPrimary,
+    letterSpacing: 0.3,
   },
   list: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 24,
     paddingBottom: 20,
   },
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
+    backgroundColor: FARMER_COLORS.surface,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   imageBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    backgroundColor: FARMER_COLORS.tintCard,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    marginRight: 16,
   },
   info: {
     flex: 1,
   },
   name: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1F2937",
+    fontSize: 16,
+    fontWeight: "600",
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.2,
+    lineHeight: 22,
   },
   brand: {
     fontSize: 13,
-    color: "#6B7280",
-    marginTop: 2,
+    color: FARMER_COLORS.textSecondary,
+    marginTop: 4,
     fontWeight: "500",
+    letterSpacing: 0.2,
   },
   price: {
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
     color: FARMER_COLORS.primaryLight,
-    marginTop: 4,
+    marginTop: 6,
+    letterSpacing: 0.2,
   },
   actions: {
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 16,
   },
   qtyBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    gap: 10,
+    backgroundColor: FARMER_COLORS.tintCard,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: FARMER_COLORS.tintMid,
   },
   productImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
+    borderRadius: 16,
   },
   qty: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#1F2937",
-    minWidth: 16,
+    color: FARMER_COLORS.textPrimary,
+    minWidth: 18,
     textAlign: "center",
   },
   deleteBtn: {
@@ -485,178 +430,138 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 32,
   },
   emptyIconBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#FEF9E7",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: FARMER_COLORS.tintCard,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: FARMER_COLORS.tintMid,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#6B7280",
+    fontWeight: "600",
+    color: FARMER_COLORS.textSecondary,
+    letterSpacing: 0.2,
   },
   footer: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     padding: 24,
+    paddingBottom: 28,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: -5 },
-  },
-  couponContainer: {
-    flexDirection: "row",
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  couponInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: "#1F2937",
-    backgroundColor: "#F9FAF8",
-    fontWeight: "600",
-  },
-  applyBtn: {
-    backgroundColor: FARMER_COLORS.primaryLight,
-    borderRadius: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    marginLeft: 12,
-    justifyContent: "center",
-  },
-  applyBtnDisabled: {
-    backgroundColor: "#E5E7EB",
-  },
-  applyBtnText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  appliedCouponText: {
-    color: FARMER_COLORS.primaryLight,
-    fontSize: 14,
-    marginBottom: 16,
-    marginTop: -8,
-    fontWeight: "600",
+    elevation: 12,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: -8 },
+    borderTopWidth: 1,
+    borderTopColor: FARMER_COLORS.tintMid,
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   finalTotalRow: {
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    marginBottom: 20,
-  },
-  totalLabel: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "500",
+    marginTop: 12,
+    paddingTop: 20,
+    borderTopWidth: 1.5,
+    borderTopColor: FARMER_COLORS.tintMid,
+    marginBottom: 24,
   },
   finalTotalLabel: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1F2937",
-  },
-  totalPrice: {
-    fontSize: 15,
-    color: "#1F2937",
+    fontSize: 19,
     fontWeight: "700",
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
-  discountPrice: {
-    fontSize: 15,
-    color: "#EF4444",
-    fontWeight: "700",
-  },
+
   finalTotalPrice: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 24,
+    fontWeight: "700",
     color: FARMER_COLORS.primaryLight,
+    letterSpacing: 0.3,
   },
   paymentMethodTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 12,
+    color: FARMER_COLORS.textPrimary,
+    marginBottom: 16,
+    letterSpacing: 0.2,
   },
   paymentMethodContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 28,
     gap: 12,
   },
   paymentMethodBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: FARMER_COLORS.tintMid,
+    backgroundColor: FARMER_COLORS.tintCard,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
   },
   paymentMethodBtnActive: {
-    borderColor: "#059669",
-    backgroundColor: "#ECFDF5",
+    borderColor: FARMER_COLORS.primaryLight,
+    backgroundColor: FARMER_COLORS.secondary,
+    borderWidth: 2,
   },
   radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: "#D1D5DB",
+    borderColor: FARMER_COLORS.tintMid,
     justifyContent: "center",
     alignItems: "center",
   },
   radioOuterActive: {
-    borderColor: "#059669",
+    borderColor: FARMER_COLORS.primaryLight,
+    borderWidth: 2.5,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#059669",
+    backgroundColor: FARMER_COLORS.primaryLight,
   },
   paymentMethodText: {
     fontSize: 15,
-    color: "#4B5563",
-    marginLeft: 8,
+    color: FARMER_COLORS.textSecondary,
+    marginLeft: 10,
     fontWeight: "600",
+    letterSpacing: 0.2,
   },
   paymentMethodTextActive: {
-    color: "#059669",
+    color: FARMER_COLORS.primaryLight,
+    fontWeight: "700",
   },
   checkoutBtn: {
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   checkoutText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
     letterSpacing: 0.5,
   },
 });

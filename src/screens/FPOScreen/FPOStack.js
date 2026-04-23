@@ -33,6 +33,8 @@ import BroadcastDetailsScreen from './FpoScreen/BroadcastDetailsScreen';
 import SendBroadcastScreen from './FpoScreen/SendBroadcastScreen';
 import FpoPrivateFiles from './FpoScreen/FpoPrivateFiles';
 import FpoUploadDocuments from './FpoScreen/FpoUploadDocuments';
+import AllTasksAssigned from './FpoScreen/AllTasksAssigned';
+import AssignTask from './FpoScreen/AssignTask';
 import { FPO_COLORS } from '../../colorsList/ColorList';
 
 const LoadingIndicator = () => (
@@ -53,6 +55,8 @@ export const UserStackHome = () => {
       }}>
     
             <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="AssignTask" component={AssignTask} />
+            <Stack.Screen name="AllTasksAssigned" component={AllTasksAssigned} />
             <Stack.Screen name="Broadcasts" component={BroadcastsScreen} />
             <Stack.Screen name="BroadcastDetails" component={BroadcastDetailsScreen} />
             <Stack.Screen name="SendBroadcast" component={SendBroadcastScreen} />

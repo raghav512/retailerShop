@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,22 +7,21 @@ import {
   StatusBar,
   FlatList,
   TouchableOpacity,
-} from "react-native";
-import { useTranslation } from "react-i18next";
-import apiService from "../../../Redux/apiService";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
+import apiService from '../../../Redux/apiService';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 
 /* ---------------- MAPPER ---------------- */
-
 
 /* ---------------- SCREEN ---------------- */
 
 const Listing = () => {
   const { t } = useTranslation();
   const [list, setList] = useState([]);
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchListing();
@@ -31,7 +30,7 @@ const Listing = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchListing();
-    }, [])
+    }, []),
   );
 
   const fetchListing = async () => {
@@ -40,25 +39,27 @@ const Listing = () => {
       const listings = response.data || response;
       setList(listings);
     } catch (error) {
-      console.log("LISTING API ERROR 👉", error);
+      console.log('LISTING API ERROR 👉', error);
     }
   };
 
   const renderItem = ({ item }) => {
-    const farmer = `${item.userId?.firstName || ""} ${item.userId?.lastName || ""}`.trim() || "Unknown";
+    const farmer =
+      `${item.userId?.firstName || ''} ${item.userId?.lastName || ''}`.trim() ||
+      'Unknown';
     const code = item._id?.slice(-5).toUpperCase();
     const crop = item.cropName;
     const quantity = `${item.quantity} kg`;
     const amount = `₹${item.price}`;
-    const date = new Date(item.createdAt).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+    const date = new Date(item.createdAt).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
-    const status = item.status || "pending";
+    const status = item.status || 'pending';
 
-    const getBadgeStyle = (status) => {
-      switch(status) {
+    const getBadgeStyle = status => {
+      switch (status) {
         case 'approved':
           return { backgroundColor: '#DCFCE7', color: '#16A34A' };
         case 'rejected':
@@ -71,7 +72,7 @@ const Listing = () => {
     const badgeStyle = getBadgeStyle(status);
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('ListingDetails', { listing: item })}
       >
@@ -82,7 +83,12 @@ const Listing = () => {
             <Text style={styles.code}> — {code}</Text>
           </Text>
 
-          <View style={[styles.badge, { backgroundColor: badgeStyle.backgroundColor }]}>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: badgeStyle.backgroundColor },
+            ]}
+          >
             <Text style={[styles.badgeText, { color: badgeStyle.color }]}>
               {status}
             </Text>
@@ -97,12 +103,12 @@ const Listing = () => {
         {/* BOTTOM */}
         <View style={styles.rowBetween}>
           <View>
-            <Text style={styles.label}>{t("Common.amount")}</Text>
+            <Text style={styles.label}>{t('Common.amount')}</Text>
             <Text style={styles.amount}>{amount}</Text>
           </View>
 
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={styles.label}>{t("Common.date")}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.label}>{t('Common.date')}</Text>
             <Text style={styles.date}>{date}</Text>
           </View>
         </View>
@@ -116,7 +122,7 @@ const Listing = () => {
 
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
         >
@@ -129,7 +135,7 @@ const Listing = () => {
       {/* LIST */}
       <FlatList
         data={list}
-        keyExtractor={(item) => item._id}
+        keyExtractor={item => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
 
   /* HEADER */
   header: {
-    backgroundColor: "#FF6A00",
+    backgroundColor: '#FF6A00',
     paddingVertical: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -163,9 +169,9 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
   },
 
   /* LIST */
@@ -176,7 +182,7 @@ const styles = StyleSheet.create({
 
   /* CARD */
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 14,
     marginBottom: 14,
@@ -184,24 +190,24 @@ const styles = StyleSheet.create({
   },
 
   rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
   name: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: '600',
+    color: '#111827',
   },
 
   code: {
     fontSize: 11,
-    color: "#6B7280",
+    color: '#6B7280',
   },
 
   badge: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -209,31 +215,31 @@ const styles = StyleSheet.create({
 
   badgeText: {
     fontSize: 10,
-    color: "#16A34A",
-    fontWeight: "600",
+    color: '#16A34A',
+    fontWeight: '600',
   },
 
   crop: {
     fontSize: 12,
-    color: "#374151",
+    color: '#374151',
     marginVertical: 8,
   },
 
   label: {
     fontSize: 11,
-    color: "#6B7280",
+    color: '#6B7280',
   },
 
   amount: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#16A34A",
+    fontWeight: '600',
+    color: '#16A34A',
     marginTop: 2,
   },
 
   date: {
     fontSize: 12,
     marginTop: 2,
-    color: "#111827",
+    color: '#111827',
   },
 });

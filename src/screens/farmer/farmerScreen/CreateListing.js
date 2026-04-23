@@ -169,7 +169,7 @@ const CreateListing = () => {
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+          <Icon name="chevron-back" size={24} color={FARMER_COLORS.textOnPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("create_listing.title")}</Text>
       </View>
@@ -181,14 +181,14 @@ const CreateListing = () => {
           value={cropName} 
           onChangeText={setCropName} 
           style={styles.input} 
-          placeholderTextColor="#9CA3AF" 
+          placeholderTextColor="rgba(142, 171, 83, 0.5)" 
         />
         <TextInput 
           placeholder={t("create_listing.variety")} 
           value={variety} 
           onChangeText={setVariety} 
           style={styles.input} 
-          placeholderTextColor="#9CA3AF" 
+          placeholderTextColor="rgba(142, 171, 83, 0.5)" 
         />
         <View style={styles.row}>
           <TextInput 
@@ -197,7 +197,7 @@ const CreateListing = () => {
             onChangeText={setQuantity} 
             keyboardType="numeric" 
             style={[styles.input, styles.halfInput]} 
-            placeholderTextColor="#9CA3AF" 
+            placeholderTextColor="rgba(142, 171, 83, 0.5)" 
           />
           <TextInput 
             placeholder={t("create_listing.price")} 
@@ -205,7 +205,7 @@ const CreateListing = () => {
             onChangeText={setPrice} 
             keyboardType="numeric" 
             style={[styles.input, styles.halfInput]} 
-            placeholderTextColor="#9CA3AF" 
+            placeholderTextColor="rgba(142, 171, 83, 0.5)" 
           />
         </View>
       </View>
@@ -217,11 +217,11 @@ const CreateListing = () => {
           value={location} 
           onChangeText={setLocation} 
           style={styles.input} 
-          placeholderTextColor="#9CA3AF" 
+          placeholderTextColor="rgba(142, 171, 83, 0.5)" 
         />
         <TouchableOpacity style={[styles.locationBtn, locationLoading && styles.locationBtnDisabled]} onPress={getCurrentLocation} disabled={locationLoading}>
-          {locationLoading ? <ActivityIndicator size="small" color={FARMER_COLORS.primaryLight} /> : <Icon name="location" size={20} color={FARMER_COLORS.primaryLight} />}
-          <Text style={[styles.locationText, { color: FARMER_COLORS.primaryLight }]}>{locationLoading ? ' Getting location...' : ' Use current location'}</Text>
+          {locationLoading ? <ActivityIndicator size="small" color={FARMER_COLORS.primary} /> : <Icon name="location" size={20} color={FARMER_COLORS.primary} />}
+          <Text style={[styles.locationText, { color: FARMER_COLORS.primary }]}>{locationLoading ? ' Getting location...' : ' Use current location'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -240,8 +240,8 @@ const CreateListing = () => {
             </View>
           ))}
           {selectedImages.length < 5 && (
-            <TouchableOpacity onPress={() => setShowImagePicker(true)} style={[styles.addImageBtn, { borderColor: FARMER_COLORS.primaryLight }]}>
-              <Icon name="camera" size={32} color={FARMER_COLORS.primaryLight} />
+            <TouchableOpacity onPress={() => setShowImagePicker(true)} style={styles.addImageBtn}>
+              <Icon name="camera" size={32} color={FARMER_COLORS.primary} />
               <Text style={styles.uploadText}>Add Photo</Text>
             </TouchableOpacity>
           )}
@@ -266,24 +266,24 @@ export default CreateListing;
 
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 0,
   },
   container: { 
     flex: 1, 
-    backgroundColor: "#F4F6F8" 
+    backgroundColor: FARMER_COLORS.background
   },
   header: { 
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
     flexDirection: "row", 
     alignItems: "center",
     zIndex: 10,
@@ -291,47 +291,50 @@ const styles = StyleSheet.create({
   backBtn: { 
     width: 44, 
     height: 44, 
-    borderRadius: 22, 
-    backgroundColor: "#FEF9E7", 
+    borderRadius: 12, 
+    backgroundColor: 'rgba(255, 255, 255, 0.18)', 
     justifyContent: "center", 
     alignItems: "center", 
     marginRight: 16 
   },
   headerTitle: { 
-    fontSize: 18, 
+    fontSize: 20, 
     fontWeight: "800", 
-    color: "#1F2937",
+    color: FARMER_COLORS.textOnPrimary,
     letterSpacing: 0.5 
   },
   card: { 
-    backgroundColor: "#ffffff", 
-    marginHorizontal: 16, 
-    marginTop: 16, 
-    borderRadius: 16, 
-    padding: 18, 
-    shadowColor: "#000", 
-    shadowOpacity: 0.04, 
-    shadowRadius: 5, 
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2 
+    backgroundColor: FARMER_COLORS.surface, 
+    marginHorizontal: 20, 
+    marginTop: 20, 
+    borderRadius: 20, 
+    padding: 20, 
+    shadowColor: FARMER_COLORS.accent, 
+    shadowOpacity: 0.06, 
+    shadowRadius: 12, 
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)'
   },
   cardTitle: { 
-    fontSize: 15, 
+    fontSize: 16, 
     fontWeight: "700", 
-    color: "#374151", 
-    marginBottom: 14 
+    color: FARMER_COLORS.textPrimary, 
+    marginBottom: 16,
+    letterSpacing: 0.3
   },
   input: { 
-    height: 50, 
+    height: 52, 
     borderWidth: 1, 
-    borderColor: "#E5E7EB", 
-    borderRadius: 14, 
+    borderColor: 'rgba(142, 171, 83, 0.2)', 
+    borderRadius: 16, 
     paddingHorizontal: 16, 
     fontSize: 15, 
-    color: "#1F2937", 
-    marginBottom: 14, 
-    backgroundColor: "#F9FAF8",
-    fontWeight: "600"
+    color: FARMER_COLORS.textPrimary, 
+    marginBottom: 16, 
+    backgroundColor: 'rgba(142, 171, 83, 0.05)',
+    fontWeight: "500"
   },
   row: { 
     flexDirection: "row", 
@@ -341,18 +344,21 @@ const styles = StyleSheet.create({
     width: "48%" 
   },
   locationBtn: { 
-    height: 48, 
-    borderRadius: 14, 
-    backgroundColor: "#FEF9E7", 
+    height: 52, 
+    borderRadius: 16, 
+    backgroundColor: 'rgba(142, 171, 83, 0.15)', 
     flexDirection: "row", 
     alignItems: "center", 
     justifyContent: "center", 
-    marginTop: 6, 
-    gap: 8 
+    marginTop: 8, 
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.3)'
   },
   locationText: { 
     fontSize: 14, 
-    fontWeight: "700" 
+    fontWeight: "700",
+    letterSpacing: 0.3
   },
   imageContainer: { 
     flexDirection: "row", 
@@ -365,16 +371,17 @@ const styles = StyleSheet.create({
   addImageBtn: { 
     width: 90, 
     height: 90, 
-    borderRadius: 14, 
-    backgroundColor: "#FEF9E7", 
+    borderRadius: 16, 
+    backgroundColor: 'rgba(142, 171, 83, 0.1)', 
     justifyContent: "center", 
     alignItems: "center", 
     borderWidth: 2, 
-    borderStyle: "dashed" 
+    borderStyle: "dashed",
+    borderColor: 'rgba(142, 171, 83, 0.4)'
   },
   uploadText: { 
-    fontSize: 13, 
-    color: "#6B7280", 
+    fontSize: 12, 
+    color: FARMER_COLORS.textSecondary, 
     textAlign: "center", 
     marginTop: 6,
     fontWeight: "600"
@@ -382,7 +389,9 @@ const styles = StyleSheet.create({
   selectedImage: { 
     width: 90, 
     height: 90, 
-    borderRadius: 14 
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.2)'
   },
   removeImageBtn: { 
     position: 'absolute', 
@@ -394,32 +403,38 @@ const styles = StyleSheet.create({
     height: 24, 
     justifyContent: 'center', 
     alignItems: 'center',
-    elevation: 2
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }
   },
   submitBtn: { 
-    marginHorizontal: 16, 
-    marginTop: 24, 
-    borderRadius: 16, 
+    marginHorizontal: 20, 
+    marginTop: 28, 
+    borderRadius: 24, 
     paddingVertical: 18, 
     alignItems: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
   submitText: { 
-    color: "#ffffff", 
+    color: FARMER_COLORS.textOnPrimary, 
     fontSize: 16, 
     fontWeight: "700",
     letterSpacing: 0.5 
   },
   submitBtnDisabled: { 
-    backgroundColor: "#9CA3AF" 
+    backgroundColor: 'rgba(142, 171, 83, 0.4)',
+    opacity: 0.7
   },
   locationBtnDisabled: { 
-    backgroundColor: "#F3F4F6" 
+    backgroundColor: 'rgba(142, 171, 83, 0.08)',
+    opacity: 0.6
   },
 });
 

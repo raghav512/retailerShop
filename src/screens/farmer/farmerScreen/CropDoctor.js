@@ -457,10 +457,10 @@ export default function CropDoctor({ navigation }) {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+            <Ionicons name="arrow-back" size={24} color={FARMER_COLORS.textOnPrimary} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <MaterialCommunityIcons name="leaf" size={28} color={FARMER_COLORS.primaryLight} />
+            <MaterialCommunityIcons name="leaf" size={28} color={FARMER_COLORS.textOnPrimary} />
             <Text style={styles.headerTitle}>{t('crop_doctor_screen.title')}</Text>
           </View>
           <View style={{ width: 40 }} />
@@ -473,7 +473,7 @@ export default function CropDoctor({ navigation }) {
               <MaterialCommunityIcons
                 name="image-plus"
                 size={60}
-                color={FARMER_COLORS.primaryLight}
+                color={FARMER_COLORS.primary}
               />
             </View>
             <Text style={styles.emptyTitle}>{t('crop_doctor_screen.no_image')}</Text>
@@ -494,7 +494,7 @@ export default function CropDoctor({ navigation }) {
                 style={styles.secondaryButton}
                 onPress={openGallery}
               >
-                <Ionicons name="images" size={24} color={FARMER_COLORS.primaryLight} />
+                <Ionicons name="images" size={24} color={FARMER_COLORS.primary} />
                 <Text style={styles.secondaryButtonText}>{t('crop_doctor_screen.gallery')}</Text>
               </TouchableOpacity>
             </View>
@@ -553,7 +553,7 @@ export default function CropDoctor({ navigation }) {
 
             {loading && (
               <View style={styles.loadingBox}>
-                <ActivityIndicator size="large" color={FARMER_COLORS.primaryLight} />
+                <ActivityIndicator size="large" color={FARMER_COLORS.primary} />
                 <Text style={styles.loadingText}>{t('crop_doctor_screen.analyzing')}</Text>
               </View>
             )}
@@ -561,14 +561,14 @@ export default function CropDoctor({ navigation }) {
             {diagnosis && (
               <View style={styles.resultCard}>
                 <View style={styles.resultHeader}>
-                  <Ionicons name="document-text" size={24} color={FARMER_COLORS.primaryLight} />
+                  <Ionicons name="document-text" size={24} color={FARMER_COLORS.primary} />
                   <Text style={styles.resultTitle}>{t('crop_doctor_screen.report_title')}</Text>
                   {isSaved && (
                     <View style={styles.savedBadge}>
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color={FARMER_COLORS.primaryLight}
+                        color={FARMER_COLORS.primary}
                       />
                       <Text style={styles.savedBadgeText}>{t('crop_doctor_screen.saved')}</Text>
                     </View>
@@ -621,7 +621,7 @@ export default function CropDoctor({ navigation }) {
                       setIsSaved(false);
                     }}
                   >
-                    <Ionicons name="refresh" size={20} color={FARMER_COLORS.primaryLight} />
+                    <Ionicons name="refresh" size={20} color={FARMER_COLORS.primary} />
                     <Text style={styles.newButtonText}>{t('crop_doctor_screen.new_analysis_btn')}</Text>
                   </TouchableOpacity>
                 </View>
@@ -649,11 +649,10 @@ export default function CropDoctor({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: FARMER_COLORS.background,
   },
   headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
+    height: 0,
   },
   scrollContent: {
     paddingBottom: 100,
@@ -662,24 +661,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    backgroundColor: FARMER_COLORS.primary,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 6 },
     zIndex: 10,
     marginBottom: 20,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -691,28 +691,31 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: RFValue(20),
-    fontWeight: "700",
-    color: "#1F2937",
+    fontWeight: "800",
+    color: FARMER_COLORS.textOnPrimary,
     marginLeft: 8,
+    letterSpacing: 0.5,
   },
   emptyCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 24,
     padding: 32,
     alignItems: "center",
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginTop: 20,
-    elevation: 3,
-    shadowColor: "#000",
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   iconCircle: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#e2f0c9",
+    backgroundColor: 'rgba(142, 171, 83, 0.15)',
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
@@ -720,12 +723,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: RFValue(18),
     fontWeight: "700",
-    color: "#1F2937",
+    color: FARMER_COLORS.textPrimary,
     marginBottom: 8,
+    letterSpacing: 0.3,
   },
   emptySubtitle: {
     fontSize: RFValue(14),
-    color: "#6B7280",
+    color: FARMER_COLORS.textSecondary,
     marginBottom: 32,
     textAlign: "center",
   },
@@ -744,67 +748,71 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f0f8f9",
+    backgroundColor: 'rgba(142, 171, 83, 0.1)',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
     borderWidth: 1,
-    borderColor: FARMER_COLORS.primaryLight,
+    borderColor: 'rgba(142, 171, 83, 0.3)',
     gap: 6,
   },
   quickActionText: {
-    color: FARMER_COLORS.primaryLight,
+    color: FARMER_COLORS.primary,
     fontSize: RFValue(14),
     fontWeight: "600",
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
-    borderRadius: 28,
+    borderRadius: 24,
     gap: 8,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
   },
   buttonText: {
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: RFValue(15),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(142, 171, 83, 0.3)',
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
-    borderRadius: 28,
+    borderRadius: 24,
     gap: 8,
   },
   secondaryButtonText: {
-    color: "#4B5563",
+    color: FARMER_COLORS.textPrimary,
     fontSize: RFValue(15),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   imageCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 24,
     overflow: "hidden",
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 20,
-    elevation: 3,
-    shadowColor: "#000",
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   image: {
     width: "100%",
@@ -815,17 +823,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 16,
     right: 16,
-    backgroundColor: "rgba(31, 41, 55, 0.6)",
+    backgroundColor: "rgba(142, 171, 83, 0.9)",
     borderRadius: 20,
     padding: 4,
   },
   languageToggleContainer: {
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 20,
   },
   languageToggleLabel: {
     fontSize: RFValue(14),
-    color: "#4B5563",
+    color: FARMER_COLORS.textSecondary,
     marginBottom: 8,
     fontWeight: "600",
   },
@@ -836,71 +844,80 @@ const styles = StyleSheet.create({
   langButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#ffffff",
+    borderColor: 'rgba(142, 171, 83, 0.2)',
+    backgroundColor: FARMER_COLORS.surface,
     alignItems: "center",
   },
   langButtonActive: {
-    backgroundColor: "#e2f0c9",
-    borderColor: FARMER_COLORS.primaryLight,
+    backgroundColor: FARMER_COLORS.primary,
+    borderColor: FARMER_COLORS.primary,
   },
   langButtonText: {
-    color: "#4B5563",
+    color: FARMER_COLORS.textSecondary,
     fontSize: RFValue(14),
     fontWeight: "600",
   },
   langButtonTextActive: {
-    color: "#b49509",
+    color: FARMER_COLORS.textOnPrimary,
     fontWeight: "700",
   },
   analyzeButton: {
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     height: 56,
     borderRadius: 28,
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 20,
     gap: 10,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
+    elevation: 3,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
   },
   analyzeText: {
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: RFValue(16),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   loadingBox: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 24,
     padding: 40,
     alignItems: "center",
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 20,
-    elevation: 3,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   loadingText: {
     fontSize: RFValue(15),
-    color: "#1F2937",
+    color: FARMER_COLORS.textPrimary,
     marginTop: 16,
     fontWeight: "600",
   },
   resultCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 24,
     padding: 24,
-    marginHorizontal: 16,
-    elevation: 3,
-    shadowColor: "#000",
+    marginHorizontal: 20,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   resultHeader: {
     flexDirection: "row",
@@ -908,35 +925,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F4F6F8",
+    borderBottomColor: 'rgba(142, 171, 83, 0.1)',
   },
   resultTitle: {
     fontSize: RFValue(18),
     fontWeight: "700",
-    color: "#1F2937",
+    color: FARMER_COLORS.textPrimary,
     marginLeft: 10,
     flex: 1,
+    letterSpacing: 0.3,
   },
   savedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#e2f0c9",
+    backgroundColor: 'rgba(142, 171, 83, 0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.3)',
   },
   savedBadgeText: {
     fontSize: RFValue(12),
-    fontWeight: "600",
-    color: FARMER_COLORS.primaryLight,
+    fontWeight: "700",
+    color: FARMER_COLORS.primary,
+    letterSpacing: 0.3,
   },
   resultContent: {
     marginBottom: 24,
   },
   resultText: {
     fontSize: RFValue(15),
-    color: "#4B5563",
+    color: FARMER_COLORS.textSecondary,
     lineHeight: 26,
     fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
@@ -949,60 +970,68 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: FARMER_COLORS.primaryLight,
+    backgroundColor: FARMER_COLORS.primary,
     padding: 16,
-    borderRadius: 28,
+    borderRadius: 24,
     gap: 8,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   saveButtonDisabled: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: 'rgba(142, 171, 83, 0.4)',
     opacity: 0.8,
   },
   saveButtonText: {
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: RFValue(15),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   newButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: 'rgba(142, 171, 83, 0.3)',
     padding: 16,
-    borderRadius: 28,
+    borderRadius: 24,
     gap: 8,
   },
   newButtonText: {
-    color: "#4B5563",
+    color: FARMER_COLORS.textPrimary,
     fontSize: RFValue(15),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   bottomBar: {
     position: "absolute",
     bottom: 20,
-    left: 16,
-    right: 16,
+    left: 20,
+    right: 20,
   },
   viewReportsButton: {
-    backgroundColor: "#1F2937",
+    backgroundColor: FARMER_COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
     borderRadius: 28,
     gap: 10,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
+    elevation: 4,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.2,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
   },
   viewReportsText: {
-    color: "#ffffff",
+    color: FARMER_COLORS.textOnPrimary,
     fontSize: RFValue(16),
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
 });

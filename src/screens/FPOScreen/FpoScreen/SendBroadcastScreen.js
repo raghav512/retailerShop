@@ -10,18 +10,18 @@ import {
   ScrollView,
   Platform,
   PermissionsAndroid,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
-const THEME = FPO_COLORS.primary; // FPO Steel Blue
+const THEME = FPO_COLORS.primary; // Distributor Steel Blue
 
-const requestStoragePermission = async (t) => {
+const requestStoragePermission = async t => {
   if (Platform.OS === 'android') {
     try {
       if (Platform.Version >= 33) return true;
@@ -33,7 +33,7 @@ const requestStoragePermission = async (t) => {
           buttonNeutral: t('send_broadcast.ask_me_later'),
           buttonNegative: t('send_broadcast.cancel'),
           buttonPositive: t('send_broadcast.ok'),
-        }
+        },
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
@@ -54,30 +54,54 @@ const SendBroadcastScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const ROLES = [
-    { label: t('send_broadcast.roles.farmer'), value: 'Farmer', icon: 'leaf-outline' },
-    { label: t('send_broadcast.roles.staff'), value: 'Staff', icon: 'people-outline' }
+    {
+      label: t('send_broadcast.roles.farmer'),
+      value: 'Farmer',
+      icon: 'leaf-outline',
+    },
+    {
+      label: t('send_broadcast.roles.staff'),
+      value: 'Staff',
+      icon: 'people-outline',
+    },
   ];
 
   const pickImage = async () => {
     const hasPermission = await requestStoragePermission(t);
     if (!hasPermission) {
-      showAlert({ type: 'warning', title: t('send_broadcast.permission_required'), message: t('send_broadcast.storage_permission_msg') });
+      showAlert({
+        type: 'warning',
+        title: t('send_broadcast.permission_required'),
+        message: t('send_broadcast.storage_permission_msg'),
+      });
       return;
     }
-    launchImageLibrary({ mediaType: 'photo', quality: 0.7, includeBase64: true }, (response) => {
-      if (response.didCancel) console.log('User cancelled image picker');
-      else if (response.error) showAlert({ type: 'error', title: t('send_broadcast.error'), message: t('send_broadcast.select_image_error') });
-      else if (response.assets?.length > 0) {
-        setImage(response.assets[0].uri);
-        const type = response.assets[0].type || 'image/jpeg';
-        setImageBase64(`data:${type};base64,${response.assets[0].base64}`);
-      }
-    });
+    launchImageLibrary(
+      { mediaType: 'photo', quality: 0.7, includeBase64: true },
+      response => {
+        if (response.didCancel) console.log('User cancelled image picker');
+        else if (response.error)
+          showAlert({
+            type: 'error',
+            title: t('send_broadcast.error'),
+            message: t('send_broadcast.select_image_error'),
+          });
+        else if (response.assets?.length > 0) {
+          setImage(response.assets[0].uri);
+          const type = response.assets[0].type || 'image/jpeg';
+          setImageBase64(`data:${type};base64,${response.assets[0].base64}`);
+        }
+      },
+    );
   };
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
-      showAlert({ type: 'warning', title: t('send_broadcast.validation_error'), message: t('send_broadcast.title_desc_required') });
+      showAlert({
+        type: 'warning',
+        title: t('send_broadcast.validation_error'),
+        message: t('send_broadcast.title_desc_required'),
+      });
       return;
     }
 
@@ -95,14 +119,26 @@ const SendBroadcastScreen = ({ navigation }) => {
 
       const response = await apiService.sendBroadcast(payload);
       if (response?.status === 'success' || response?.success) {
-        showAlert({ type: 'success', title: t('send_broadcast.success'), message: t('send_broadcast.sent_success') });
+        showAlert({
+          type: 'success',
+          title: t('send_broadcast.success'),
+          message: t('send_broadcast.sent_success'),
+        });
         navigation.goBack();
       } else {
-        showAlert({ type: 'error', title: t('send_broadcast.error'), message: response?.message || t('send_broadcast.failed_to_send') });
+        showAlert({
+          type: 'error',
+          title: t('send_broadcast.error'),
+          message: response?.message || t('send_broadcast.failed_to_send'),
+        });
       }
     } catch (error) {
       console.error('Send broadcast error:', error);
-      showAlert({ type: 'error', title: t('send_broadcast.error'), message: t('send_broadcast.something_went_wrong') });
+      showAlert({
+        type: 'error',
+        title: t('send_broadcast.error'),
+        message: t('send_broadcast.something_went_wrong'),
+      });
     } finally {
       setLoading(false);
     }
@@ -110,28 +146,44 @@ const SendBroadcastScreen = ({ navigation }) => {
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
 
       {/* HEADER */}
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+        >
           <Icon name="arrow-back" size={22} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('send_broadcast.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* FORM SECTION */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="chatbubble-ellipses" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('send_broadcast.message_details')}</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="chatbubble-ellipses" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('send_broadcast.message_details')}
+            </Text>
           </View>
 
-          <Text style={styles.label}>{t('send_broadcast.broadcast_title')} *</Text>
+          <Text style={styles.label}>
+            {t('send_broadcast.broadcast_title')} *
+          </Text>
           <TextInput
             style={styles.input}
             placeholder={t('send_broadcast.enter_title')}
@@ -155,13 +207,19 @@ const SendBroadcastScreen = ({ navigation }) => {
         {/* SETTINGS SECTION */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="options" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('send_broadcast.settings_media')}</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="options" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('send_broadcast.settings_media')}
+            </Text>
           </View>
 
-          <Text style={styles.label}>{t('send_broadcast.target_audience')}</Text>
+          <Text style={styles.label}>
+            {t('send_broadcast.target_audience')}
+          </Text>
           <View style={styles.roleContainer}>
-            {ROLES.map((role) => {
+            {ROLES.map(role => {
               const isActive = targetRole === role.value;
               return (
                 <TouchableOpacity
@@ -170,13 +228,15 @@ const SendBroadcastScreen = ({ navigation }) => {
                   onPress={() => setTargetRole(role.value)}
                   activeOpacity={0.7}
                 >
-                  <Icon 
-                    name={role.icon} 
-                    size={16} 
-                    color={isActive ? "#fff" : "#6B7280"} 
-                    style={{ marginRight: 6 }} 
+                  <Icon
+                    name={role.icon}
+                    size={16}
+                    color={isActive ? '#fff' : '#6B7280'}
+                    style={{ marginRight: 6 }}
                   />
-                  <Text style={[styles.roleText, isActive && styles.roleTextActive]}>
+                  <Text
+                    style={[styles.roleText, isActive && styles.roleTextActive]}
+                  >
                     {role.label}
                   </Text>
                 </TouchableOpacity>
@@ -184,27 +244,41 @@ const SendBroadcastScreen = ({ navigation }) => {
             })}
           </View>
 
-          <Text style={[styles.label, { marginTop: 16 }]}>{t('send_broadcast.image_optional')}</Text>
+          <Text style={[styles.label, { marginTop: 16 }]}>
+            {t('send_broadcast.image_optional')}
+          </Text>
           {image ? (
             <View style={styles.imagePreviewContainer}>
               <Image source={{ uri: image }} style={styles.imagePreview} />
-              <TouchableOpacity style={styles.removeImageBtn} onPress={() => { setImage(null); setImageBase64(null); }}>
+              <TouchableOpacity
+                style={styles.removeImageBtn}
+                onPress={() => {
+                  setImage(null);
+                  setImageBase64(null);
+                }}
+              >
                 <Icon name="close-circle" size={28} color="#EF4444" />
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.pickImageBtn} onPress={pickImage} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.pickImageBtn}
+              onPress={pickImage}
+              activeOpacity={0.7}
+            >
               <View style={styles.pickImageIconBox}>
                 <Icon name="image-outline" size={28} color={THEME} />
               </View>
-              <Text style={styles.pickImageText}>{t('send_broadcast.select_image')}</Text>
+              <Text style={styles.pickImageText}>
+                {t('send_broadcast.select_image')}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* SUBMIT */}
-        <TouchableOpacity 
-          style={[styles.submitBtn, loading && { opacity: 0.7 }]} 
+        <TouchableOpacity
+          style={[styles.submitBtn, loading && { opacity: 0.7 }]}
           onPress={handleSubmit}
           disabled={loading}
           activeOpacity={0.85}
@@ -213,12 +287,18 @@ const SendBroadcastScreen = ({ navigation }) => {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Icon name="paper-plane" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.submitBtnText}>{t('send_broadcast.send_btn')}</Text>
+              <Icon
+                name="paper-plane"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.submitBtnText}>
+                {t('send_broadcast.send_btn')}
+              </Text>
             </>
           )}
         </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
@@ -231,44 +311,100 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: "#ffffff" },
+  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
   header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 16, backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
-    elevation: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 5 },
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
     zIndex: 10,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#F3F4F6", justifyContent: "center", alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#1F2937" },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
 
   scrollContent: { padding: 16, paddingBottom: 40 },
 
   /* SECTION CARDS */
   sectionCard: {
-    backgroundColor: '#ffffff', borderRadius: 24, padding: 20, marginBottom: 16,
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  sectionIcon: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#EBF3F6', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: '#EBF3F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#1F2937' },
 
   /* INPUTS */
   label: { fontSize: 13, fontWeight: '600', color: '#4B5563', marginBottom: 6 },
   input: {
-    backgroundColor: '#FAFAFA', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 14, height: 50, fontSize: 15, color: '#1F2937', marginBottom: 16,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    height: 50,
+    fontSize: 15,
+    color: '#1F2937',
+    marginBottom: 16,
   },
   textArea: {
-    backgroundColor: '#FAFAFA', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, color: '#1F2937', minHeight: 100, textAlignVertical: 'top'
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#1F2937',
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
 
   /* ROLES */
   roleContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   rolePill: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1.5, borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
   },
   rolePillActive: { backgroundColor: THEME, borderColor: THEME },
   roleText: { fontSize: 14, color: '#4B5563', fontWeight: '600' },
@@ -276,21 +412,57 @@ const styles = StyleSheet.create({
 
   /* IMAGE */
   pickImageBtn: {
-    backgroundColor: '#FAFAFA', borderWidth: 1.5, borderColor: '#E5E7EB', borderStyle: 'dashed',
-    borderRadius: 16, padding: 24, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  pickImageIconBox: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#EBF3F6', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  pickImageIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EBF3F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   pickImageText: { color: '#6B7280', fontSize: 14, fontWeight: '500' },
-  
-  imagePreviewContainer: { position: 'relative', borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: '#E5E7EB' },
+
+  imagePreviewContainer: {
+    position: 'relative',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
   imagePreview: { width: '100%', height: 200, resizeMode: 'cover' },
-  removeImageBtn: { position: 'absolute', top: 12, right: 12, backgroundColor: '#ffffff', borderRadius: 20, padding: 2 },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 2,
+  },
 
   /* SUBMIT */
   submitBtn: {
-    backgroundColor: '#1F2937', height: 56, borderRadius: 24, flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center', marginTop: 8,
-    elevation: 6, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
+    backgroundColor: '#1F2937',
+    height: 56,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

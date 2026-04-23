@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
  
@@ -26,6 +26,12 @@ const StaffProductDetails = () => {
   const images = product?.productImages || [];
   const variants = product?.products || [];
   const activeVariant = variants[selectedVariant];
+
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh data when screen comes into focus
+    }, [])
+  );
  
   return (
     <View style={styles.safeArea}>

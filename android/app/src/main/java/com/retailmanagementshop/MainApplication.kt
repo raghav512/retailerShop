@@ -1,4 +1,4 @@
-package com.beejsebazar
+package com.retailmanagementshop
 
 import android.app.Application
 import com.facebook.react.PackageList
@@ -15,7 +15,6 @@ class MainApplication : Application(), ReactApplication {
       packageList =
         PackageList(this).packages.apply {
           add(SpeechPackage())
-          add(AppHashPackage()) // Added for AppHashModule to work
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // add(MyReactNativePackage())
         },

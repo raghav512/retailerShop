@@ -112,7 +112,7 @@ const MyCrops = ({ navigation }) => {
       <View style={styles.cardContent}>
         <Text style={styles.cropName}>{item.cropName}</Text>
         <View style={styles.farmInfo}>
-          <Icon name="location-outline" size={14} color="#6B7280" />
+          <Icon name="location-outline" size={14} color={FARMER_COLORS.textSecondary} />
           <Text style={styles.farmName}>{item.farmName || t('my_crops.unknown_farm')}</Text>
         </View>
         <Text style={styles.cropArea}>
@@ -124,16 +124,16 @@ const MyCrops = ({ navigation }) => {
       <View style={styles.cardActions}>
         {/* ✏️ Edit */}
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#e2f0c9' }]}
+          style={[styles.actionButton, { backgroundColor: 'rgba(142, 171, 83, 0.15)' }]}
           onPress={(e) => { e.stopPropagation(); navigation.navigate("EditCrop", { crop: item }); }}
           activeOpacity={0.7}
         >
-          <Icon name="create-outline" size={18} color={THEME} />
+          <Icon name="create-outline" size={18} color={FARMER_COLORS.primary} />
         </TouchableOpacity>
 
         {/* 🗑 Delete */}
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#FEE2E2' }]}
+          style={[styles.actionButton, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
           onPress={(e) => { e.stopPropagation(); handleDelete(item._id); }}
           activeOpacity={0.7}
         >
@@ -150,7 +150,7 @@ const MyCrops = ({ navigation }) => {
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={24} color="#1F2937" />
+          <Icon name="arrow-back" size={24} color={FARMER_COLORS.textOnPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('my_crops.title')}</Text>
         <View style={styles.headerRight} />
@@ -158,7 +158,7 @@ const MyCrops = ({ navigation }) => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME} />
+          <ActivityIndicator size="large" color={FARMER_COLORS.primary} />
           <Text style={styles.loadingText}>{t('my_crops.loading')}</Text>
         </View>
       ) : (
@@ -184,99 +184,112 @@ const MyCrops = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F4F6F8" },
+  container: { flex: 1, backgroundColor: FARMER_COLORS.background },
   headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
+    height: 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    backgroundColor: FARMER_COLORS.primary,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 6 },
     zIndex: 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#1F2937" },
-  headerRight: { width: 40 },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: FARMER_COLORS.textOnPrimary, letterSpacing: 0.5 },
+  headerRight: { width: 44 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 12, fontSize: 16, color: THEME, fontWeight: '500' },
+  loadingText: { marginTop: 12, fontSize: 14, color: FARMER_COLORS.textSecondary, fontWeight: '600' },
   emptyList: { flexGrow: 1 },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
   emptyIcon: { marginBottom: 20 },
-  emptyTitle: { fontSize: 22, fontWeight: "700", color: "#666", marginBottom: 8 },
-  emptyText: { fontSize: 16, color: "#999", textAlign: "center", marginBottom: 30, lineHeight: 22 },
+  emptyTitle: { fontSize: 20, fontWeight: "700", color: FARMER_COLORS.textPrimary, marginBottom: 8, letterSpacing: 0.3 },
+  emptyText: { fontSize: 15, color: FARMER_COLORS.textSecondary, textAlign: "center", marginBottom: 30, lineHeight: 22 },
   emptyButton: {
     flexDirection: 'row',
-    backgroundColor: THEME,
+    backgroundColor: FARMER_COLORS.primary,
     paddingHorizontal: 24, paddingVertical: 14,
-    borderRadius: 12, alignItems: "center",
-    elevation: 3,
-    shadowColor: THEME, shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3, shadowRadius: 4,
+    borderRadius: 24, alignItems: "center",
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  emptyButtonText: { color: "#ffffff", fontSize: 15, fontWeight: "700", marginLeft: 8 },
-  listContainer: { padding: 16, paddingTop: 24 },
+  emptyButtonText: { color: FARMER_COLORS.textOnPrimary, fontSize: 15, fontWeight: "700", marginLeft: 8, letterSpacing: 0.3 },
+  listContainer: { padding: 20, paddingTop: 24 },
 
   /* Card */
   card: {
     flexDirection: "row",
-    backgroundColor: "#ffffff",
-    borderRadius: 16, 
+    backgroundColor: FARMER_COLORS.surface,
+    borderRadius: 20, 
     padding: 16,
     marginBottom: 16, 
     alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000", 
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04, 
-    shadowRadius: 5,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
   cardIcon: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: "#e2f0c9",
+    width: 56, height: 56, borderRadius: 16,
+    backgroundColor: FARMER_COLORS.primary,
     justifyContent: "center", alignItems: "center",
     marginRight: 16,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   cardContent: { flex: 1 },
-  cropName: { fontSize: 17, fontWeight: "700", color: "#1F2937", marginBottom: 6 },
+  cropName: { fontSize: 16, fontWeight: "700", color: FARMER_COLORS.textPrimary, marginBottom: 6, letterSpacing: 0.2 },
   farmInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  farmName: { fontSize: 14, color: "#6B7280", marginLeft: 4, fontWeight: '500' },
-  cropArea: { fontSize: 14, color: THEME, fontWeight: "700" },
+  farmName: { fontSize: 13, color: FARMER_COLORS.textSecondary, marginLeft: 4, fontWeight: '500' },
+  cropArea: { fontSize: 14, color: FARMER_COLORS.primary, fontWeight: "700", letterSpacing: 0.3 },
 
   /* Actions */
   cardActions: { flexDirection: "row", gap: 10, alignItems: "center" },
   actionButton: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: "#F3F4F6",
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: FARMER_COLORS.surface,
     justifyContent: "center", alignItems: "center",
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.2)',
   },
 
   /* FAB */
   fab: {
     position: "absolute", right: 20, bottom: 20,
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: THEME,
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: FARMER_COLORS.primary,
     justifyContent: "center", alignItems: "center",
     elevation: 4,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
 });
 

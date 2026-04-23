@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, Animated, ActivityIndicator } from "react-native";
-import Images from "../../assets/Images/Images";
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Animated,
+  ActivityIndicator,
+} from 'react-native';
+import Images from '../../assets/Images/Images';
 import { FARMER_COLORS } from '../../colorsList/ColorList';
 
 const Splashscreen = () => {
   const [loading, setLoading] = useState(true);
-  
+
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
   const textFadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -77,7 +84,7 @@ const Splashscreen = () => {
           },
         ]}
       >
-        <Text style={styles.title}>Beej Se Bazar</Text>
+        <Text style={styles.title}>Retail Management System</Text>
       </Animated.View>
 
       {/* ANIMATED LOADING */}
@@ -92,22 +99,21 @@ const Splashscreen = () => {
 
 export default Splashscreen;
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
 
   imageContainer: {
     width: 250,
     height: 250,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     borderRadius: 40,
     elevation: 8,
     shadowColor: FARMER_COLORS.primary,
@@ -118,23 +124,21 @@ const styles = StyleSheet.create({
   },
 
   splashImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderRadius: 40,
-    
   },
 
   content: {
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: 20,
   },
 
   title: {
     fontSize: 34,
-    fontWeight: "800",
+    fontWeight: '800',
     color: FARMER_COLORS.primary,
-    textAlign: "center",
+    textAlign: 'center',
     letterSpacing: 1,
   },
 });
-

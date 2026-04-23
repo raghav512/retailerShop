@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import DatePicker from 'react-native-date-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
 import ImagePickerModal from '../../../common/reusableComponent/ImagePickerModal';
 import imagePickerService from '../../../services/imagePickerService';
@@ -80,6 +80,12 @@ const StaffUpdateProduct = () => {
           _id: p._id,
         }))
       : [{ parameter: '', unit: '', mrp: '', quantity: '', purchaseDate: '', expiryDate: '' }]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh data when screen comes into focus
+    }, [])
   );
 
   const handleChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));

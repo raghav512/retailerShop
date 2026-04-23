@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,17 +8,17 @@ import {
   ActivityIndicator,
   Image,
   Platform,
-} from "react-native";
-import { showAlert } from "../../../common/reusableComponent/CustomAlert";
-import Icon from "react-native-vector-icons/Ionicons";
-import { useDispatch } from "react-redux";
-import { logOut } from "../../../Redux/AuthSlice";
-import { useTranslation } from "react-i18next";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import apiService from "../../../Redux/apiService";
-import { API_BASE_URL } from "../../../config";
-import { launchImageLibrary } from "react-native-image-picker";
-import { getAccessToken } from "../../../Redux/Storage";
+} from 'react-native';
+import { showAlert } from '../../../common/reusableComponent/CustomAlert';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useDispatch } from 'react-redux';
+import { logOut } from '../../../Redux/AuthSlice';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import apiService from '../../../Redux/apiService';
+import { API_BASE_URL } from '../../../config';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { getAccessToken } from '../../../Redux/Storage';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
 const FarmerProfile = () => {
@@ -30,59 +30,56 @@ const FarmerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
-  const [profileImageNew, setProfileImageNew] = useState("");
+  const [profileImageNew, setProfileImageNew] = useState('');
 
   const MENU_ITEMS = [
     {
       id: 1,
-      title: t("personal_details"),
-      icon: "person",
-      screen: "PersonalDetails",
+      title: t('personal_details'),
+      icon: 'person',
+      screen: 'ScreenOne',
     },
     {
       id: 2,
-      title: t("address_details"),
-      icon: "location",
-      screen: "AddressDetails",
+      title: t('address_details'),
+      icon: 'location',
+      screen: 'ScreenSecond',
     },
     {
       id: 3,
-      title: t("farmer_category"),
-      icon: "leaf",
-      screen: "FarmerCategory",
+      title: t('farmer_category'),
+      icon: 'leaf',
+      screen: 'ScreenThird',
     },
     {
       id: 4,
-      title: t("crops_grown"),
-      icon: "flower",
-      screen: "CropsGrown",
+      title: t('crops_grown'),
+      icon: 'flower',
+      screen: 'ScreenFourth',
     },
     {
       id: 5,
-      title: t("bank_details"),
-      icon: "card",
-      screen: "ScreenSixth",
+      title: t('bank_details'),
+      icon: 'card',
+      screen: 'ScreenFifth',
     },
     {
       id: 6,
-      title: t("documents"),
-      icon: "document",
-      screen: "ScreenSeventh",
+      title: t('documents'),
+      icon: 'document',
+      screen: 'ScreenSeventh',
     },
     {
       id: 7,
-      title: t("private_files.title"),
-      icon: "folder-open",
-      screen: "PrivateFiles",
+      title: t('private_files.title'),
+      icon: 'folder-open',
+      screen: 'PrivateFiles',
     },
   ];
-  
-  const fetchUserDetails = async () => {
+
+  const fetchUserDetails = useCallback(async () => {
     try {
-      setLoading(true);
-
       const response = await apiService.getProfileDetails();
-
       const userData = response?.data || response;
 
       setUserDetails(userData);
@@ -90,47 +87,43 @@ const FarmerProfile = () => {
       let imageUri = null;
       if (userData?.profileImage) {
         if (
-          typeof userData.profileImage === "object" &&
+          typeof userData.profileImage === 'object' &&
           userData.profileImage.url
         ) {
           imageUri = userData.profileImage.url;
         } else if (
-          typeof userData.profileImage === "string" &&
-          userData.profileImage !== "null" &&
-          userData.profileImage !== "undefined"
+          typeof userData.profileImage === 'string' &&
+          userData.profileImage !== 'null' &&
+          userData.profileImage !== 'undefined'
         ) {
           imageUri = userData.profileImage;
         }
       }
 
       setProfileImage(imageUri);
+      setLoading(false);
     } catch (error) {
-      console.log("Fetch profile error:", error.message);
-    } finally {
+      console.log('Fetch profile error:', error.message);
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUserDetails();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       fetchUserDetails();
-    }, []),
+    }, [fetchUserDetails]),
   );
 
   const pickImage = async () => {
     launchImageLibrary(
       {
-        mediaType: "photo",
+        mediaType: 'photo',
         quality: 0.7,
         maxWidth: 400,
         maxHeight: 400,
         includeBase64: true,
       },
-      async (response) => {
+      async response => {
         if (response.didCancel || response.errorCode) return;
 
         const asset = response.assets[0];
@@ -145,10 +138,10 @@ const FarmerProfile = () => {
           const apiResponse = await fetch(
             `${API_BASE_URL}/api/user/update-profile`,
             {
-              method: "PUT",
+              method: 'PUT',
               headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 profileImage: `data:${asset.type};base64,${asset.base64}`,
@@ -165,15 +158,23 @@ const FarmerProfile = () => {
 
           const data = await apiResponse.json();
 
-          console.log("Upload successful:", data);
+          console.log('Upload successful:', data);
 
           setProfileImage(asset.uri);
           setProfileImageNew(null);
           await fetchUserDetails();
-          showAlert({ type: 'success', title: 'Success', message: 'Profile image updated successfully' });
+          showAlert({
+            type: 'success',
+            title: 'Success',
+            message: 'Profile image updated successfully',
+          });
         } catch (error) {
-          console.error("Upload error:", error.message);
-          showAlert({ type: 'error', title: 'Error', message: error.message || 'Failed to update profile' });
+          console.error('Upload error:', error.message);
+          showAlert({
+            type: 'error',
+            title: 'Error',
+            message: error.message || 'Failed to update profile',
+          });
         } finally {
           setUploading(false);
         }
@@ -207,7 +208,7 @@ const FarmerProfile = () => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.headerSpacer} />
-      <View style={styles.header}>
+        <View style={styles.header}>
           <View style={styles.profileRow}>
             <TouchableOpacity style={styles.avatar} onPress={pickImage}>
               {uploading ? (
@@ -218,33 +219,43 @@ const FarmerProfile = () => {
                   style={styles.avatarImage}
                 />
               ) : (
-                <Icon name="person" size={36} color={FARMER_COLORS.primaryLight} />
+                <Icon
+                  name="person"
+                  size={36}
+                  color={FARMER_COLORS.primaryLight}
+                />
               )}
               <View style={styles.cameraIcon}>
-                <Icon name="camera" size={14} color={FARMER_COLORS.primaryLight} />
+                <Icon
+                  name="camera"
+                  size={14}
+                  color={FARMER_COLORS.primaryLight}
+                />
               </View>
             </TouchableOpacity>
 
             <View style={styles.userInfo}>
               <Text style={styles.name}>
                 {loading
-                  ? t("common.loading")
-                  : `${userDetails?.firstName || ""} ${
-                      userDetails?.lastName || ""
+                  ? t('common.loading')
+                  : `${userDetails?.firstName || ''} ${
+                      userDetails?.lastName || ''
                     }`}
               </Text>
               <Text style={styles.phone}>
-                {loading ? t("common.loading") : `+91 ${userDetails?.phone || "N/A"}`}
+                {loading
+                  ? t('common.loading')
+                  : `+91 ${userDetails?.phone || 'N/A'}`}
               </Text>
               <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>{t("role_farmer")}</Text>
+                <Text style={styles.roleText}>{t('role_farmer')}</Text>
               </View>
             </View>
           </View>
         </View>
 
         <View style={styles.listWrapper}>
-          {MENU_ITEMS.map((item) => (
+          {MENU_ITEMS.map(item => (
             <TouchableOpacity
               key={item.id}
               style={styles.menuItem}
@@ -252,7 +263,11 @@ const FarmerProfile = () => {
             >
               <View style={styles.menuLeft}>
                 <View style={styles.menuIcon}>
-                  <Icon name={item.icon} size={20} color={FARMER_COLORS.primaryLight} />
+                  <Icon
+                    name={item.icon}
+                    size={20}
+                    color={FARMER_COLORS.primaryLight}
+                  />
                 </View>
                 <Text style={styles.menuText}>{item.title}</Text>
               </View>
@@ -262,8 +277,8 @@ const FarmerProfile = () => {
         </View>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={logoutUser}>
-          <Icon name="log-out" size={20} color="#DC2626" />
-          <Text style={styles.logoutText}>{t("logout")}</Text>
+          <Icon name="log-out" size={20} color="#FFFFFF" />
+          <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -276,100 +291,168 @@ export default FarmerProfile;
 
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 0,
   },
-  container: { flex: 1, backgroundColor: "#F4F6F8" },
+  container: {
+    flex: 1,
+    backgroundColor: FARMER_COLORS.background,
+  },
   header: {
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
-    paddingBottom: 24,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingTop: 24,
+    paddingBottom: 32,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 6 },
   },
-  profileRow: { flexDirection: "row", alignItems: "center" },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#FEF9E7",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-    borderWidth: 2,
-    borderColor: "#ffffff",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  avatarImage: { width: 80, height: 80, borderRadius: 40 },
+  avatarImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+  },
   cameraIcon: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: FARMER_COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 2,
+    borderColor: FARMER_COLORS.primary,
   },
-  userInfo: { marginLeft: 16, flex: 1 },
-  name: { fontSize: 22, fontWeight: "800", color: "#1A1A1A" },
-  phone: { fontSize: 14, color: "#6B7280", marginTop: 4, fontWeight: "500" },
+  userInfo: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: FARMER_COLORS.textOnPrimary,
+    letterSpacing: 0.3,
+    lineHeight: 30,
+  },
+  phone: {
+    fontSize: 14,
+    color: FARMER_COLORS.textSubOnPrimary,
+    marginTop: 4,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    opacity: 0.95,
+  },
   roleBadge: {
     marginTop: 8,
-    backgroundColor: "#FEF9E7",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  roleText: { fontSize: 12, color: FARMER_COLORS.primaryLight, fontWeight: "700" },
-  listWrapper: { paddingHorizontal: 16, marginTop: 24 },
+  roleText: {
+    fontSize: 11,
+    color: FARMER_COLORS.textOnPrimary,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  listWrapper: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
   menuItem: {
-    backgroundColor: "#ffffff",
+    backgroundColor: FARMER_COLORS.surface,
     borderRadius: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.1)',
   },
-  menuLeft: { flexDirection: "row", alignItems: "center" },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   menuIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    backgroundColor: "#FEF9E7",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
+    backgroundColor: FARMER_COLORS.tintCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.15)',
   },
-  menuText: { fontSize: 15, fontWeight: "600", color: "#374151" },
+  menuText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.2,
+  },
   logoutBtn: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: "#FEF2F2",
+    marginHorizontal: 20,
+    marginTop: 24,
+    backgroundColor: '#DC2626',
     paddingVertical: 16,
     borderRadius: 16,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: "#FEE2E2",
+    borderColor: '#B91C1C',
+    elevation: 2,
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-  logoutText: { color: "#DC2626", fontWeight: "700", fontSize: 15, marginLeft: 8 },
+  logoutText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 8,
+    letterSpacing: 0.3,
+  },
 });
-

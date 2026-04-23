@@ -1,4 +1,10 @@
-﻿import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+﻿import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+} from 'react';
 import {
   View,
   Text,
@@ -16,7 +22,11 @@ import {
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MIcon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
 import { useTranslation } from 'react-i18next';
 import ImageViewer from 'react-native-image-zoom-viewer';
@@ -46,11 +56,6 @@ const MarketplaceProductDetails = () => {
   const { items, product, productId, productName } = route.params || {};
 
   // Debug: Log incoming data
-  console.log('=== MARKETPLACE PRODUCT DETAILS DEBUG ===');
-  console.log('Items:', JSON.stringify(items, null, 2));
-  console.log('Product:', JSON.stringify(product, null, 2));
-  console.log('ProductId:', productId);
-  console.log('ProductName:', productName);
 
   /* ── State ──────────────────────────────────────────── */
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -71,27 +76,30 @@ const MarketplaceProductDetails = () => {
       try {
         setLoading(true);
         const firstItem = items?.[0] || product;
-        
+
         console.log('First item:', JSON.stringify(firstItem, null, 2));
-        
+
         // Fetch all products
-        console.log('📦 Fetching all FPO products...');
+        console.log('📦 Fetching all Distributor products...');
         const allProducts = await apiService.GetFPOProduct();
         console.log('📦 Total products fetched:', allProducts?.length);
-        
+
         if (!allProducts || allProducts.length === 0) {
           console.log('⚠️ No products returned from API');
           setFullProduct(firstItem);
           setLoading(false);
           return;
         }
-        
-        console.log('📦 Sample product structure:', JSON.stringify(allProducts[0], null, 2));
-        
+
+        console.log(
+          '📦 Sample product structure:',
+          JSON.stringify(allProducts[0], null, 2),
+        );
+
         // Try to match by image URL (most reliable)
         let productDetails = null;
         const itemImage = firstItem?.productImages?.[0];
-        
+
         if (itemImage) {
           console.log('🔍 Searching by image URL:', itemImage);
           productDetails = allProducts.find(p => {
@@ -101,38 +109,41 @@ const MarketplaceProductDetails = () => {
               return imgUrl === itemImage;
             });
           });
-          
+
           if (productDetails) {
             console.log('✅ Found product by image match!');
           }
         }
-        
+
         // If not found by image, try by brand + partial name match
         if (!productDetails && firstItem?.brand && firstItem?.itemName) {
           console.log('🔍 Searching by brand and name...');
           const itemBrand = firstItem.brand.toLowerCase();
           const itemNameParts = firstItem.itemName.toLowerCase().split(' ');
-          
+
           productDetails = allProducts.find(p => {
             const productBrand = (p.brand || '').toLowerCase();
             const productName = (p.productName || '').toLowerCase();
-            
+
             // Check if brand matches and product name contains any part of item name
             const brandMatch = productBrand === itemBrand;
-            const nameMatch = itemNameParts.some(part => 
-              part.length > 2 && productName.includes(part)
+            const nameMatch = itemNameParts.some(
+              part => part.length > 2 && productName.includes(part),
             );
-            
+
             return brandMatch && nameMatch;
           });
-          
+
           if (productDetails) {
             console.log('✅ Found product by brand+name match!');
           }
         }
-        
+
         if (productDetails) {
-          console.log('✅ Full product details:', JSON.stringify(productDetails, null, 2));
+          console.log(
+            '✅ Full product details:',
+            JSON.stringify(productDetails, null, 2),
+          );
           setFullProduct(productDetails);
         } else {
           console.log('⚠️ Product not found, using item data');
@@ -151,8 +162,11 @@ const MarketplaceProductDetails = () => {
 
   /* ── Normalise to flat items array ───────────────────── */
   const allItems = useMemo(() => {
-    console.log('🔄 Building allItems with fullProduct:', fullProduct ? 'FOUND' : 'NOT FOUND');
-    
+    console.log(
+      '🔄 Building allItems with fullProduct:',
+      fullProduct ? 'FOUND' : 'NOT FOUND',
+    );
+
     if (items && items.length > 0) {
       const normalized = items.map(item => {
         const result = {
@@ -165,7 +179,8 @@ const MarketplaceProductDetails = () => {
           productImages: fullProduct?.productImages || item.productImages || [],
           productVideos: fullProduct?.productVideos || [],
           description: fullProduct?.description || '',
-          productCategory: fullProduct?.productCategory || item.productCategory || '',
+          productCategory:
+            fullProduct?.productCategory || item.productCategory || '',
           targetCrops: fullProduct?.targetCrops || [],
           productTechnicalDetails: fullProduct?.productTechnicalDetails || '',
           howToUse: fullProduct?.howToUse || '',
@@ -177,22 +192,24 @@ const MarketplaceProductDetails = () => {
       return normalized;
     } else if (fullProduct || product) {
       const prod = fullProduct || product;
-      const result = [{
-        itemId: prod._id || prod.itemId,
-        itemName: prod.productName || prod.itemName,
-        brand: prod.brand,
-        unit: prod.unit || '',
-        price: prod.mrp || prod.price || 0,
-        availableQuantity: prod.quantity || prod.availableQuantity || 0,
-        productImages: prod.productImages || [],
-        productVideos: prod.productVideos || [],
-        description: prod.description || '',
-        productCategory: prod.productCategory || '',
-        targetCrops: prod.targetCrops || [],
-        productTechnicalDetails: prod.productTechnicalDetails || '',
-        howToUse: prod.howToUse || '',
-        productBenefits: prod.productBenefits || '',
-      }];
+      const result = [
+        {
+          itemId: prod._id || prod.itemId,
+          itemName: prod.productName || prod.itemName,
+          brand: prod.brand,
+          unit: prod.unit || '',
+          price: prod.mrp || prod.price || 0,
+          availableQuantity: prod.quantity || prod.availableQuantity || 0,
+          productImages: prod.productImages || [],
+          productVideos: prod.productVideos || [],
+          description: prod.description || '',
+          productCategory: prod.productCategory || '',
+          targetCrops: prod.targetCrops || [],
+          productTechnicalDetails: prod.productTechnicalDetails || '',
+          howToUse: prod.howToUse || '',
+          productBenefits: prod.productBenefits || '',
+        },
+      ];
       console.log('Normalized product:', result);
       return result;
     }
@@ -200,32 +217,35 @@ const MarketplaceProductDetails = () => {
   }, [items, product, fullProduct]);
 
   const selected = allItems[selectedIndex] || {};
-  
+
   console.log('📌 Selected item:', selected);
   console.log('📌 Description:', selected.description);
   console.log('📌 Videos:', selected.productVideos);
   console.log('📌 Target Crops:', selected.targetCrops);
-  
+
   // Process images
-  const images = (selected.productImages || []).map(img =>
-    typeof img === 'string' ? img : img?.url || img
-  ).filter(Boolean);
-  
+  const images = (selected.productImages || [])
+    .map(img => (typeof img === 'string' ? img : img?.url || img))
+    .filter(Boolean);
+
   // Process videos
-  const videos = (selected.productVideos || []).map(vid =>
-    typeof vid === 'string' ? vid : vid?.url || vid
-  ).filter(Boolean);
-  
+  const videos = (selected.productVideos || [])
+    .map(vid => (typeof vid === 'string' ? vid : vid?.url || vid))
+    .filter(Boolean);
+
   console.log('📌 Processed images:', images);
   console.log('📌 Processed videos:', videos);
-  
+
   const viewerImages = images.map(img => ({ url: img }));
 
   /* ── Helpers ────────────────────────────────────────── */
   const targetCropsArray = Array.isArray(selected.targetCrops)
     ? selected.targetCrops
     : typeof selected.targetCrops === 'string'
-    ? selected.targetCrops.split(',').map(s => s.trim()).filter(Boolean)
+    ? selected.targetCrops
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
     : [];
 
   const categoryLabel = selected.productCategory
@@ -239,7 +259,9 @@ const MarketplaceProductDetails = () => {
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) setCurrentImageIndex(viewableItems[0].index);
   }).current;
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 50,
+  }).current;
 
   const handleThumbnailPress = idx => {
     setCurrentImageIndex(idx);
@@ -255,15 +277,31 @@ const MarketplaceProductDetails = () => {
     } catch (_) {}
   }, []);
 
-  useFocusEffect(useCallback(() => { fetchCartCount(); }, [fetchCartCount]));
+  useFocusEffect(
+    useCallback(() => {
+      fetchCartCount();
+    }, [fetchCartCount]),
+  );
 
   const handleAddToCart = useCallback(async () => {
     try {
-      await apiService.addToCart({ itemId: selected.itemId, quantity, expectedPrice: selected.price });
+      await apiService.addToCart({
+        itemId: selected.itemId,
+        quantity,
+        expectedPrice: selected.price,
+      });
       await fetchCartCount();
-      showAlert({ type: 'success', title: t('success'), message: t('marketplace.item_added_to_cart') });
+      showAlert({
+        type: 'success',
+        title: t('success'),
+        message: t('marketplace.item_added_to_cart'),
+      });
     } catch (_) {
-      showAlert({ type: 'error', title: t('error'), message: t('marketplace.failed_add_to_cart') });
+      showAlert({
+        type: 'error',
+        title: t('error'),
+        message: t('marketplace.failed_add_to_cart'),
+      });
     }
   }, [selected, quantity, fetchCartCount, t]);
 
@@ -272,57 +310,95 @@ const MarketplaceProductDetails = () => {
     setSelectedIndex(idx);
     setCurrentImageIndex(0);
     setQuantity(1);
-    setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: false }), 100);
+    setTimeout(
+      () => flatListRef.current?.scrollToOffset({ offset: 0, animated: false }),
+      100,
+    );
   }, []);
 
   /* ══════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════ */
-  
+
   if (loading) {
     return (
       <View style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
         <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon
+              name="chevron-back"
+              size={24}
+              color={FARMER_COLORS.primaryLight}
+            />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('marketplace.product_details')}</Text>
-          <View style={{width: 44}} />
+          <Text style={styles.headerTitle}>
+            {t('marketplace.product_details')}
+          </Text>
+          <View style={{ width: 44 }} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={FARMER_COLORS.primaryLight} />
-          <Text style={styles.loadingText}>{t('marketplace.loading_product')}</Text>
+          <Text style={styles.loadingText}>
+            {t('marketplace.loading_product')}
+          </Text>
         </View>
       </View>
     );
   }
-  
+
   return (
     <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
 
       {/* ── HEADER ─────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon
+            name="chevron-back"
+            size={24}
+            color={FARMER_COLORS.primaryLight}
+          />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>{t('marketplace.product_details')}</Text>
+        <Text style={styles.headerTitle}>
+          {t('marketplace.product_details')}
+        </Text>
 
-        <TouchableOpacity style={[styles.backBtn, {backgroundColor: '#FEF2F2'}]} onPress={() => navigation.navigate('Cart')}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: '#FEF2F2' }]}
+          onPress={() => navigation.navigate('Cart')}
+        >
           <Icon name="cart" size={20} color="#EF4444" />
           {cartCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+              <Text style={styles.badgeText}>
+                {cartCount > 9 ? '9+' : cartCount}
+              </Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* ── IMAGE GALLERY ──────────────────────────────── */}
         <View style={styles.galleryCard}>
           {images.length > 0 ? (
@@ -355,7 +431,9 @@ const MarketplaceProductDetails = () => {
                 {/* Tap-to-zoom hint */}
                 <View style={styles.zoomTag}>
                   <Icon name="expand-outline" size={12} color="#fff" />
-                  <Text style={styles.zoomTagText}>{t('marketplace.tap_to_zoom')}</Text>
+                  <Text style={styles.zoomTagText}>
+                    {t('marketplace.tap_to_zoom')}
+                  </Text>
                 </View>
               </View>
 
@@ -363,8 +441,16 @@ const MarketplaceProductDetails = () => {
               {images.length > 1 && (
                 <View style={styles.dotsRow}>
                   {images.map((_, i) => (
-                    <TouchableOpacity key={i} onPress={() => handleThumbnailPress(i)}>
-                      <View style={[styles.dot, currentImageIndex === i && styles.dotActive]} />
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => handleThumbnailPress(i)}
+                    >
+                      <View
+                        style={[
+                          styles.dot,
+                          currentImageIndex === i && styles.dotActive,
+                        ]}
+                      />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -381,9 +467,16 @@ const MarketplaceProductDetails = () => {
                     <TouchableOpacity
                       key={i}
                       onPress={() => handleThumbnailPress(i)}
-                      style={[styles.thumb, currentImageIndex === i && styles.thumbActive]}
+                      style={[
+                        styles.thumb,
+                        currentImageIndex === i && styles.thumbActive,
+                      ]}
                     >
-                      <Image source={{ uri }} style={styles.thumbImg} resizeMode="contain" />
+                      <Image
+                        source={{ uri }}
+                        style={styles.thumbImg}
+                        resizeMode="contain"
+                      />
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -391,16 +484,26 @@ const MarketplaceProductDetails = () => {
             </>
           ) : (
             <View style={styles.noImage}>
-              <View style={[styles.iconWrapper, { width: 56, height: 56, borderRadius: 28 }]}>
-                <Icon name="image-outline" size={28} color={FARMER_COLORS.primaryLight} />
+              <View
+                style={[
+                  styles.iconWrapper,
+                  { width: 56, height: 56, borderRadius: 28 },
+                ]}
+              >
+                <Icon
+                  name="image-outline"
+                  size={28}
+                  color={FARMER_COLORS.primaryLight}
+                />
               </View>
-              <Text style={styles.noImageText}>{t('marketplace.no_images')}</Text>
+              <Text style={styles.noImageText}>
+                {t('marketplace.no_images')}
+              </Text>
             </View>
           )}
         </View>
 
         <View style={styles.bodyPad}>
-
           {/* ── PRODUCT INFO CARD ───────────────────────── */}
           <View style={styles.card}>
             {/* Category badge */}
@@ -414,7 +517,11 @@ const MarketplaceProductDetails = () => {
 
             <View style={styles.metaRow}>
               <View style={styles.iconWrapper}>
-                <Icon name="business" size={16} color={FARMER_COLORS.primaryLight} />
+                <Icon
+                  name="business"
+                  size={16}
+                  color={FARMER_COLORS.primaryLight}
+                />
               </View>
               <Text style={styles.metaText}>{selected.brand || 'N/A'}</Text>
             </View>
@@ -425,7 +532,9 @@ const MarketplaceProductDetails = () => {
                   <Icon name="leaf" size={16} color="#15803D" />
                 </View>
                 <Text style={styles.targetCropsText}>
-                  {t('marketplace.targets', { crops: targetCropsArray.join(', ') })}
+                  {t('marketplace.targets', {
+                    crops: targetCropsArray.join(', '),
+                  })}
                 </Text>
               </View>
             )}
@@ -433,13 +542,19 @@ const MarketplaceProductDetails = () => {
             {/* Price strip */}
             <View style={styles.priceStrip}>
               <View>
-                <Text style={styles.priceLabel}>{t('marketplace.price_per_unit', { unit: selected.unit || 'unit' })}</Text>
+                <Text style={styles.priceLabel}>
+                  {t('marketplace.price_per_unit', {
+                    unit: selected.unit || 'unit',
+                  })}
+                </Text>
                 <Text style={styles.price}>₹{selected.price || 0}</Text>
               </View>
               <View style={styles.stockPill}>
                 <Icon name="cube" size={14} color="#047857" />
                 <Text style={styles.stockPillText}>
-                  {t('marketplace.in_stock', { count: selected.availableQuantity || 0 })}
+                  {t('marketplace.in_stock', {
+                    count: selected.availableQuantity || 0,
+                  })}
                 </Text>
               </View>
             </View>
@@ -450,13 +565,24 @@ const MarketplaceProductDetails = () => {
             <View style={styles.card}>
               <View style={styles.cardTitleRow}>
                 <View style={styles.iconWrapper}>
-                  <Icon name="videocam" size={16} color={FARMER_COLORS.primaryLight} />
+                  <Icon
+                    name="videocam"
+                    size={16}
+                    color={FARMER_COLORS.primaryLight}
+                  />
                 </View>
-                <Text style={styles.cardTitle}>{t('marketplace.product_videos', { count: videos.length })}</Text>
+                <Text style={styles.cardTitle}>
+                  {t('marketplace.product_videos', { count: videos.length })}
+                </Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginTop: 12 }}
+              >
                 {videos.map((vid, i) => {
-                  const url = typeof vid === 'string' ? vid : vid?.url || vid?.uri || '';
+                  const url =
+                    typeof vid === 'string' ? vid : vid?.url || vid?.uri || '';
                   return (
                     <TouchableOpacity
                       key={i}
@@ -465,7 +591,11 @@ const MarketplaceProductDetails = () => {
                       activeOpacity={0.8}
                     >
                       <View style={styles.videoThumbPlay}>
-                        <Icon name="play-circle" size={36} color={FARMER_COLORS.primaryLight} />
+                        <Icon
+                          name="play-circle"
+                          size={36}
+                          color={FARMER_COLORS.primaryLight}
+                        />
                       </View>
                       <Text style={styles.videoThumbText} numberOfLines={1}>
                         {t('marketplace.video_number', { number: i + 1 })}
@@ -482,21 +612,47 @@ const MarketplaceProductDetails = () => {
             <View style={styles.card}>
               <View style={styles.cardTitleRow}>
                 <View style={styles.iconWrapper}>
-                  <Icon name="options" size={16} color={FARMER_COLORS.primaryLight} />
+                  <Icon
+                    name="options"
+                    size={16}
+                    color={FARMER_COLORS.primaryLight}
+                  />
                 </View>
-                <Text style={styles.cardTitle}>{t('marketplace.select_variant')}</Text>
+                <Text style={styles.cardTitle}>
+                  {t('marketplace.select_variant')}
+                </Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginTop: 10 }}
+              >
                 {allItems.map((itm, i) => (
                   <TouchableOpacity
                     key={itm.itemId || i}
                     onPress={() => handleSelectItem(i)}
-                    style={[styles.variantChip, selectedIndex === i && styles.variantChipActive]}
+                    style={[
+                      styles.variantChip,
+                      selectedIndex === i && styles.variantChipActive,
+                    ]}
                   >
-                    <Text style={[styles.variantChipUnit, selectedIndex === i && { color: '#fff' }]}>
+                    <Text
+                      style={[
+                        styles.variantChipUnit,
+                        selectedIndex === i && { color: '#fff' },
+                      ]}
+                    >
                       {itm.unit}
                     </Text>
-                    <Text style={[styles.variantChipPrice, selectedIndex === i && { color: '#ffffff', opacity: 0.9 }]}>
+                    <Text
+                      style={[
+                        styles.variantChipPrice,
+                        selectedIndex === i && {
+                          color: '#ffffff',
+                          opacity: 0.9,
+                        },
+                      ]}
+                    >
                       ₹{itm.price}
                     </Text>
                   </TouchableOpacity>
@@ -517,10 +673,18 @@ const MarketplaceProductDetails = () => {
                 return (
                   <TouchableOpacity
                     key={tab}
-                    style={[styles.tabItem, activeTab === i && styles.tabItemActive]}
+                    style={[
+                      styles.tabItem,
+                      activeTab === i && styles.tabItemActive,
+                    ]}
                     onPress={() => setActiveTab(i)}
                   >
-                    <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === i && styles.tabTextActive,
+                      ]}
+                    >
                       {label}
                     </Text>
                   </TouchableOpacity>
@@ -533,21 +697,51 @@ const MarketplaceProductDetails = () => {
               <View style={styles.tabBody}>
                 {selected.description ? (
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{t('marketplace.description')}</Text>
+                    <Text style={styles.sectionTitle}>
+                      {t('marketplace.description')}
+                    </Text>
                     <Text style={styles.bodyText}>{selected.description}</Text>
                   </View>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>{t('marketplace.product_info')}</Text>
-                <InfoRow icon="pricetag-outline" label={t('marketplace.price_label')} value={`₹${selected.price || 0}`} />
-                <InfoRow icon="cube-outline" label={t('marketplace.stock_label')} value={`${selected.availableQuantity || 0} ${selected.unit || 'units'}`} />
-                <InfoRow icon="resize-outline" label={t('marketplace.unit_label')} value={selected.unit || '—'} />
-                <InfoRow icon="business-outline" label={t('marketplace.brand_label')} value={selected.brand || '—'} />
+                <Text style={styles.sectionTitle}>
+                  {t('marketplace.product_info')}
+                </Text>
+                <InfoRow
+                  icon="pricetag-outline"
+                  label={t('marketplace.price_label')}
+                  value={`₹${selected.price || 0}`}
+                />
+                <InfoRow
+                  icon="cube-outline"
+                  label={t('marketplace.stock_label')}
+                  value={`${selected.availableQuantity || 0} ${
+                    selected.unit || 'units'
+                  }`}
+                />
+                <InfoRow
+                  icon="resize-outline"
+                  label={t('marketplace.unit_label')}
+                  value={selected.unit || '—'}
+                />
+                <InfoRow
+                  icon="business-outline"
+                  label={t('marketplace.brand_label')}
+                  value={selected.brand || '—'}
+                />
                 {categoryLabel && (
-                  <InfoRow icon="grid-outline" label={t('marketplace.category_label')} value={categoryLabel} />
+                  <InfoRow
+                    icon="grid-outline"
+                    label={t('marketplace.category_label')}
+                    value={categoryLabel}
+                  />
                 )}
                 {targetCropsArray.length > 0 && (
-                  <InfoRow icon="leaf-outline" label={t('marketplace.target_crops')} value={targetCropsArray.join(', ')} />
+                  <InfoRow
+                    icon="leaf-outline"
+                    label={t('marketplace.target_crops')}
+                    value={targetCropsArray.join(', ')}
+                  />
                 )}
               </View>
             )}
@@ -559,11 +753,19 @@ const MarketplaceProductDetails = () => {
                   <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
                       <View style={styles.iconWrapper}>
-                        <Icon name="beaker" size={14} color={FARMER_COLORS.primaryLight} />
+                        <Icon
+                          name="beaker"
+                          size={14}
+                          color={FARMER_COLORS.primaryLight}
+                        />
                       </View>
-                      <Text style={styles.sectionTitle}>{t('marketplace.technical_details')}</Text>
+                      <Text style={styles.sectionTitle}>
+                        {t('marketplace.technical_details')}
+                      </Text>
                     </View>
-                    <Text style={styles.bodyText}>{selected.productTechnicalDetails}</Text>
+                    <Text style={styles.bodyText}>
+                      {selected.productTechnicalDetails}
+                    </Text>
                   </View>
                 ) : null}
 
@@ -571,9 +773,15 @@ const MarketplaceProductDetails = () => {
                   <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
                       <View style={styles.iconWrapper}>
-                        <Icon name="book" size={14} color={FARMER_COLORS.primaryLight} />
+                        <Icon
+                          name="book"
+                          size={14}
+                          color={FARMER_COLORS.primaryLight}
+                        />
                       </View>
-                      <Text style={styles.sectionTitle}>{t('marketplace.how_to_use')}</Text>
+                      <Text style={styles.sectionTitle}>
+                        {t('marketplace.how_to_use')}
+                      </Text>
                     </View>
                     <Text style={styles.bodyText}>{selected.howToUse}</Text>
                   </View>
@@ -583,22 +791,43 @@ const MarketplaceProductDetails = () => {
                   <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
                       <View style={styles.iconWrapper}>
-                        <Icon name="checkmark-circle" size={14} color={FARMER_COLORS.primaryLight} />
+                        <Icon
+                          name="checkmark-circle"
+                          size={14}
+                          color={FARMER_COLORS.primaryLight}
+                        />
                       </View>
-                      <Text style={styles.sectionTitle}>{t('marketplace.benefits')}</Text>
+                      <Text style={styles.sectionTitle}>
+                        {t('marketplace.benefits')}
+                      </Text>
                     </View>
-                    <Text style={styles.bodyText}>{selected.productBenefits}</Text>
+                    <Text style={styles.bodyText}>
+                      {selected.productBenefits}
+                    </Text>
                   </View>
                 ) : null}
 
-                {!selected.productTechnicalDetails && !selected.howToUse && !selected.productBenefits && (
-                  <View style={styles.emptyTab}>
-                    <View style={[styles.iconWrapper, { width: 56, height: 56, borderRadius: 28 }]}>
-                      <Icon name="document-text" size={28} color={FARMER_COLORS.primaryLight} />
+                {!selected.productTechnicalDetails &&
+                  !selected.howToUse &&
+                  !selected.productBenefits && (
+                    <View style={styles.emptyTab}>
+                      <View
+                        style={[
+                          styles.iconWrapper,
+                          { width: 56, height: 56, borderRadius: 28 },
+                        ]}
+                      >
+                        <Icon
+                          name="document-text"
+                          size={28}
+                          color={FARMER_COLORS.primaryLight}
+                        />
+                      </View>
+                      <Text style={styles.emptyText}>
+                        {t('marketplace.no_details')}
+                      </Text>
                     </View>
-                    <Text style={styles.emptyText}>{t('marketplace.no_details')}</Text>
-                  </View>
-                )}
+                  )}
               </View>
             )}
 
@@ -607,14 +836,28 @@ const MarketplaceProductDetails = () => {
               <View style={styles.tabBody}>
                 {videos.length === 0 ? (
                   <View style={styles.emptyTab}>
-                    <View style={[styles.iconWrapper, { width: 56, height: 56, borderRadius: 28 }]}>
-                      <Icon name="videocam-off" size={28} color={FARMER_COLORS.primaryLight} />
+                    <View
+                      style={[
+                        styles.iconWrapper,
+                        { width: 56, height: 56, borderRadius: 28 },
+                      ]}
+                    >
+                      <Icon
+                        name="videocam-off"
+                        size={28}
+                        color={FARMER_COLORS.primaryLight}
+                      />
                     </View>
-                    <Text style={styles.emptyText}>{t('marketplace.no_videos')}</Text>
+                    <Text style={styles.emptyText}>
+                      {t('marketplace.no_videos')}
+                    </Text>
                   </View>
                 ) : (
                   videos.map((vid, i) => {
-                    const url = typeof vid === 'string' ? vid : vid?.url || vid?.uri || '';
+                    const url =
+                      typeof vid === 'string'
+                        ? vid
+                        : vid?.url || vid?.uri || '';
                     return (
                       <TouchableOpacity
                         key={i}
@@ -626,10 +869,20 @@ const MarketplaceProductDetails = () => {
                           <Icon name="play" size={22} color="#fff" />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.videoTitle}>{t('marketplace.product_video_number', { number: i + 1 })}</Text>
-                          <Text style={styles.videoSub}>{t('marketplace.tap_to_play')}</Text>
+                          <Text style={styles.videoTitle}>
+                            {t('marketplace.product_video_number', {
+                              number: i + 1,
+                            })}
+                          </Text>
+                          <Text style={styles.videoSub}>
+                            {t('marketplace.tap_to_play')}
+                          </Text>
                         </View>
-                        <Icon name="chevron-forward" size={18} color="#9CA3AF" />
+                        <Icon
+                          name="chevron-forward"
+                          size={18}
+                          color="#9CA3AF"
+                        />
                       </TouchableOpacity>
                     );
                   })
@@ -642,7 +895,11 @@ const MarketplaceProductDetails = () => {
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
               <View style={styles.iconWrapper}>
-                <Icon name="layers" size={16} color={FARMER_COLORS.primaryLight} />
+                <Icon
+                  name="layers"
+                  size={16}
+                  color={FARMER_COLORS.primaryLight}
+                />
               </View>
               <Text style={styles.cardTitle}>{t('marketplace.quantity')}</Text>
             </View>
@@ -652,7 +909,11 @@ const MarketplaceProductDetails = () => {
                 style={styles.qtyBtn}
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
               >
-                <Icon name="remove" size={20} color={FARMER_COLORS.primaryLight} />
+                <Icon
+                  name="remove"
+                  size={20}
+                  color={FARMER_COLORS.primaryLight}
+                />
               </TouchableOpacity>
 
               <Text style={styles.qtyValue}>{quantity}</Text>
@@ -660,20 +921,24 @@ const MarketplaceProductDetails = () => {
               <TouchableOpacity
                 style={styles.qtyBtn}
                 onPress={() =>
-                  setQuantity(Math.min(selected.availableQuantity || 999, quantity + 1))
+                  setQuantity(
+                    Math.min(selected.availableQuantity || 999, quantity + 1),
+                  )
                 }
               >
                 <Icon name="add" size={20} color={FARMER_COLORS.primaryLight} />
               </TouchableOpacity>
 
               <View style={styles.qtyTotal}>
-                <Text style={styles.qtyTotalLabel}>{t('marketplace.total')}</Text>
+                <Text style={styles.qtyTotalLabel}>
+                  {t('marketplace.total')}
+                </Text>
                 <Text style={styles.qtyTotalValue}>₹{totalPrice}</Text>
               </View>
             </View>
           </View>
-
-        </View>{/* /bodyPad */}
+        </View>
+        {/* /bodyPad */}
       </ScrollView>
 
       {/* ── STICKY FOOTER ──────────────────────────────── */}
@@ -682,9 +947,15 @@ const MarketplaceProductDetails = () => {
           <Text style={styles.footerLabel}>{t('marketplace.total_price')}</Text>
           <Text style={styles.footerPrice}>₹{totalPrice}</Text>
         </View>
-        <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.addToCartBtn}
+          onPress={handleAddToCart}
+          activeOpacity={0.85}
+        >
           <Icon name="cart" size={20} color="#ffffff" />
-          <Text style={styles.addToCartText}>{t('marketplace.add_to_cart')}</Text>
+          <Text style={styles.addToCartText}>
+            {t('marketplace.add_to_cart')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -737,7 +1008,11 @@ const MarketplaceProductDetails = () => {
               controls
               resizeMode="contain"
               onError={() => {
-                showAlert({ type: 'error', title: t('error'), message: t('marketplace.video_error') });
+                showAlert({
+                  type: 'error',
+                  title: t('error'),
+                  message: t('marketplace.video_error'),
+                });
                 setVideoModal({ visible: false, url: '' });
               }}
             />
@@ -764,7 +1039,8 @@ export default MarketplaceProductDetails;
 ══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
   headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
+    height: 6,
+    backgroundColor: '#ffffff',
   },
   loadingContainer: {
     flex: 1,
@@ -1280,7 +1556,7 @@ const styles = StyleSheet.create({
     color: FARMER_COLORS.primaryLight,
   },
   addToCartBtn: {
-    backgroundColor: '#1F2937',
+    backgroundColor: '#1b3e05',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
@@ -1332,4 +1608,3 @@ const styles = StyleSheet.create({
     height: SW * (9 / 16),
   },
 });
-

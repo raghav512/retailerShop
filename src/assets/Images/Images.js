@@ -1,5 +1,6 @@
 const Images = {
-  firstScreen: require('./Screen1.png'),
+  appLogo: require('./retailerLogo.png'),
+  firstScreen: require('./splash.png'),
   secondScreen: require('./Image1.png'),
   thirdScreen: require('./Screen3.png'),
   forthScreen: require('./Screen2.png'),
@@ -15,10 +16,11 @@ const Images = {
   Vector: require('./Vector.png'),
   SwitchAccount: require('./switch_account.png'),
   Mick: require('./mic.png'),
-  Market:require('./Marketplace.png'),
-  Listings:require('./Listings.png'),
-  Login:require('./login.png'),
-  DummyCrop:require('./crop.png'),
+  Market: require('./Marketplace.png'),
+  Listings: require('./Listings.png'),
+  Login: require('./login.png'),
+  DummyCrop: require('./crop.png'),
+  roleBased: require('./roleBased.png'),
 };
 
 export default Images;

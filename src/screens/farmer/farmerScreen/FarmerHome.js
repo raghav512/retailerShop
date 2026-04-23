@@ -1,4 +1,4 @@
-﻿import { useNavigation } from "@react-navigation/native";
+﻿import { useNavigation } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -10,21 +10,19 @@ import {
   Animated,
   Modal,
   TextInput,
-} from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { useTranslation } from "react-i18next";
-import LatestNotifications from "../../../components/LatestNotifications";
-import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useState, useCallback, useEffect } from "react";
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
+import LatestNotifications from '../../../components/LatestNotifications';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useCallback, useEffect } from 'react';
 import notifee, { EventType } from '@notifee/react-native';
 import messaging from '@react-native-firebase/messaging';
-import LanguageSwitcher from "../../../common/reusableComponent/LanguageSwitcher";
-import FloatingAIAssistant from "../../../animations/FloatingAIAssistant";
-import AdvertisementSlider from "../../../components/AdvertisementSlider";
+import LanguageSwitcher from '../../../common/reusableComponent/LanguageSwitcher';
+import FloatingAIAssistant from '../../../animations/FloatingAIAssistant';
+import AdvertisementSlider from '../../../components/AdvertisementSlider';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
-
-
 
 /* 🔹 Waving Hand Component */
 const WavingHand = () => {
@@ -33,18 +31,34 @@ const WavingHand = () => {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(waveAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-        Animated.timing(waveAnim, { toValue: -1, duration: 300, useNativeDriver: true }),
-        Animated.timing(waveAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(waveAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(waveAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waveAnim, {
+          toValue: -1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waveAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waveAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
         Animated.delay(2000),
-      ])
+      ]),
     ).start();
   }, []);
 
   const spin = waveAnim.interpolate({
     inputRange: [-1, 1],
-    outputRange: ['-20deg', '25deg']
+    outputRange: ['-20deg', '25deg'],
   });
 
   return (
@@ -56,20 +70,14 @@ const WavingHand = () => {
 
 /* 🔹 MOCK DATA (Replace with API later) */
 const QUICK_ACTIONS = [
-  { id: "1", key: "create_listing.title", icon: "pricetags" },
-  { id: "2", key: "farmer_tabs.marketplace", icon: "cart" },
-  { id: "3", key: "my_orders.title", icon: "receipt" },
-  { id: "4", key: "documents", icon: "folder-open" },
-  { id: "5", key: "my_farm", icon: "location" },
-  { id: "6", key: "my_crop", icon: "leaf" },
-  { id: "7", key: "crop_doctor", icon: "medkit" },
-  { id: "8", key: "mandi_prices", icon: "bar-chart" },
-  { id: "9", key: "community", icon: "people" },
+  { id: '1', key: 'my_farm', icon: 'home' },
+  { id: '2', key: 'my_crop', icon: 'leaf' },
+  { id: '3', key: 'crop_doctor', icon: 'medkit' },
+  { id: '4', key: 'my_orders.title', icon: 'receipt' },
 ];
 
-
 const FarmerHome = () => {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const { t } = useTranslation(); // 🌍
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -77,34 +85,37 @@ const FarmerHome = () => {
   useFocusEffect(
     useCallback(() => {
       const loadCount = async () => {
-        const count = await AsyncStorage.getItem("unreadCount");
+        const count = await AsyncStorage.getItem('unreadCount');
         setUnreadCount(count ? parseInt(count) : 0);
       };
       loadCount();
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
     // 1. Listen for background-to-foreground app state changes
-    const subscription = AppState.addEventListener("change", async (nextAppState) => {
-      if (nextAppState === "active") {
-        const stored = await AsyncStorage.getItem("unreadCount");
-        setUnreadCount(stored ? parseInt(stored) : 0);
-      }
-    });
+    const subscription = AppState.addEventListener(
+      'change',
+      async nextAppState => {
+        if (nextAppState === 'active') {
+          const stored = await AsyncStorage.getItem('unreadCount');
+          setUnreadCount(stored ? parseInt(stored) : 0);
+        }
+      },
+    );
 
     // 2. Notifee foreground event
     const unsubscribeNotifee = notifee.onForegroundEvent(async ({ type }) => {
       if (type === EventType.DELIVERED) {
-        const stored = await AsyncStorage.getItem("unreadCount");
+        const stored = await AsyncStorage.getItem('unreadCount');
         setUnreadCount(stored ? parseInt(stored) : 0);
       }
     });
 
     // 3. FCM foreground message event
-    const unsubscribeFCM = messaging().onMessage(async (remoteMessage) => {
+    const unsubscribeFCM = messaging().onMessage(async remoteMessage => {
       if (remoteMessage?.data?.type === 'ADMIN_BROADCAST') {
-        setUnreadCount((prev) => prev + 1);
+        setUnreadCount(prev => prev + 1);
       }
     });
 
@@ -115,52 +126,58 @@ const FarmerHome = () => {
     };
   }, []);
 
-
-
-  const handleActionPress = (key) => {
-    if (key === "documents") navigation.navigate("ScreenSeventh");
-    if (key === "create_listing.title") navigation.navigate("CreateListing");
-    if (key === "my_farm") navigation.navigate("MyFarms");
-    if (key === "my_crop") navigation.navigate("MyCrops");
-    if (key === "my_orders.title") navigation.navigate("MyOrders");
-    if (key === "farmer_tabs.marketplace") navigation.navigate("FarmerMarketTab");
-    if (key === "crop_doctor") navigation.navigate("CropDoctor");
-    if (key === "chatbot_label") navigation.navigate("ChatBot");
-    if (key === "community") navigation.navigate("Community");
-    if (key === "mandi_prices") navigation.navigate("MandiPricesScreen");
+  const handleActionPress = key => {
+    if (key === 'documents') navigation.navigate('ScreenSeventh');
+    if (key === 'create_listing.title') navigation.navigate('CreateListing');
+    if (key === 'my_farm') navigation.navigate('MyFarms');
+    if (key === 'my_crop') navigation.navigate('MyCrops');
+    if (key === 'my_orders.title') navigation.navigate('MyOrders');
+    if (key === 'farmer_tabs.marketplace')
+      navigation.navigate('FarmerMarketTab');
+    if (key === 'crop_doctor') navigation.navigate('CropDoctor');
+    if (key === 'chatbot_label') navigation.navigate('ChatBot');
+    if (key === 'community') navigation.navigate('Community');
+    if (key === 'mandi_prices') navigation.navigate('MandiPricesScreen');
   };
-
-  const primaryActions = QUICK_ACTIONS.slice(0, 2);
-  const secondaryActions = QUICK_ACTIONS.slice(2);
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* NEW MODERN HEADER */}
         <View style={styles.headerSpacer} />
-      <View style={styles.topBar}>
+        <View style={styles.topBar}>
           <View style={styles.greetingBox}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={styles.helloText}>{t("hello_farmer")} </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.helloText}>{t('hello_farmer')} </Text>
               <WavingHand />
             </View>
-            <Text style={styles.subText}>{t("welcome_back")}</Text>
+            <Text style={styles.subText}>{t('welcome_back')}</Text>
           </View>
           <View style={styles.headerRight}>
-            <LanguageSwitcher iconColor="#4A4A4A" style={styles.iconBtn} />
+            <LanguageSwitcher
+              iconColor={FARMER_COLORS.textOnPrimary}
+              style={styles.iconBtn}
+            />
             <TouchableOpacity
               style={styles.iconBtn}
               onPress={async () => {
-                await AsyncStorage.setItem("unreadCount", "0");
+                await AsyncStorage.setItem('unreadCount', '0');
                 setUnreadCount(0);
-                navigation.navigate("Broadcasts");
+                navigation.navigate('Broadcasts');
               }}
             >
-              <Icon name="notifications-outline" size={24} color="#4A4A4A" />
+              <Icon
+                name="notifications-outline"
+                size={24}
+                color={FARMER_COLORS.textOnPrimary}
+              />
               {unreadCount > 0 && (
                 <View style={styles.badgeIndicator}>
                   <Text style={styles.badgeNum}>
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </Text>
                 </View>
               )}
@@ -172,56 +189,42 @@ const FarmerHome = () => {
           <AdvertisementSlider />
         </View>
 
-        {/* EXPLORE SECTION - REPLACES QUICK ACTIONS GRID */}
+        {/* EXPLORE SECTION - QUICK ACTIONS GRID */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t("quick_actions")}</Text>
+          <Text style={styles.sectionTitle}>{t('quick_actions')}</Text>
         </View>
 
-        <View style={styles.primaryActionsContainer}>
-          {primaryActions.map((item, index) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.primaryCard, index === 0 ? styles.focusedCard : styles.lightCard]}
+        <View style={styles.quickActionsGrid}>
+          {QUICK_ACTIONS.map(item => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.actionCard}
               onPress={() => handleActionPress(item.key)}
             >
-              <View style={[styles.primaryIconWrapper, index === 0 ? styles.focusedIcon : styles.lightIcon]}>
-                <Icon name={item.icon} size={36} color={index === 0 ? "#222" : FARMER_COLORS.primaryLight} />
+              <View style={styles.actionIconContainer}>
+                <Icon
+                  name={item.icon}
+                  size={28}
+                  color={FARMER_COLORS.surface}
+                />
               </View>
-              <Text style={[styles.primaryCardText, index === 0 ? {color: "#222"} : {color: "#333"}]}>
-                {t(item.key)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.secondaryActionsWrapper}>
-          {secondaryActions.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.secondaryItem} 
-              onPress={() => handleActionPress(item.key)}
-            >
-              <View style={styles.circularIcon}>
-                <Icon name={item.icon} size={36} color="#555" />
-              </View>
-              <Text style={styles.secondaryItemText} numberOfLines={2}>
-                {t(item.key)}
-              </Text>
+              <Text style={styles.actionCardText}>{t(item.key)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t("latest_notifications", "Latest Notifications")}</Text>
+          <Text style={styles.sectionTitle}>
+            {t('latest_notifications', 'Latest Notifications')}
+          </Text>
         </View>
-        
+
         <View style={styles.notificationsWrapper}>
           <LatestNotifications />
         </View>
-
       </ScrollView>
-      
-      <FloatingAIAssistant onPress={() => navigation.navigate("ChatBot")} />
+
+      <FloatingAIAssistant onPress={() => navigation.navigate('ChatBot')} />
     </View>
   );
 };
@@ -229,172 +232,152 @@ const FarmerHome = () => {
 export default FarmerHome;
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
-  },
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8", // Modern light background
+    backgroundColor: FARMER_COLORS.background,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 88,
+  },
+  headerSpacer: {
+    height: 0,
   },
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 20,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderColor: "#E5E7EB",
+    paddingBottom: 32,
+    backgroundColor: FARMER_COLORS.primary,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 6,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   greetingBox: {
     flex: 1,
   },
   helloText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1A1A1A",
-    letterSpacing: 0.5,
+    fontSize: 28,
+    fontWeight: '700',
+    color: FARMER_COLORS.textOnPrimary,
+    letterSpacing: 0.3,
+    lineHeight: 34,
   },
   subText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: FARMER_COLORS.textSubOnPrimary,
     marginTop: 4,
-    fontWeight: "500",
+    fontWeight: '500',
+    letterSpacing: 0.3,
+    opacity: 0.95,
   },
   headerRight: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   iconBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badgeIndicator: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    backgroundColor: "#EF4444",
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFF",
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: FARMER_COLORS.primary,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   badgeNum: {
-    color: "#FFF",
+    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: "bold",
+    fontWeight: '700',
   },
   adWrapper: {
-    marginTop: 15,
+    marginTop: 24,
+    marginBottom: 8,
   },
   sectionHeader: {
     paddingHorizontal: 20,
-    marginTop: 24,
+    marginTop: 32,
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-    letterSpacing: 0.2,
+    fontSize: 20,
+    fontWeight: '700',
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
-  primaryActionsContainer: {
-    flexDirection: "row",
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 20,
-    gap: 15,
+    gap: 16,
   },
-  primaryCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    height: 120,
-    justifyContent: "space-between",
-  },
-  focusedCard: {
-    backgroundColor: FARMER_COLORS.primaryLight, // Farmer App Brand Accent
-  },
-  lightCard: {
-    backgroundColor: "#FFFFFF",
-  },
-  primaryIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  focusedIcon: {
-    backgroundColor: "rgba(255,255,255,0.4)",
-  },
-  lightIcon: {
-    backgroundColor: "#FEF9E7",
-  },
-  primaryCardText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  secondaryActionsWrapper: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 10,
-    marginTop: 18,
-  },
-  secondaryItem: {
-    width: "33.33%",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  circularIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+  actionCard: {
+    width: '47%',
+    aspectRatio: 1.3,
+    backgroundColor: FARMER_COLORS.surface,
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'space-between',
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: 'rgba(142, 171, 83, 0.12)',
   },
-  secondaryItemText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4B5563",
-    textAlign: "center",
-    paddingHorizontal: 4,
+  actionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: FARMER_COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: FARMER_COLORS.accent,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  actionCardText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: FARMER_COLORS.textPrimary,
+    letterSpacing: 0.2,
+    lineHeight: 20,
   },
   notificationsWrapper: {
-    marginHorizontal: 16,
-    borderRadius: 16,
+    marginHorizontal: 20,
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    elevation: 2,
-    shadowColor: "#000",
+    backgroundColor: FARMER_COLORS.surface,
+    elevation: 1,
+    shadowColor: FARMER_COLORS.accent,
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
-    paddingBottom: 10,
-  }
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.1)',
+  },
 });

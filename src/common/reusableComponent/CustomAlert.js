@@ -31,7 +31,12 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import React, { useImperativeHandle, forwardRef, useRef, useState } from 'react';
+import React, {
+  useImperativeHandle,
+  forwardRef,
+  useRef,
+  useState,
+} from 'react';
 import {
   Modal,
   View,
@@ -89,7 +94,7 @@ let _alertRef = null;
  * Call this anywhere in your app to show a sweet alert.
  * @param {{ type?: string, title: string, message: string, buttons?: Array }} options
  */
-export const showAlert = (options) => {
+export const showAlert = options => {
   if (_alertRef) {
     _alertRef.show(options);
   }
@@ -146,7 +151,7 @@ const CustomAlertInner = forwardRef((_, ref) => {
     },
   }));
 
-  const handleClose = (btn) => {
+  const handleClose = btn => {
     if (autoCloseTimer.current) {
       clearTimeout(autoCloseTimer.current);
       autoCloseTimer.current = null;
@@ -172,13 +177,13 @@ const CustomAlertInner = forwardRef((_, ref) => {
 
   const typeConf = TYPE_CONFIG[config.type] || DEFAULT;
 
-  const getButtonStyle = (style) => {
+  const getButtonStyle = style => {
     if (style === 'destructive') return styles.btnDestructive;
     if (style === 'cancel') return styles.btnCancel;
     return [styles.btnDefault, { backgroundColor: typeConf.color }];
   };
 
-  const getButtonTextStyle = (style) => {
+  const getButtonTextStyle = style => {
     if (style === 'cancel') return styles.btnCancelText;
     return styles.btnDefaultText;
   };
@@ -200,13 +205,17 @@ const CustomAlertInner = forwardRef((_, ref) => {
           ]}
         >
           {/* ── Icon ── */}
-          <View style={[styles.iconWrapper, { backgroundColor: typeConf.iconBg }]}>
+          <View
+            style={[styles.iconWrapper, { backgroundColor: typeConf.iconBg }]}
+          >
             <Icon name={typeConf.icon} size={38} color={typeConf.color} />
           </View>
 
           {/* ── Title ── */}
           {!!config.title && (
-            <Text style={[styles.title, { color: typeConf.color }]}>{config.title}</Text>
+            <Text style={[styles.title, { color: typeConf.color }]}>
+              {config.title}
+            </Text>
           )}
 
           {/* ── Message ── */}
@@ -215,7 +224,9 @@ const CustomAlertInner = forwardRef((_, ref) => {
           )}
 
           {/* ── Divider ── */}
-          <View style={[styles.divider, { backgroundColor: typeConf.color + '30' }]} />
+          <View
+            style={[styles.divider, { backgroundColor: typeConf.color + '30' }]}
+          />
 
           {/* ── Buttons ── */}
           <View
@@ -254,7 +265,9 @@ export const CustomAlertHost = () => {
   // register the singleton
   React.useEffect(() => {
     _alertRef = ref.current;
-    return () => { _alertRef = null; };
+    return () => {
+      _alertRef = null;
+    };
   }, []);
 
   return <CustomAlertInner ref={ref} />;

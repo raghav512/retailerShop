@@ -12,6 +12,11 @@ import {
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/Ionicons";
+import {
+  validateFirstName,
+  validateLastName,
+  validateMobileNumber,
+} from "../../../utils/validation";
 
 
 const Screen1 = ({ route }) => {
@@ -25,18 +30,51 @@ const Screen1 = ({ route }) => {
   const [password, setPassword] = useState("");
   const [gender, setGender] = useState("Male");
   
+  const [errors, setErrors] = useState({});
+  
 const handleContinue = () => {
-    if (!firstName || !mobile || !password || !lastName) {
-     showAlert({ type: 'warning', title: t("error"), message: t("fill_required_fields") });
+    const newErrors = {};
+
+    // Validate First Name
+    const firstNameValidation = validateFirstName(firstName);
+    if (!firstNameValidation.isValid) {
+      newErrors.firstName = firstNameValidation.message;
+    }
+
+    // Validate Last Name
+    const lastNameValidation = validateLastName(lastName);
+    if (!lastNameValidation.isValid) {
+      newErrors.lastName = lastNameValidation.message;
+    }
+
+    // Validate Mobile Number
+    const mobileValidation = validateMobileNumber(mobile);
+    if (!mobileValidation.isValid) {
+      newErrors.mobile = mobileValidation.message;
+    }
+
+    // Validate Password
+    if (!password || password.trim() === "") {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    // Check if there are any errors
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      showAlert({ type: 'warning', title: t("error"), message: firstError });
       return;
     }
 
+    setErrors({});
     navigation.navigate("Screen2", {
       screen1Data: {
-        firstName,
-        lastName,
-        phone: mobile,
-         password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: mobile.trim(),
+        password,
         gender: gender.toLowerCase(),
       },
       themeColor,
@@ -72,25 +110,49 @@ const handleContinue = () => {
 
         <Text style={styles.cardTitle}>{t("personal_details")}</Text>
 
-        {/* FULL NAME */}
+        {/* FIRST NAME */}
         <Text style={styles.label}>{t("first_name")} *</Text>
         <TextInput
           placeholder={t("enter_first_name")}
           placeholderTextColor="#9CA3AF"
-          style={styles.input}
+          style={[styles.input, errors.firstName && styles.inputError]}
           value={firstName}
-          onChangeText={setfirstName}
+          onChangeText={(text) => {
+            setfirstName(text);
+            if (errors.firstName) {
+              setErrors({ ...errors, firstName: null });
+            }
+          }}
+          onBlur={() => {
+            const validation = validateFirstName(firstName);
+            if (!validation.isValid) {
+              setErrors({ ...errors, firstName: validation.message });
+            }
+          }}
         />
+        {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
 
- {/* FULL NAME */}
+        {/* LAST NAME */}
         <Text style={styles.label}>{t("last_name")} *</Text>
         <TextInput
           placeholder={t("enter_last_name")}
           placeholderTextColor="#9CA3AF"
-          style={styles.input}
+          style={[styles.input, errors.lastName && styles.inputError]}
           value={lastName}
-          onChangeText={setlastName}
+          onChangeText={(text) => {
+            setlastName(text);
+            if (errors.lastName) {
+              setErrors({ ...errors, lastName: null });
+            }
+          }}
+          onBlur={() => {
+            const validation = validateLastName(lastName);
+            if (!validation.isValid) {
+              setErrors({ ...errors, lastName: validation.message });
+            }
+          }}
         />
+        {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
 
         {/* MOBILE */}
         <Text style={styles.label}>{t("mobile_number")} *</Text>
@@ -98,20 +160,48 @@ const handleContinue = () => {
           placeholder={t("mobile_placeholder_short")}
           placeholderTextColor="#9CA3AF"
           keyboardType="numeric"
-          style={styles.input}
+          maxLength={10}
+          style={[styles.input, errors.mobile && styles.inputError]}
           value={mobile}
-          onChangeText={setMobile}
+          onChangeText={(text) => {
+            const numericText = text.replace(/[^0-9]/g, '');
+            setMobile(numericText);
+            if (errors.mobile) {
+              setErrors({ ...errors, mobile: null });
+            }
+          }}
+          onBlur={() => {
+            const validation = validateMobileNumber(mobile);
+            if (!validation.isValid) {
+              setErrors({ ...errors, mobile: validation.message });
+            }
+          }}
         />
+        {errors.mobile && <Text style={styles.errorText}>{errors.mobile}</Text>}
 
         {/* PASSWORD */}
 <Text style={styles.label}>{t("password")} *</Text>
 <TextInput
   placeholder={t("enter_password")}
   placeholderTextColor="#9CA3AF"
-  style={styles.input}
+  secureTextEntry
+  style={[styles.input, errors.password && styles.inputError]}
   value={password}
-  onChangeText={setPassword}
+  onChangeText={(text) => {
+    setPassword(text);
+    if (errors.password) {
+      setErrors({ ...errors, password: null });
+    }
+  }}
+  onBlur={() => {
+    if (!password || password.trim() === "") {
+      setErrors({ ...errors, password: "Password is required" });
+    } else if (password.length < 6) {
+      setErrors({ ...errors, password: "Password must be at least 6 characters" });
+    }
+  }}
 />
+{errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
         {/* GENDER */}
         <Text style={styles.label}>{t("gender")} *</Text>
@@ -249,6 +339,16 @@ progressBarFill: {
     backgroundColor: "#FAFAFA",
     fontSize: 14,
     color:"black"
+  },
+  inputError: {
+    borderColor: "#EF4444",
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 
   /* GENDER */

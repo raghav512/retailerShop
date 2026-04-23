@@ -7,6 +7,13 @@ import Profile from '../TabScreen/Profile';
 import Visits from '../TabScreen/Visits';
 import Performance from '../TabScreen/Performance';
 import HomeSecond from '../TabScreen/HomeSecond';
+import Inquiry from '../TabScreen/Inquiry';
+import InquiryDetails from '../TabScreen/InquiryDetails';
+import Attendance from '../TabScreen/Attendance';
+import ApplyLeave from '../TabScreen/ApplyLeave';
+import Orders from '../TabScreen/Orders';
+import OrderDetails from '../TabScreen/OrderDetails';
+import TaskAssigned from '../TabScreen/TaskAssigned';
 import Listing from '../TabScreen/Listing';
 import ListingDetails from '../TabScreen/ListingDetails';
 import AddPurchaseEntry from '../TabScreen/AddPurchaseEntry ';
@@ -27,6 +34,7 @@ import Screen4 from '../../Signup/Form/Screen4';
 import Screen5 from '../../Signup/Form/Screen5';
 import Screen6 from '../../Signup/Form/Screen6';
 import Screen7 from '../../Signup/Form/Screen7';
+import TaskDetailScreen from '../TabScreen/TaskDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,14 +44,24 @@ const LoadingIndicator = () => (
   </View>
 );
 
-
 export const UserStackHome = () => (
   <Suspense fallback={<LoadingIndicator />}>
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Broadcasts" component={BroadcastsScreen} />
-      <Stack.Screen name="BroadcastDetails" component={BroadcastDetailsScreen} />
+      <Stack.Screen
+        name="BroadcastDetails"
+        component={BroadcastDetailsScreen}
+      />
       <Stack.Screen name="HomeSecond" component={HomeSecond} />
+      <Stack.Screen name="Inquiry" component={Inquiry} />
+      <Stack.Screen name="InquiryDetails" component={InquiryDetails} />
+      <Stack.Screen name="Attendance" component={Attendance} />
+      <Stack.Screen name="ApplyLeave" component={ApplyLeave} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+      <Stack.Screen name="Orders" component={Orders} />
+      <Stack.Screen name="OrderDetails" component={OrderDetails} />
+      <Stack.Screen name="TaskAssigned" component={TaskAssigned} />
       <Stack.Screen name="Listing" component={Listing} />
       <Stack.Screen name="ListingDetails" component={ListingDetails} />
       <Stack.Screen name="StaffCreateListing" component={StaffCreateListing} />
@@ -51,7 +69,6 @@ export const UserStackHome = () => (
     </Stack.Navigator>
   </Suspense>
 );
-
 
 export const UserStackVisit = () => (
   <Suspense fallback={<LoadingIndicator />}>
@@ -84,7 +101,10 @@ export const UserStackInventory = () => (
       <Stack.Screen name="StaffInventory" component={StaffInventory} />
       <Stack.Screen name="StaffAddProduct" component={StaffAddProduct} />
       <Stack.Screen name="StaffUpdateProduct" component={StaffUpdateProduct} />
-      <Stack.Screen name="StaffProductDetails" component={StaffProductDetails} />
+      <Stack.Screen
+        name="StaffProductDetails"
+        component={StaffProductDetails}
+      />
     </Stack.Navigator>
   </Suspense>
 );
@@ -108,4 +128,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

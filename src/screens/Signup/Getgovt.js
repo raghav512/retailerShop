@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+﻿import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,11 @@ import {
   Image,
   TouchableOpacity,
   Animated,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import Images from "../../assets/Images/Images";
-import { useTranslation } from "react-i18next";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Images from '../../assets/Images/Images';
+import { useTranslation } from 'react-i18next';
 import { FARMER_COLORS } from '../../colorsList/ColorList';
-
 
 const Getgovt = () => {
   const navigation = useNavigation();
@@ -44,7 +43,7 @@ const Getgovt = () => {
   const handleNext = () => {
     navigation.navigate('Roll');
   };
-    
+
   return (
     <View style={styles.container}>
       {/* ANIMATED APP NAME */}
@@ -54,8 +53,8 @@ const Getgovt = () => {
           transform: [{ translateY: slideAnim }],
         }}
       >
-        <Text style={styles.appName}>Beej Se Bazar</Text>
-        <Text style={styles.subTitle}>{t("get_govt_subtitle")}</Text>
+        <Text style={styles.appName}>Retailer Management System</Text>
+        <Text style={styles.subTitle}>{t('get_govt_subtitle')}</Text>
       </Animated.View>
 
       {/* ANIMATED IMAGE CARD */}
@@ -88,18 +87,23 @@ const Getgovt = () => {
           transform: [{ translateY: slideAnim }],
         }}
       >
-        <TouchableOpacity onPress={() => handleNext()} style={styles.nextButton}>
-          <Text style={styles.nextText}>{t("next")}</Text>
+        <TouchableOpacity
+          onPress={() => handleNext()}
+          style={styles.nextButton}
+        >
+          <Text style={styles.nextText}>{t('next')}</Text>
         </TouchableOpacity>
       </Animated.View>
 
       {/* ANIMATED SKIP BUTTON */}
       <Animated.View style={{ opacity: fadeAnim }}>
-        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('Roll')}>
-          <Text style={styles.skipText}>{t("skip")}</Text>
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={() => navigation.navigate('Roll')}
+        >
+          <Text style={styles.skipText}>{t('skip')}</Text>
         </TouchableOpacity>
       </Animated.View>
-
     </View>
   );
 };
@@ -110,50 +114,50 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     paddingHorizontal: 24,
     paddingTop: 50,
   },
 
   appName: {
     fontSize: 26,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
     marginTop: 5,
     color: FARMER_COLORS.primary,
   },
 
   subTitle: {
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 6,
     marginBottom: 20,
-    color: "#6B7280",
+    color: '#6B7280',
     fontSize: 14,
   },
 
   card: {
-    width: "100%",
-    backgroundColor: "#fff",
+    width: '100%',
+    backgroundColor: '#fff',
     borderRadius: 20,
-    alignItems: "center",
-    overflow: "hidden",
+    alignItems: 'center',
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: '#F3F4F6',
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
   },
 
   mainImage: {
-    width: "100%",
+    width: '100%',
     height: 500,
   },
 
   dotContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 20,
     gap: 6,
   },
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
   dotInactive: {
     height: 7,
     width: 7,
-    backgroundColor: "#C8C8C8",
+    backgroundColor: '#C8C8C8',
     borderRadius: 10,
   },
 
@@ -178,17 +182,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginTop: 35,
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
   },
 
   nextText: {
-    textAlign: "center",
-    color: "white",
+    textAlign: 'center',
+    color: 'white',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   skipButton: {
@@ -196,9 +200,9 @@ const styles = StyleSheet.create({
   },
 
   skipText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 14,
-    color: "gray",
+    color: 'gray',
   },
 });
 

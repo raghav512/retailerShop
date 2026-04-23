@@ -62,7 +62,7 @@ const App = () => {
 
   return (
     <Provider store={store}>
-      <PersistGate loading={<Splashscreen />} persistor={persistor}>
+      <PersistGate loading={null} persistor={persistor}>
         <LanguageProvider>
           <SafeAreaProvider>
             <NavigationContainer ref={navigationRef}>
