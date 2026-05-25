@@ -1,109 +1,4 @@
-# # OSX
-# #
-# .DS_Store
-
-# # Xcode
-# #
-# build/
-# *.pbxuser
-# !default.pbxuser
-# *.mode1v3
-# !default.mode1v3
-# *.mode2v3
-# !default.mode2v3
-# *.perspectivev3
-# !default.perspectivev3
-# xcuserdata
-# *.xccheckout
-# *.moved-aside
-# DerivedData
-# *.hmap
-# *.ipa
-# *.xcuserstate
-# **/.xcode.env.local
-
-# # Android/IntelliJ
-# #
-# build/
-# .idea
-# .gradle
-# local.properties
-# *.iml
-# *.hprof
-# .cxx/
-# *.keystore
-!debug.keystore
-# .kotlin/
-
-# # node.js
-# #
-node_modules/
-# npm-debug.log
-# yarn-error.log
-
-# # fastlane
-# #
-# # It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
-# # screenshots whenever they are needed.
-# # For more information about the recommended setup visit:
-# # https://docs.fastlane.tools/best-practices/source-control/
-
-# # **/fastlane/report.xml
-# # **/fastlane/Preview.html
-# # **/fastlane/screenshots
-# # **/fastlane/test_output
-
-# # # Bundle artifact
-# # *.jsbundle
-
-# # # Ruby / CocoaPods
-# # **/Pods/
-# # /vendor/bundle/
-
-# # # Temporary files created by Metro to check the health of the file watcher
-# # .metro-health-check*
-
-# # # testing
-# # /coverage
-
-# # # Yarn
-# # .yarn/*
-# # !.yarn/patches
-# # !.yarn/plugins
-# # !.yarn/releases
-# # !.yarn/sdks
-# # !.yarn/versions
-
-# environment configurations
-.env
-config.js
-
-# # # -- New Additions --
-# # # React Native Bundles & Assets
-# # android/app/src/main/assets/index.android.bundle
-# # ios/main.jsbundle
-
-# # # Environment Variations
-# # .env.local
-# # .env.development.local
-# # .env.test.local
-# # .env.production.local
-
-# # # Editor & System Overrides
-# # .vscode/
-# # Thumbs.db
-# # *.swp
-# # *.swoit
-
-# # # Modern Build Paths
-# # android/app/build/
-# # android/build/
-# # ios/build/
-# # ios/DerivedData/
-# # ios/*.xcworkspace/xcuserdata/
-
-# # # Snapshot Testing
-# # __tests__/__snapshots__/
+gitignore id="ln6m9f"
 node_modules/
 android/build/
 ios/build/
@@ -114,7 +9,37 @@ android/.gradle/
 android/app/.cxx/
 ios/DerivedData/
 
-# Keep generated React Native bundles and maps out of git.
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+**/.xcode.env.local
+
+.idea
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
+*.keystore
+!debug.keystore
+
+.env
+config.js
+
 android/app/src/main/assets/index.android.bundle
 android/app/src/main/assets/index.android.bundle.map
 ios/main.jsbundle
+
