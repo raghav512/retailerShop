@@ -125,6 +125,7 @@ const Distributor = {
   farmer_listing: 'किसान लिस्टिंग',
   all_tasks: 'सभी कार्य',
   Community: 'समुदाय',
+  inquiry: 'पूछताछ',
   ledger: 'लेजर',
 
   wheat: 'गेहूं',

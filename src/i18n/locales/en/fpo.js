@@ -126,6 +126,7 @@ const Distributor = {
   farmer_listing: 'Farmer Listing',
   all_tasks: 'All Tasks',
   Community: 'Community',
+  inquiry: 'Inquiry',
   ledger: 'Ledger',
 
   wheat: 'Wheat',
@@ -207,8 +208,40 @@ const Distributor = {
     },
     app_name: 'KrishiGyan Distributor App',
   },
-  roles: {
-    Distributor: 'Distributor',
+  
+  fpo_profile: {
+    title: 'My Profile',
+    edit: 'Edit',
+    account_details: 'Account Details',
+    features_title: 'Features',
+    account: {
+      phone: 'Phone Number',
+      email: 'Email Address',
+      shop: 'Shop Name',
+    },
+    features: {
+      documents: {
+        title: 'Documents',
+        sub: 'Licenses and certificates',
+      },
+    },
+    settings: {
+      title: 'Settings',
+      notifications: 'Notifications',
+      language: 'Language',
+      privacy: 'Privacy Policy',
+      help: 'Help & Support',
+      logout: 'Logout',
+      logout_msg: 'Are you sure you want to logout?',
+      cancel: 'Cancel',
+    },
+  },
+  
+  role: {
+    farmer: 'Farmer',
+    staff: 'Staff',
+    retailer: 'Retailer',
+    distributor: 'Distributor',
   },
   field_mapping: {
     title: 'Field & Crop Mapping',

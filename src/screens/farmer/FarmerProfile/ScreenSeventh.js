@@ -26,6 +26,7 @@ const ScreenSeventh = () => {
   const [soilCard, setSoilCard] = useState(null);
   const [labReport, setLabReport] = useState(null);
   const [govDoc, setGovDoc] = useState(null);
+  const [otherDocuments, setOtherDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
 
@@ -47,7 +48,11 @@ const ScreenSeventh = () => {
         size: file.size,
       });
     } catch (error) {
-      if (error.code === "DOCUMENT_PICKER_CANCELED") {
+      const isPickerCancelled =
+        error?.code === "OPERATION_CANCELED" ||
+        error?.code === "DOCUMENT_PICKER_CANCELED";
+
+      if (isPickerCancelled) {
         return;
       } else {
         console.log('Picker error:', error);
@@ -57,7 +62,7 @@ const ScreenSeventh = () => {
   };
 
   const handleSave = async () => {
-    if (!soilCard && !labReport && !govDoc) {
+    if (!soilCard && !labReport && !govDoc && otherDocuments.length === 0) {
       showAlert({ type: 'warning', title: t('error'), message: t('profile_screens.upload_at_least_one') });
       return;
     }
@@ -81,6 +86,16 @@ const ScreenSeventh = () => {
       if (govDoc) {
         const base64 = await ReactNativeBlobUtil.fs.readFile(govDoc.uri, 'base64');
         payload.govtSchemeDocs = `data:${govDoc.type || 'application/pdf'};base64,${base64}`;
+      }
+
+      if (otherDocuments.length > 0) {
+        const otherDocsBase64 = await Promise.all(
+          otherDocuments.map(async (doc) => {
+            const base64 = await ReactNativeBlobUtil.fs.readFile(doc.uri, 'base64');
+            return `data:${doc.type || 'application/pdf'};base64,${base64}`;
+          })
+        );
+        payload.otherDocuments = otherDocsBase64;
       }
 
       const response = await fetch(`${API_BASE_URL}/api/user/update-profile`, {
@@ -122,7 +137,7 @@ const ScreenSeventh = () => {
           <Icon name="arrow-back" size={24} color={FARMER_COLORS.textOnPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t("profile_screens.document_upload")}</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacerView} />
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -191,6 +206,39 @@ const ScreenSeventh = () => {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Other Documents */}
+        <Text style={styles.sectionLabel}>{t("profile_screens.other_documents")}</Text>
+        {otherDocuments.map((doc, index) => (
+          <View key={index} style={styles.uploadContainer}>
+            <TouchableOpacity
+              style={[styles.uploadBox, styles.uploadBoxActive]}
+              onPress={() => {
+                pickDocument((newDoc) => {
+                  const updated = [...otherDocuments];
+                  updated[index] = newDoc;
+                  setOtherDocuments(updated);
+                });
+              }}
+            >
+              <Text style={styles.uploadText}>{doc.name}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.removeBtn}
+              onPress={() => setOtherDocuments(otherDocuments.filter((_, i) => i !== index))}
+            >
+              <Icon name="close-circle" size={20} color="#D32F2F" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          style={styles.addDocBtn}
+          onPress={() => pickDocument((doc) => setOtherDocuments([...otherDocuments, doc]))}
+        >
+          <Icon name="add-circle" size={20} color={FARMER_COLORS.primary} />
+          <Text style={styles.addDocText}>{t("profile_screens.add_other_document")}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* SAVE BUTTON */}
@@ -207,7 +255,7 @@ const ScreenSeventh = () => {
         )}
       </TouchableOpacity>
 
-      <View style={{ height: 30 }} />
+      <View style={styles.sectionSpacer} />
 
       {/* DISCLAIMER SECTION */}
       <View style={styles.disclaimerContainer}>
@@ -230,7 +278,7 @@ const ScreenSeventh = () => {
         )}
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
@@ -276,6 +324,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: FARMER_COLORS.textOnPrimary,
     letterSpacing: 0.3,
+  },
+  headerSpacerView: {
+    width: 40,
   },
   card: {
     backgroundColor: FARMER_COLORS.surface,
@@ -357,6 +408,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  sectionSpacer: {
+    height: 30,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
   disclaimerContainer: {
     marginHorizontal: 20,
     marginTop: 8,
@@ -382,6 +439,31 @@ const styles = StyleSheet.create({
     color: FARMER_COLORS.textSecondary,
     fontWeight: '500',
     lineHeight: 20,
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: FARMER_COLORS.textPrimary,
+    marginTop: 16,
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
+  addDocBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: FARMER_COLORS.primary,
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  addDocText: {
+    color: FARMER_COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 
 });

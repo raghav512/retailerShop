@@ -22,7 +22,7 @@ const Route = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 3500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -33,7 +33,7 @@ const Route = () => {
       ) : userData == null ? (
         <BindAuth />
       ) : (
-        <BindUser />
+        <BindUser role={userData?.user?.role} />
       )}
     </>
   );

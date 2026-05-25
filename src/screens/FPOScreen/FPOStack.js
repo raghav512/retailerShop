@@ -1,4 +1,4 @@
-﻿import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import React, { Suspense } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const Stack = createNativeStackNavigator();
@@ -18,6 +18,7 @@ import OrderDetails from './FpoScreen/OrderDetails';
 import FarmerListing from './FpoScreen/FarmerListing';
 import FarmerListingDetails from './FpoScreen/FarmerListingDetails';
 import FarmerDetails from './FpoScreen/FarmerDetails';
+import AllActiveFarms from './FpoScreen/AllActiveFarms';
 import FarmDetails from '../farmer/farmerScreen/FarmDetails';
 import Screen1 from '../Signup/Form/Screen1';
 import Screen2 from '../Signup/Form/Screen2';
@@ -35,6 +36,9 @@ import FpoPrivateFiles from './FpoScreen/FpoPrivateFiles';
 import FpoUploadDocuments from './FpoScreen/FpoUploadDocuments';
 import AllTasksAssigned from './FpoScreen/AllTasksAssigned';
 import AssignTask from './FpoScreen/AssignTask';
+import InquiryList from './FpoScreen/InquiryList';
+import InquiryDetails from './FpoScreen/InquiryDetails';
+import AttendanceCalendar from './FpoScreen/AttendanceCalendar';
 import { FPO_COLORS } from '../../colorsList/ColorList';
 
 const LoadingIndicator = () => (
@@ -55,8 +59,12 @@ export const UserStackHome = () => {
       }}>
     
             <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="AllActiveFarms" component={AllActiveFarms} />
             <Stack.Screen name="AssignTask" component={AssignTask} />
             <Stack.Screen name="AllTasksAssigned" component={AllTasksAssigned} />
+            <Stack.Screen name="InquiryList" component={InquiryList} />
+            <Stack.Screen name="InquiryDetails" component={InquiryDetails} />
+            <Stack.Screen name="AttendanceCalendar" component={AttendanceCalendar} />
             <Stack.Screen name="Broadcasts" component={BroadcastsScreen} />
             <Stack.Screen name="BroadcastDetails" component={BroadcastDetailsScreen} />
             <Stack.Screen name="SendBroadcast" component={SendBroadcastScreen} />
@@ -192,4 +200,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

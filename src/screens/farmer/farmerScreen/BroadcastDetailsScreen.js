@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../../Redux/apiService';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
@@ -128,19 +129,35 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+            <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
             
-            {/* ── Custom Header ── */}
-            <View style={styles.headerSpacer} />
-            <View style={styles.navHeader}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
-                    <Icon name="arrow-back" size={24} color="#1F2937" />
-                </TouchableOpacity>
-                <Text style={styles.navTitle} numberOfLines={1}>
-                    {t('broadcasts.detail_title')}
-                </Text>
-                <View style={styles.backBtn} />
-            </View>
+            {/* Gradient Header */}
+            <LinearGradient
+                colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientHeader}
+            >
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.backBtn}
+                        onPress={() => navigation.goBack()}
+                        activeOpacity={0.7}
+                    >
+                        <Icon name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>{t('broadcasts.detail_title', 'Broadcast Details')}</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.shareBtn}
+                        onPress={handleShare}
+                        activeOpacity={0.7}
+                    >
+                        <Icon name="share-outline" size={24} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {imageUrl && (
@@ -171,6 +188,44 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F4F6F8',
+    },
+    /* GRADIENT HEADER */
+    gradientHeader: {
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        paddingBottom: 12,
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    backBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerCenter: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: "800",
+        color: "#fff",
+    },
+    shareBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     loaderContainer: {
         flex: 1,
@@ -203,47 +258,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
 
-    /* ── Nav Header ── */
-    headerSpacer: {
-        height: 6,
-        backgroundColor: "#ffffff",
-    },
-    navHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        backgroundColor: '#ffffff',
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-        elevation: 8,
-        shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 5 },
-        zIndex: 10,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navTitle: {
-        flex: 1,
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1F2937',
-        marginHorizontal: 8,
-        textAlign: 'center',
-    },
-    shareBtn: {
-        padding: 4,
-    },
-
     /* ── Content ── */
     image: {
         width: width,
@@ -251,12 +265,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#e0e0e0',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
+        marginTop: 16,
     },
     content: {
         padding: 24,
         backgroundColor: '#ffffff',
         marginHorizontal: 16,
-        marginTop: -30,
+        marginTop: 16,
         borderRadius: 24,
         elevation: 4,
         shadowColor: '#000',

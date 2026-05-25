@@ -31,7 +31,7 @@ import apiService from '../../../Redux/apiService';
 import { useTranslation } from 'react-i18next';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Video from 'react-native-video';
-import { FARMER_COLORS } from '../../../colorsList/ColorList';
+import { FARMER_COLORS, STAFF_COLORS } from '../../../colorsList/ColorList';
 
 /*──────────────────────────────────────────────────────────
   MarketplaceProductDetails
@@ -53,9 +53,26 @@ const MarketplaceProductDetails = () => {
     t('marketplace.tab_videos'),
   ];
 
-  const { items, product, productId, productName } = route.params || {};
+  const {
+    items,
+    product,
+    productId,
+    productName,
+    isStaffOrder,
+    selectedFarmerId,
+    selectedFarmerData,
+    selectedFarmerName,
+  } = route.params || {};
 
-  // Debug: Log incoming data
+  const COLORS = isStaffOrder ? STAFF_COLORS : FARMER_COLORS;
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
+
+  console.log('PRODUCT DETAILS CONTEXT:', {
+    isStaffOrder,
+    selectedFarmerId,
+    selectedFarmerName,
+    farmerPhone: selectedFarmerData?.phone,
+  });
 
   /* ── State ──────────────────────────────────────────── */
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -67,6 +84,7 @@ const MarketplaceProductDetails = () => {
   const [videoModal, setVideoModal] = useState({ visible: false, url: '' });
   const [fullProduct, setFullProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const flatListRef = useRef(null);
 
@@ -271,11 +289,13 @@ const MarketplaceProductDetails = () => {
   /* ── Cart ───────────────────────────────────────────── */
   const fetchCartCount = useCallback(async () => {
     try {
-      const res = await apiService.getCart();
+      const res = await apiService.getCart(
+        isStaffOrder ? selectedFarmerId : undefined,
+      );
       const cartItems = res?.data?.items || [];
       setCartCount(cartItems.reduce((s, i) => s + i.quantity, 0));
     } catch (_) {}
-  }, []);
+  }, [isStaffOrder, selectedFarmerId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -284,12 +304,30 @@ const MarketplaceProductDetails = () => {
   );
 
   const handleAddToCart = useCallback(async () => {
+    if (isAddingToCart) return;
     try {
-      await apiService.addToCart({
+      setIsAddingToCart(true);
+      console.log('========== ADD TO CART ==========');
+      console.log('isStaffOrder:', isStaffOrder);
+      console.log('selectedFarmerId:', selectedFarmerId);
+      console.log('itemId:', selected.itemId);
+      console.log('quantity:', quantity);
+      console.log('expectedPrice:', selected.price);
+      console.log('=================================');
+
+      const payload = {
         itemId: selected.itemId,
         quantity,
         expectedPrice: selected.price,
-      });
+      };
+
+      if (isStaffOrder && selectedFarmerId) {
+        payload.farmerId = selectedFarmerId;
+      }
+
+      console.log('ADD TO CART PAYLOAD:', payload);
+
+      await apiService.addToCart(payload);
       await fetchCartCount();
       showAlert({
         type: 'success',
@@ -302,8 +340,10 @@ const MarketplaceProductDetails = () => {
         title: t('error'),
         message: t('marketplace.failed_add_to_cart'),
       });
+    } finally {
+      setIsAddingToCart(false);
     }
-  }, [selected, quantity, fetchCartCount, t]);
+  }, [selected, quantity, fetchCartCount, t, isStaffOrder, selectedFarmerId, isAddingToCart]);
 
   /* ── Variant selection ──────────────────────────────── */
   const handleSelectItem = useCallback(idx => {
@@ -346,7 +386,7 @@ const MarketplaceProductDetails = () => {
           <View style={{ width: 44 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={FARMER_COLORS.primaryLight} />
+          <ActivityIndicator size="large" color={COLORS.primaryLight} />
           <Text style={styles.loadingText}>
             {t('marketplace.loading_product')}
           </Text>
@@ -369,11 +409,7 @@ const MarketplaceProductDetails = () => {
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
         >
-          <Icon
-            name="chevron-back"
-            size={24}
-            color={FARMER_COLORS.primaryLight}
-          />
+          <Icon name="chevron-back" size={24} color={COLORS.primaryLight} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
@@ -382,7 +418,14 @@ const MarketplaceProductDetails = () => {
 
         <TouchableOpacity
           style={[styles.backBtn, { backgroundColor: '#FEF2F2' }]}
-          onPress={() => navigation.navigate('Cart')}
+          onPress={() =>
+            navigation.navigate('Cart', {
+              isStaffOrder,
+              selectedFarmerId,
+              selectedFarmerData,
+              selectedFarmerName,
+            })
+          }
         >
           <Icon name="cart" size={20} color="#EF4444" />
           {cartCount > 0 && (
@@ -493,7 +536,7 @@ const MarketplaceProductDetails = () => {
                 <Icon
                   name="image-outline"
                   size={28}
-                  color={FARMER_COLORS.primaryLight}
+                  color={COLORS.primaryLight}
                 />
               </View>
               <Text style={styles.noImageText}>
@@ -517,11 +560,7 @@ const MarketplaceProductDetails = () => {
 
             <View style={styles.metaRow}>
               <View style={styles.iconWrapper}>
-                <Icon
-                  name="business"
-                  size={16}
-                  color={FARMER_COLORS.primaryLight}
-                />
+                <Icon name="business" size={16} color={COLORS.primaryLight} />
               </View>
               <Text style={styles.metaText}>{selected.brand || 'N/A'}</Text>
             </View>
@@ -565,11 +604,7 @@ const MarketplaceProductDetails = () => {
             <View style={styles.card}>
               <View style={styles.cardTitleRow}>
                 <View style={styles.iconWrapper}>
-                  <Icon
-                    name="videocam"
-                    size={16}
-                    color={FARMER_COLORS.primaryLight}
-                  />
+                  <Icon name="videocam" size={16} color={COLORS.primaryLight} />
                 </View>
                 <Text style={styles.cardTitle}>
                   {t('marketplace.product_videos', { count: videos.length })}
@@ -590,16 +625,22 @@ const MarketplaceProductDetails = () => {
                       onPress={() => setVideoModal({ visible: true, url })}
                       activeOpacity={0.8}
                     >
-                      <View style={styles.videoThumbPlay}>
-                        <Icon
-                          name="play-circle"
-                          size={36}
-                          color={FARMER_COLORS.primaryLight}
-                        />
+                      <Video
+                        source={{ uri: url }}
+                        style={styles.videoThumbPreview}
+                        paused={true}
+                        muted={true}
+                        resizeMode="cover"
+                        repeat={false}
+                      />
+                      <View style={styles.videoThumbOverlay}>
+                        <Icon name="play-circle" size={36} color="#ffffff" />
                       </View>
-                      <Text style={styles.videoThumbText} numberOfLines={1}>
-                        {t('marketplace.video_number', { number: i + 1 })}
-                      </Text>
+                      <View style={styles.videoThumbLabel}>
+                        <Text style={styles.videoThumbText} numberOfLines={1}>
+                          {t('marketplace.video_number', { number: i + 1 })}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -612,11 +653,7 @@ const MarketplaceProductDetails = () => {
             <View style={styles.card}>
               <View style={styles.cardTitleRow}>
                 <View style={styles.iconWrapper}>
-                  <Icon
-                    name="options"
-                    size={16}
-                    color={FARMER_COLORS.primaryLight}
-                  />
+                  <Icon name="options" size={16} color={COLORS.primaryLight} />
                 </View>
                 <Text style={styles.cardTitle}>
                   {t('marketplace.select_variant')}
@@ -711,6 +748,7 @@ const MarketplaceProductDetails = () => {
                   icon="pricetag-outline"
                   label={t('marketplace.price_label')}
                   value={`₹${selected.price || 0}`}
+                  COLORS={COLORS}
                 />
                 <InfoRow
                   icon="cube-outline"
@@ -718,22 +756,26 @@ const MarketplaceProductDetails = () => {
                   value={`${selected.availableQuantity || 0} ${
                     selected.unit || 'units'
                   }`}
+                  COLORS={COLORS}
                 />
                 <InfoRow
                   icon="resize-outline"
                   label={t('marketplace.unit_label')}
                   value={selected.unit || '—'}
+                  COLORS={COLORS}
                 />
                 <InfoRow
                   icon="business-outline"
                   label={t('marketplace.brand_label')}
                   value={selected.brand || '—'}
+                  COLORS={COLORS}
                 />
                 {categoryLabel && (
                   <InfoRow
                     icon="grid-outline"
                     label={t('marketplace.category_label')}
                     value={categoryLabel}
+                    COLORS={COLORS}
                   />
                 )}
                 {targetCropsArray.length > 0 && (
@@ -741,6 +783,7 @@ const MarketplaceProductDetails = () => {
                     icon="leaf-outline"
                     label={t('marketplace.target_crops')}
                     value={targetCropsArray.join(', ')}
+                    COLORS={COLORS}
                   />
                 )}
               </View>
@@ -756,7 +799,7 @@ const MarketplaceProductDetails = () => {
                         <Icon
                           name="beaker"
                           size={14}
-                          color={FARMER_COLORS.primaryLight}
+                          color={COLORS.primaryLight}
                         />
                       </View>
                       <Text style={styles.sectionTitle}>
@@ -776,7 +819,7 @@ const MarketplaceProductDetails = () => {
                         <Icon
                           name="book"
                           size={14}
-                          color={FARMER_COLORS.primaryLight}
+                          color={COLORS.primaryLight}
                         />
                       </View>
                       <Text style={styles.sectionTitle}>
@@ -794,7 +837,7 @@ const MarketplaceProductDetails = () => {
                         <Icon
                           name="checkmark-circle"
                           size={14}
-                          color={FARMER_COLORS.primaryLight}
+                          color={COLORS.primaryLight}
                         />
                       </View>
                       <Text style={styles.sectionTitle}>
@@ -820,7 +863,7 @@ const MarketplaceProductDetails = () => {
                         <Icon
                           name="document-text"
                           size={28}
-                          color={FARMER_COLORS.primaryLight}
+                          color={COLORS.primaryLight}
                         />
                       </View>
                       <Text style={styles.emptyText}>
@@ -845,7 +888,7 @@ const MarketplaceProductDetails = () => {
                       <Icon
                         name="videocam-off"
                         size={28}
-                        color={FARMER_COLORS.primaryLight}
+                        color={COLORS.primaryLight}
                       />
                     </View>
                     <Text style={styles.emptyText}>
@@ -865,8 +908,18 @@ const MarketplaceProductDetails = () => {
                         onPress={() => setVideoModal({ visible: true, url })}
                         activeOpacity={0.8}
                       >
-                        <View style={styles.videoPlayCircle}>
-                          <Icon name="play" size={22} color="#fff" />
+                        <View style={styles.videoCardPreview}>
+                          <Video
+                            source={{ uri: url }}
+                            style={styles.videoCardPreviewMedia}
+                            paused={true}
+                            muted={true}
+                            resizeMode="cover"
+                            repeat={false}
+                          />
+                          <View style={styles.videoCardPlay}>
+                            <Icon name="play" size={18} color="#fff" />
+                          </View>
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.videoTitle}>
@@ -895,11 +948,7 @@ const MarketplaceProductDetails = () => {
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
               <View style={styles.iconWrapper}>
-                <Icon
-                  name="layers"
-                  size={16}
-                  color={FARMER_COLORS.primaryLight}
-                />
+                <Icon name="layers" size={16} color={COLORS.primaryLight} />
               </View>
               <Text style={styles.cardTitle}>{t('marketplace.quantity')}</Text>
             </View>
@@ -909,11 +958,7 @@ const MarketplaceProductDetails = () => {
                 style={styles.qtyBtn}
                 onPress={() => setQuantity(Math.max(1, quantity - 1))}
               >
-                <Icon
-                  name="remove"
-                  size={20}
-                  color={FARMER_COLORS.primaryLight}
-                />
+                <Icon name="remove" size={20} color={COLORS.primaryLight} />
               </TouchableOpacity>
 
               <Text style={styles.qtyValue}>{quantity}</Text>
@@ -926,7 +971,7 @@ const MarketplaceProductDetails = () => {
                   )
                 }
               >
-                <Icon name="add" size={20} color={FARMER_COLORS.primaryLight} />
+                <Icon name="add" size={20} color={COLORS.primaryLight} />
               </TouchableOpacity>
 
               <View style={styles.qtyTotal}>
@@ -948,14 +993,21 @@ const MarketplaceProductDetails = () => {
           <Text style={styles.footerPrice}>₹{totalPrice}</Text>
         </View>
         <TouchableOpacity
-          style={styles.addToCartBtn}
+          style={[styles.addToCartBtn, isAddingToCart && styles.addToCartBtnDisabled]}
           onPress={handleAddToCart}
           activeOpacity={0.85}
+          disabled={isAddingToCart}
         >
-          <Icon name="cart" size={20} color="#ffffff" />
-          <Text style={styles.addToCartText}>
-            {t('marketplace.add_to_cart')}
-          </Text>
+          {isAddingToCart ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <>
+              <Icon name="cart" size={20} color="#ffffff" />
+              <Text style={styles.addToCartText}>
+                {t('marketplace.add_to_cart')}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -1024,587 +1076,629 @@ const MarketplaceProductDetails = () => {
 };
 
 /* ── InfoRow helper ─────────────────────────────────────── */
-const InfoRow = ({ icon, label, value }) => (
-  <View style={styles.infoRow}>
-    <Icon name={icon} size={15} color={FARMER_COLORS.primaryLight} />
-    <Text style={styles.infoLabel}>{label}</Text>
-    <Text style={styles.infoValue}>{value}</Text>
-  </View>
-);
+const InfoRow = ({ icon, label, value, COLORS }) => {
+  const infoStyles = useMemo(() => getStyles(COLORS), [COLORS]);
+  return (
+    <View style={infoStyles.infoRow}>
+      <Icon name={icon} size={15} color={COLORS.primaryLight} />
+      <Text style={infoStyles.infoLabel}>{label}</Text>
+      <Text style={infoStyles.infoValue}>{value}</Text>
+    </View>
+  );
+};
 
 export default MarketplaceProductDetails;
 
-/* ══════════════════════════════════════════════════════════
-   STYLES — matches app design language
-══════════════════════════════════════════════════════════ */
-const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-    backgroundColor: '#ffffff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F4F6F8',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F6F8',
-  },
+const getStyles = COLORS =>
+  StyleSheet.create({
+    headerSpacer: {
+      height: 6,
+      backgroundColor: '#ffffff',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#F4F6F8',
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: '#6B7280',
+      fontWeight: '600',
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: '#F4F6F8',
+    },
 
-  /* HEADER */
-  header: {
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
-  },
-  headerTitle: {
-    color: '#1F2937',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FEF9E7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-  },
+    /* HEADER */
+    header: {
+      backgroundColor: '#ffffff',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      elevation: 8,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 5 },
+      zIndex: 10,
+    },
+    headerTitle: {
+      color: '#1F2937',
+      fontSize: 18,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+    },
+    backBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#FEF9E7',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    badge: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      backgroundColor: '#EF4444',
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 3,
+    },
+    badgeText: {
+      color: '#fff',
+      fontSize: 9,
+      fontWeight: '700',
+    },
 
-  /* GALLERY CARD */
-  galleryCard: {
-    backgroundColor: '#fff',
-    margin: 16,
-    marginBottom: 0,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  noImage: {
-    height: IMG_H,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-  },
-  noImageText: {
-    fontSize: 13,
-    color: '#9CA3AF',
-  },
-  zoomTag: {
-    position: 'absolute',
-    bottom: 10,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  zoomTagText: {
-    color: '#fff',
-    fontSize: 11,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 5,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#C8E6C9',
-  },
-  dotActive: {
-    width: 18,
-    backgroundColor: FARMER_COLORS.primaryLight,
-  },
-  thumbStrip: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  thumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    overflow: 'hidden',
-    marginRight: 8,
-  },
-  thumbActive: {
-    borderColor: FARMER_COLORS.primaryLight,
-  },
-  thumbImg: {
-    width: '100%',
-    height: '100%',
-  },
+    /* GALLERY CARD */
+    galleryCard: {
+      backgroundColor: '#fff',
+      margin: 16,
+      marginBottom: 0,
+      borderRadius: 20,
+      overflow: 'hidden',
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+    },
+    noImage: {
+      height: IMG_H,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+    },
+    noImageText: {
+      fontSize: 13,
+      color: '#9CA3AF',
+    },
+    zoomTag: {
+      position: 'absolute',
+      bottom: 10,
+      left: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 20,
+    },
+    zoomTagText: {
+      color: '#fff',
+      fontSize: 11,
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 10,
+      gap: 5,
+    },
+    dot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: '#C8E6C9',
+    },
+    dotActive: {
+      width: 18,
+      backgroundColor: COLORS.primaryLight,
+    },
+    thumbStrip: {
+      paddingHorizontal: 12,
+      paddingBottom: 12,
+      gap: 8,
+    },
+    thumb: {
+      width: 52,
+      height: 52,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      overflow: 'hidden',
+      marginRight: 8,
+    },
+    thumbActive: {
+      borderColor: COLORS.primaryLight,
+    },
+    thumbImg: {
+      width: '100%',
+      height: '100%',
+    },
 
-  /* BODY PADDING */
-  bodyPad: {
-    padding: 16,
-    paddingBottom: 0,
-    gap: 12,
-  },
+    /* BODY PADDING */
+    bodyPad: {
+      padding: 16,
+      paddingBottom: 0,
+      gap: 12,
+    },
 
-  /* CARD (reusable) */
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#374151',
-  },
+    /* CARD (reusable) */
+    card: {
+      backgroundColor: '#ffffff',
+      borderRadius: 16,
+      padding: 16,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    cardTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8,
+    },
+    cardTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#374151',
+    },
 
-  /* ICON WRAPPER */
-  iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FEF9E7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    /* ICON WRAPPER */
+    iconWrapper: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: '#FEF9E7',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 
-  /* PRODUCT INFO */
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginBottom: 10,
-  },
-  categoryBadgeText: {
-    color: '#16A34A',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  productName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 10,
-    lineHeight: 26,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  targetCropsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-    backgroundColor: '#F0FDF4',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-  },
-  targetCropsText: {
-    fontSize: 14,
-    color: '#15803D',
-    fontWeight: '600',
-    flex: 1,
-  },
-  priceStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: '#F4F6F8',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 2,
-    fontWeight: '500',
-  },
-  price: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: FARMER_COLORS.primaryLight,
-  },
-  stockPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#D1FAE5',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  stockPillText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#047857',
-  },
+    /* PRODUCT INFO */
+    categoryBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#DCFCE7',
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      marginBottom: 10,
+    },
+    categoryBadgeText: {
+      color: '#16A34A',
+      fontSize: 11,
+      fontWeight: '700',
+      textTransform: 'capitalize',
+    },
+    productName: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#111827',
+      marginBottom: 10,
+      lineHeight: 26,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 6,
+    },
+    metaText: {
+      fontSize: 13,
+      color: '#6B7280',
+    },
+    targetCropsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+      backgroundColor: '#F0FDF4',
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#BBF7D0',
+    },
+    targetCropsText: {
+      fontSize: 14,
+      color: '#15803D',
+      fontWeight: '600',
+      flex: 1,
+    },
+    priceStrip: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 12,
+      backgroundColor: '#F4F6F8',
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+    },
+    priceLabel: {
+      fontSize: 12,
+      color: '#6B7280',
+      marginBottom: 2,
+      fontWeight: '500',
+    },
+    price: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: COLORS.primaryLight,
+    },
+    stockPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: '#D1FAE5',
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    stockPillText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#047857',
+    },
 
-  /* VARIANT CHIPS */
-  variantChip: {
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 10,
-    backgroundColor: '#F9FAF8',
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  variantChipActive: {
-    backgroundColor: FARMER_COLORS.primaryLight,
-    borderColor: FARMER_COLORS.primaryLight,
-  },
-  variantChipUnit: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  variantChipPrice: {
-    fontSize: 12,
-    color: FARMER_COLORS.primaryLight,
-    marginTop: 2,
-    fontWeight: '700',
-  },
+    /* VARIANT CHIPS */
+    variantChip: {
+      borderWidth: 1.5,
+      borderColor: '#E5E7EB',
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      marginRight: 10,
+      backgroundColor: '#F9FAF8',
+      alignItems: 'center',
+      minWidth: 80,
+    },
+    variantChipActive: {
+      backgroundColor: COLORS.primaryLight,
+      borderColor: COLORS.primaryLight,
+    },
+    variantChipUnit: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#374151',
+    },
+    variantChipPrice: {
+      fontSize: 12,
+      color: COLORS.primaryLight,
+      marginTop: 2,
+      fontWeight: '700',
+    },
 
-  /* TABS */
-  tabCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  tabItemActive: {
-    borderBottomColor: FARMER_COLORS.primaryLight,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  tabTextActive: {
-    color: FARMER_COLORS.primaryLight,
-    fontWeight: '800',
-  },
-  tabBody: {
-    padding: 16,
-    gap: 12,
-  },
+    /* TABS */
+    tabCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 16,
+      overflow: 'hidden',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    tabBar: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+    },
+    tabItem: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 16,
+      borderBottomWidth: 3,
+      borderBottomColor: 'transparent',
+    },
+    tabItemActive: {
+      borderBottomColor: COLORS.primaryLight,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#6B7280',
+    },
+    tabTextActive: {
+      color: COLORS.primaryLight,
+      fontWeight: '800',
+    },
+    tabBody: {
+      padding: 16,
+      gap: 12,
+    },
 
-  /* SECTIONS INSIDE TAB */
-  section: {
-    gap: 8,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F4F1',
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  bodyText: {
-    fontSize: 13,
-    color: '#374151',
-    lineHeight: 20,
-  },
+    /* SECTIONS INSIDE TAB */
+    section: {
+      gap: 8,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F0F4F1',
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#333',
+      marginBottom: 4,
+    },
+    bodyText: {
+      fontSize: 13,
+      color: '#374151',
+      lineHeight: 20,
+    },
 
-  /* INFOROW */
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 7,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#F0F4F1',
-  },
-  infoLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  infoValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
+    /* INFOROW */
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 7,
+      borderBottomWidth: 0.5,
+      borderBottomColor: '#F0F4F1',
+    },
+    infoLabel: {
+      flex: 1,
+      fontSize: 13,
+      color: '#6B7280',
+    },
+    infoValue: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#111827',
+    },
 
-  /* EMPTY TAB */
-  emptyTab: {
-    alignItems: 'center',
-    paddingVertical: 30,
-    gap: 10,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: '#9CA3AF',
-  },
+    /* EMPTY TAB */
+    emptyTab: {
+      alignItems: 'center',
+      paddingVertical: 30,
+      gap: 10,
+    },
+    emptyText: {
+      fontSize: 13,
+      color: '#9CA3AF',
+    },
 
-  /* VIDEO CARDS */
-  videoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#F9FAF8',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  videoPlayCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: FARMER_COLORS.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  videoTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  videoSub: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  videoThumb: {
-    width: 140,
-    height: 100,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1.5,
-    borderColor: '#BBF7D0',
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    overflow: 'hidden',
-  },
-  videoThumbPlay: {
-    marginBottom: 6,
-  },
-  videoThumbText: {
-    fontSize: 12,
-    color: '#15803D',
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingHorizontal: 8,
-  },
+    /* VIDEO CARDS */
+    videoCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: '#F9FAF8',
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+    },
+    videoCardPreview: {
+      width: 64,
+      height: 64,
+      borderRadius: 12,
+      overflow: 'hidden',
+      backgroundColor: '#E5E7EB',
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    videoCardPreviewMedia: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    videoCardPlay: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    videoTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#111827',
+    },
+    videoSub: {
+      fontSize: 11,
+      color: '#9CA3AF',
+      marginTop: 2,
+    },
+    videoThumb: {
+      width: 140,
+      height: 100,
+      backgroundColor: '#E5E7EB',
+      borderWidth: 1.5,
+      borderColor: '#E5E7EB',
+      borderRadius: 14,
+      marginRight: 12,
+      overflow: 'hidden',
+    },
+    videoThumbPreview: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    videoThumbOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.15)',
+    },
+    videoThumbLabel: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingVertical: 6,
+      paddingHorizontal: 8,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    videoThumbText: {
+      fontSize: 12,
+      color: '#ffffff',
+      fontWeight: '600',
+      textAlign: 'center',
+    },
 
-  /* QUANTITY */
-  qtyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 12,
-  },
-  qtyBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FEF9E7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2937',
-    minWidth: 44,
-    textAlign: 'center',
-  },
-  qtyTotal: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  qtyTotalLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  qtyTotalValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: FARMER_COLORS.primaryLight,
-  },
+    /* QUANTITY */
+    qtyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 12,
+      gap: 12,
+    },
+    qtyBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: '#FEF9E7',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    qtyValue: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: '#1F2937',
+      minWidth: 44,
+      textAlign: 'center',
+    },
+    qtyTotal: {
+      flex: 1,
+      alignItems: 'flex-end',
+    },
+    qtyTotalLabel: {
+      fontSize: 12,
+      color: '#6B7280',
+      fontWeight: '500',
+    },
+    qtyTotalValue: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: COLORS.primaryLight,
+    },
 
-  /* FOOTER */
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 18,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    elevation: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: -5 },
-  },
-  footerLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  footerPrice: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: FARMER_COLORS.primaryLight,
-  },
-  addToCartBtn: {
-    backgroundColor: '#1b3e05',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    gap: 8,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 5,
-  },
-  addToCartText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
+    /* FOOTER */
+    footer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: '#ffffff',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 18,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      elevation: 16,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 15,
+      shadowOffset: { width: 0, height: -5 },
+    },
+    footerLabel: {
+      fontSize: 13,
+      color: '#6B7280',
+      fontWeight: '500',
+    },
+    footerPrice: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: COLORS.primaryLight,
+    },
+    addToCartBtn: {
+      backgroundColor: '#1b3e05',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      gap: 8,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 3 },
+      shadowRadius: 5,
+    },
+    addToCartBtnDisabled: {
+      opacity: 0.6,
+    },
+    addToCartText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
 
-  /* IMAGE VIEWER MODAL */
-  modalCloseBtn: {
-    position: 'absolute',
-    top: 44,
-    right: 16,
-    zIndex: 10,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-  },
+    /* IMAGE VIEWER MODAL */
+    modalCloseBtn: {
+      position: 'absolute',
+      top: 44,
+      right: 16,
+      zIndex: 10,
+      padding: 8,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      borderRadius: 20,
+    },
 
-  /* VIDEO PLAYER MODAL */
-  videoModalBg: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  videoModalClose: {
-    position: 'absolute',
-    top: 44,
-    right: 16,
-    zIndex: 20,
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-  },
-  videoPlayer: {
-    width: SW,
-    height: SW * (9 / 16),
-  },
-});
+    /* VIDEO PLAYER MODAL */
+    videoModalBg: {
+      flex: 1,
+      backgroundColor: '#000',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    videoModalClose: {
+      position: 'absolute',
+      top: 44,
+      right: 16,
+      zIndex: 20,
+      padding: 8,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 20,
+    },
+    videoPlayer: {
+      width: SW,
+      height: SW * (9 / 16),
+    },
+  });

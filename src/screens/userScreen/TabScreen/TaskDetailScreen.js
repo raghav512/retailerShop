@@ -1,5 +1,3 @@
-// TASK DETAIL SCREEN — Display assigned task details with all information cards
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   SafeAreaView,
@@ -12,12 +10,20 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { STAFF_COLORS, COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
+import { useTranslation } from 'react-i18next';
 
 const TaskDetailScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { taskId } = route?.params || {};
+
+  // Safety check for i18n during hot reload
+  if (!t) {
+    return null;
+  }
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -291,15 +297,31 @@ const TaskDetailScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent={true}
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        <View style={styles.header}>
-          <View style={styles.backButtonDummy} />
-          <View style={styles.headerTitleDummy} />
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={handleGoBack}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         <View style={[styles.card, styles.taskCard, { marginTop: 20 }]}>
           <View style={styles.taskCardContent}>
@@ -361,24 +383,34 @@ const TaskDetailScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent={true}
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleGoBack}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Task Assigned</Text>
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={handleGoBack}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <Icon name="alert-circle-outline" size={64} color="#EF4444" style={styles.errorIcon} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
@@ -395,21 +427,31 @@ const TaskDetailScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent={true}
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleGoBack}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Task Assigned</Text>
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={handleGoBack}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Task details not available</Text>
@@ -432,22 +474,31 @@ const TaskDetailScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
       />
 
-      {/* TASK 1 — Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleGoBack}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Task Assigned</Text>
-      </View>
+      <LinearGradient
+        colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={handleGoBack}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+          </View>
+        </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}
@@ -666,24 +717,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: STAFF_COLORS.tint,
   },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: STAFF_COLORS.tint,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  backButton: {
-    width: 44,
-    height: 44,
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -877,8 +938,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   errorIcon: {
-    fontSize: 48,
     marginBottom: 16,
+    opacity: 0.8,
   },
   errorText: {
     fontSize: 16,

@@ -30,7 +30,10 @@ const App = () => {
   const navigationRef = useRef();
 
   useEffect(() => {
-    LogBox.ignoreAllLogs();
+    // Only ignore warnings in production, allow console.log in dev
+    if (!__DEV__) {
+      LogBox.ignoreAllLogs();
+    }
 
     // ── Wire navigation ref into notification service ──
     notificationService.setNavigationRef(navigationRef);

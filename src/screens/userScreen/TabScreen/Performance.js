@@ -7,10 +7,13 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
+  Animated,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
+
 import apiService from "../../../Redux/apiService";
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 
@@ -72,12 +75,26 @@ const Performance = () => {
 
   useFocusEffect(useCallback(() => { PurchesData(); }, []));
 
-  const filteredData =
-    selectedFilter === "all"
-      ? purchases
-      : purchases.filter((item) => item.status === selectedFilter);
+  const filteredData = purchases;
 
   const renderItem = ({ item }) => {
+    const scaleAnim = new Animated.Value(1);
+
+    const handlePressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.97,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
     const badgeStyle =
       item.status === "completed"
         ? styles.badgeCompleted
@@ -93,100 +110,87 @@ const Performance = () => {
         : styles.badgeTextQuality;
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate("PurchaseDetails", { purchaseId: item.id })}
-        activeOpacity={0.8}
-      >
-        {/* CARD HEADER */}
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderLeft}>
-            <Text style={styles.farmerName}>{item.farmer}</Text>
-            <Text style={styles.farmerCode}>#{item.code}</Text>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate("PurchaseDetails", { purchaseId: item.id })}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={1}
+        >
+          {/* CARD HEADER */}
+          <View style={styles.cardHeader}>
+            <View style={styles.cardHeaderLeft}>
+              <Text style={styles.farmerName} numberOfLines={1}>{item.farmer}</Text>
+              <Text style={styles.farmerCode}>#{item.code}</Text>
+            </View>
+            <View style={[styles.statusBadge, badgeStyle]}>
+              <Text style={[styles.statusText, badgeTextStyle]}>
+                {t(`status.${item.status}`)}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.statusBadge, badgeStyle]}>
-            <Text style={[styles.statusText, badgeTextStyle]}>
-              {t(`status.${item.status}`)}
-            </Text>
-          </View>
-        </View>
 
-        {/* CROPS */}
-        <View style={styles.cropsContainer}>
-          {item.fullCrops && item.fullCrops.length > 0 ? (
-            item.fullCrops.map((c, idx) => (
-              <View key={idx} style={styles.cropRow}>
-                <View style={styles.cropLeft}>
-                  <View style={styles.cropDot} />
-                  <Text style={styles.cropName}>
-                    {c.cropName}
-                    {c.variety ? ` · ${c.variety}` : ""}
-                  </Text>
+          {/* CROPS */}
+          <View style={styles.cropsContainer}>
+            {item.fullCrops && item.fullCrops.length > 0 ? (
+              item.fullCrops.map((c, idx) => (
+                <View key={idx} style={styles.cropRow}>
+                  <View style={styles.cropLeft}>
+                    <View style={styles.cropDot} />
+                    <Text style={styles.cropName} numberOfLines={1}>
+                      {c.cropName}
+                      {c.variety ? ` · ${c.variety}` : ""}
+                    </Text>
+                  </View>
+                  <View style={styles.cropRight}>
+                    <Text style={styles.cropQty}>{c.quantity} qtl</Text>
+                    <Text style={styles.cropRate}>₹{c.rate}</Text>
+                  </View>
                 </View>
-                <View style={styles.cropRight}>
-                  <Text style={styles.cropQty}>{c.quantity} qtl</Text>
-                  <Text style={styles.cropRate}>₹{c.rate}</Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.cropLine}>{item.crop} • {item.quantity}</Text>
-          )}
-        </View>
+              ))
+            ) : (
+              <Text style={styles.cropLine}>{item.crop} • {item.quantity}</Text>
+            )}
+          </View>
 
-        {/* FOOTER */}
-        <View style={styles.cardFooter}>
-          <View style={styles.footerItem}>
-            <Text style={styles.footerLabel}>{t("common.amount")}</Text>
-            <Text style={styles.footerAmount}>{item.amount}</Text>
+          {/* FOOTER */}
+          <View style={styles.cardFooter}>
+            <View style={styles.footerItem}>
+              <Text style={styles.footerLabel}>{t("common.amount")}</Text>
+              <Text style={styles.footerAmount}>{item.amount}</Text>
+            </View>
+            <View style={styles.dividerV} />
+            <View style={[styles.footerItem, { alignItems: "flex-end" }]}>
+              <Text style={styles.footerLabel}>{t("common.date")}</Text>
+              <Text style={styles.footerDate}>{item.date}</Text>
+            </View>
           </View>
-          <View style={styles.dividerV} />
-          <View style={[styles.footerItem, { alignItems: "flex-end" }]}>
-            <Text style={styles.footerLabel}>{t("common.date")}</Text>
-            <Text style={styles.footerDate}>{item.date}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={STAFF_COLORS.primary} translucent={false} />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t("purchase.title")}</Text>
-        <Text style={styles.headerSubtitle}>{filteredData.length} entries</Text>
-
-        {/* FILTER TABS */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
-          {FILTERS.map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              activeOpacity={0.8}
-              style={[
-                styles.filterBtn,
-                selectedFilter === filter && styles.activeFilter,
-              ]}
-              onPress={() => setSelectedFilter(filter)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedFilter === filter && styles.activeFilterText,
-                ]}
-              >
-                {t(`filters.${filter}`)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("purchase.title")}</Text>
+            <Text style={styles.headerSubtitle}>{purchases.length} entries</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
       </View>
 
       <ScrollView
@@ -207,29 +211,6 @@ const Performance = () => {
           <Icon name="chevron-forward" size={18} color={THEME} />
         </TouchableOpacity>
 
-        {/* SUMMARY PILLS */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryPill}>
-            <Icon name="document-text-outline" size={18} color={THEME} />
-            <Text style={styles.summaryNum}>{purchases.length}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
-          </View>
-          <View style={styles.summaryPill}>
-            <Icon name="checkmark-circle-outline" size={18} color="#10B981" />
-            <Text style={styles.summaryNum}>
-              {purchases.filter((p) => p.status === "completed").length}
-            </Text>
-            <Text style={styles.summaryLabel}>Done</Text>
-          </View>
-          <View style={styles.summaryPill}>
-            <Icon name="time-outline" size={18} color="#F59E0B" />
-            <Text style={styles.summaryNum}>
-              {purchases.filter((p) => p.status === "pending").length}
-            </Text>
-            <Text style={styles.summaryLabel}>Pending</Text>
-          </View>
-        </View>
-
         {/* LIST */}
         <FlatList
           data={filteredData}
@@ -245,182 +226,152 @@ const Performance = () => {
           }
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default Performance;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F4F6F8" },
+  safeArea: { flex: 1, backgroundColor: "#F9FAFB" },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: "#ffffff" },
-  header: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingBottom: 16,
     elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.25)",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#1F2937",
-    marginBottom: 4,
+    fontSize: 21,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 0.3,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
-    marginBottom: 16,
-  },
-
-  /* FILTER TABS */
-  filterRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingBottom: 2,
-  },
-  filterBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    borderWidth: 1.5,
-    borderColor: "#E5E7EB",
-  },
-  activeFilter: {
-    backgroundColor: THEME,
-    borderColor: THEME,
-  },
-  filterText: {
     fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "600",
-  },
-  activeFilterText: {
-    color: "#ffffff",
-    fontWeight: "700",
+    color: "rgba(255, 255, 255, 0.95)",
+    fontWeight: "500",
+    marginTop: 3,
+    letterSpacing: 0.2,
   },
 
-  /* SCROLL */
+
   scrollContainer: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 18, paddingBottom: 40 },
 
   /* ADD BUTTON */
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 16,
-    elevation: 4,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    marginBottom: 18,
+    elevation: 5,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    borderWidth: 1.5,
-    borderColor: "#FAF7E8",
-    gap: 12,
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 0.5,
+    borderColor: "#E5E7EB",
+    gap: 14,
   },
   addBtnIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FAF7E8",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: THEME + "15",
     alignItems: "center",
     justifyContent: "center",
   },
   addText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     color: THEME,
+    letterSpacing: 0.2,
   },
 
-  /* SUMMARY PILLS */
-  summaryRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
-  },
-  summaryPill: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    gap: 4,
-  },
-  summaryNum: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#1F2937",
-    marginTop: 4,
-  },
-  summaryLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
 
-  /* PURCHASE CARD */
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 18,
     marginBottom: 16,
     elevation: 4,
     shadowColor: "#000",
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 0.5,
+    borderColor: "#E5E7EB",
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 14,
+    marginBottom: 16,
+    gap: 12,
   },
   cardHeaderLeft: { flex: 1 },
   farmerName: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#1F2937",
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#111827",
+    letterSpacing: 0.2,
   },
   farmerCode: {
     fontSize: 12,
     color: "#9CA3AF",
     fontWeight: "500",
-    marginTop: 2,
+    marginTop: 4,
+    letterSpacing: 0.3,
   },
 
   /* STATUS BADGE */
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   badgeCompleted: { backgroundColor: "#D1FAE5" },
   badgeTextCompleted: { color: "#059669" },
@@ -432,10 +383,12 @@ const styles = StyleSheet.create({
   /* CROPS */
   cropsContainer: {
     backgroundColor: "#F9FAFB",
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 14,
-    gap: 8,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    gap: 10,
+    borderWidth: 0.5,
+    borderColor: "#F3F4F6",
   },
   cropRow: {
     flexDirection: "row",
@@ -446,37 +399,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    gap: 8,
+    gap: 10,
   },
   cropDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
     backgroundColor: THEME,
   },
   cropName: {
     fontSize: 14,
     color: "#374151",
-    fontWeight: "600",
+    fontWeight: "500",
     flex: 1,
   },
   cropRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   cropQty: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#10B981",
   },
   cropRate: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#6B7280",
     fontWeight: "500",
   },
   cropLine: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#4B5563",
     fontWeight: "500",
   },
@@ -486,49 +439,54 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 14,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: "#F3F4F6",
   },
   footerItem: { flex: 1 },
   dividerV: {
     width: 1,
-    height: 32,
+    height: 36,
     backgroundColor: "#E5E7EB",
-    marginHorizontal: 12,
+    marginHorizontal: 14,
   },
   footerLabel: {
     fontSize: 11,
     color: "#9CA3AF",
     fontWeight: "500",
-    marginBottom: 2,
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   footerAmount: {
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 17,
+    fontWeight: "700",
     color: THEME,
+    letterSpacing: 0.2,
   },
   footerDate: {
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
+    letterSpacing: 0.2,
   },
 
   /* EMPTY */
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: 60,
-    gap: 8,
+    paddingVertical: 80,
+    gap: 10,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#374151",
-    marginTop: 8,
+    marginTop: 12,
+    letterSpacing: 0.2,
   },
   emptySubText: {
     fontSize: 14,
     color: "#9CA3AF",
-    fontWeight: "500",
+    fontWeight: "400",
   },
 });

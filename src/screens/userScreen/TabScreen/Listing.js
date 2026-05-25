@@ -172,6 +172,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
+    flex: 1,
   },
 
   /* LIST */

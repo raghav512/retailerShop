@@ -11,12 +11,17 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import Video from 'react-native-video';
 import apiService from '../../../Redux/apiService';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Images from '../../../assets/Images/Images';
 import { useTranslation } from 'react-i18next';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FARMER_COLORS } from '../../../colorsList/ColorList';
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from '@react-navigation/native';
+import { FARMER_COLORS, STAFF_COLORS } from '../../../colorsList/ColorList';
 
 const MarketPlace = () => {
   const [cartCount, setCartCount] = useState(0);
@@ -28,7 +33,25 @@ const MarketPlace = () => {
     { key: 'All', labelKey: 'all', icon: 'apps' },
   ]);
   const navigation = useNavigation();
+  const route = useRoute();
   const { t } = useTranslation();
+
+  const {
+    isStaffOrder,
+    selectedFarmerId,
+    selectedFarmerData,
+    selectedFarmerName,
+  } = route.params || {};
+
+  const COLORS = isStaffOrder ? STAFF_COLORS : FARMER_COLORS;
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
+
+  console.log('MARKETPLACE CONTEXT:', {
+    isStaffOrder,
+    selectedFarmerId,
+    selectedFarmerName,
+    farmerPhone: selectedFarmerData?.phone,
+  });
 
   // All 8 categories from Distributor Add Product
   const ALL_CATEGORIES = [
@@ -44,14 +67,16 @@ const MarketPlace = () => {
 
   const fetchCartCount = useCallback(async () => {
     try {
-      const response = await apiService.getCart();
+      const response = await apiService.getCart(
+        isStaffOrder ? selectedFarmerId : undefined,
+      );
       const items = response?.data?.items || [];
       const count = items.reduce((sum, item) => sum + item.quantity, 0);
       setCartCount(count);
     } catch (error) {
       console.log('Cart count error:', error.message);
     }
-  }, []);
+  }, [isStaffOrder, selectedFarmerId]);
 
   const fetchMarketplaceItems = useCallback(async () => {
     try {
@@ -100,6 +125,9 @@ const MarketPlace = () => {
         // Add productCategory to item
         return {
           ...item,
+          productId:
+            matchedProduct?._id || matchedProduct?.productId || item.productId,
+          productName: matchedProduct?.productName || item.productName,
           productCategory:
             matchedProduct?.productCategory || item.productCategory || '',
         };
@@ -188,10 +216,46 @@ const MarketPlace = () => {
   const renderItem = useCallback(
     ({ item: group }) => {
       const first = group[0]; // representative item for the card
-      const imageUrl =
-        typeof first.productImages?.[0] === 'string'
-          ? first.productImages[0]
-          : first.productImages?.[0]?.url;
+      // Build media candidate list (images first, then videos)
+      const mediaCandidates = [
+        ...(first.productImages || []).map(img =>
+          typeof img === 'string' ? img : img?.url || img,
+        ),
+        ...(first.productVideos || []).map(vid =>
+          typeof vid === 'string' ? vid : vid?.url || vid,
+        ),
+      ].filter(Boolean);
+
+      const firstMedia = mediaCandidates[0];
+
+      const isDataUrl = url =>
+        typeof url === 'string' && url.startsWith('data:');
+      const getExtension = url => {
+        if (!url || typeof url !== 'string') return '';
+        if (isDataUrl(url)) {
+          const m = url.match(/^data:(.*?);/);
+          return m ? m[1].split('/').pop() : '';
+        }
+        const parts = url.split('?')[0].split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+      };
+
+      const imageExts = ['jpg', 'jpeg', 'png', 'webp'];
+      const videoExts = ['mp4', 'mov', 'mkv', 'webm'];
+
+      const isVideo = url => {
+        if (!url) return false;
+        if (isDataUrl(url)) return url.startsWith('data:video');
+        const ext = getExtension(url);
+        return videoExts.includes(ext);
+      };
+
+      const isImage = url => {
+        if (!url) return false;
+        if (isDataUrl(url)) return url.startsWith('data:image');
+        const ext = getExtension(url);
+        return imageExts.includes(ext);
+      };
 
       // Price range label
       const prices = group.map(i => i.price).sort((a, b) => a - b);
@@ -208,17 +272,38 @@ const MarketPlace = () => {
               items: group,
               productId: first.productId,
               productName: first.productName,
+              isStaffOrder,
+              selectedFarmerId,
+              selectedFarmerData,
+              selectedFarmerName,
             });
           }}
           activeOpacity={0.8}
         >
           <View style={styles.imageContainer}>
-            {imageUrl ? (
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.productImage}
-                onError={() => console.log('Image load error')}
-              />
+            {firstMedia ? (
+              isVideo(firstMedia) ? (
+                <Video
+                  source={{ uri: firstMedia }}
+                  style={styles.productImage}
+                  controls={true}
+                  resizeMode="cover"
+                  paused={true}
+                />
+              ) : isImage(firstMedia) ? (
+                <Image
+                  source={{ uri: firstMedia }}
+                  style={styles.productImage}
+                  onError={() => console.log('Image load error')}
+                />
+              ) : (
+                // Unknown extension: try rendering as image fallback
+                <Image
+                  source={{ uri: firstMedia }}
+                  style={styles.productImage}
+                  onError={() => console.log('Media load error')}
+                />
+              )
             ) : (
               <View style={styles.placeholderIconWrapper}>
                 <Icon name="inventory-2" size={36} color="#BDBDBD" />
@@ -259,7 +344,15 @@ const MarketPlace = () => {
         </TouchableOpacity>
       );
     },
-    [navigation, t],
+    [
+      navigation,
+      t,
+      isStaffOrder,
+      selectedFarmerId,
+      selectedFarmerData,
+      selectedFarmerName,
+      styles,
+    ],
   );
 
   return (
@@ -275,21 +368,34 @@ const MarketPlace = () => {
             <Icon
               name="arrow-back-ios"
               size={20}
-              color={FARMER_COLORS.textOnPrimary}
+              color={COLORS.textOnPrimary}
               style={{ marginLeft: 6 }}
             />
           </TouchableOpacity>
 
           <View style={styles.headerTitleBox}>
             <Text style={styles.headerTitle}>{t('marketplace.title')}</Text>
-            <Text style={styles.headerSub}>{t('marketplace.subtitle')}</Text>
+            {isStaffOrder && selectedFarmerName ? (
+              <Text style={styles.headerSub}>
+                Ordering for: {selectedFarmerName}
+              </Text>
+            ) : (
+              <Text style={styles.headerSub}>{t('marketplace.subtitle')}</Text>
+            )}
           </View>
 
           <TouchableOpacity
             style={styles.iconCircleBtn}
-            onPress={() => navigation.navigate('Cart')}
+            onPress={() =>
+              navigation.navigate('Cart', {
+                isStaffOrder,
+                selectedFarmerId,
+                selectedFarmerData,
+                selectedFarmerName,
+              })
+            }
           >
-            <Icon name="shopping-cart" size={22} color={FARMER_COLORS.textOnPrimary} />
+            <Icon name="shopping-cart" size={22} color={COLORS.textOnPrimary} />
             {cartCount > 0 && (
               <View style={styles.badgeIndicator}>
                 <Text style={styles.badgeNum}>{cartCount}</Text>
@@ -338,7 +444,7 @@ const MarketPlace = () => {
                 <Icon
                   name={category.icon}
                   size={18}
-                  color={isActive ? FARMER_COLORS.textOnPrimary : FARMER_COLORS.textSecondary}
+                  color={isActive ? COLORS.textOnPrimary : COLORS.textSecondary}
                 />
                 <Text
                   style={[
@@ -359,7 +465,7 @@ const MarketPlace = () => {
       {/* PRODUCT LIST */}
       {loading ? (
         <View style={styles.stateContainer}>
-          <ActivityIndicator size="large" color={FARMER_COLORS.primaryLight} />
+          <ActivityIndicator size="large" color={COLORS.primaryLight} />
         </View>
       ) : filteredGroups.length === 0 ? (
         <View style={styles.stateContainer}>
@@ -403,295 +509,296 @@ const MarketPlace = () => {
 
 export default MarketPlace;
 
-const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 0,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: FARMER_COLORS.background,
-  },
+const getStyles = COLORS =>
+  StyleSheet.create({
+    headerSpacer: {
+      height: 0,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: COLORS.background,
+    },
 
-  /* TOP BAR */
-  topBar: {
-    backgroundColor: FARMER_COLORS.primary,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 6,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    zIndex: 10,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  iconCircleBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitleBox: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: FARMER_COLORS.textOnPrimary,
-    letterSpacing: 0.5,
-  },
-  headerSub: {
-    fontSize: 12,
-    color: FARMER_COLORS.textSubOnPrimary,
-    marginTop: 2,
-    fontWeight: '500',
-    opacity: 0.95,
-  },
-  badgeIndicator: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2.5,
-    borderColor: FARMER_COLORS.primary,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  badgeNum: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
+    /* TOP BAR */
+    topBar: {
+      backgroundColor: COLORS.primary,
+      paddingTop: 20,
+      paddingHorizontal: 20,
+      paddingBottom: 28,
+      borderBottomLeftRadius: 28,
+      borderBottomRightRadius: 28,
+      elevation: 6,
+      shadowColor: COLORS.accent,
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      zIndex: 10,
+    },
+    headerTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    iconCircleBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerTitleBox: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: COLORS.textOnPrimary,
+      letterSpacing: 0.5,
+    },
+    headerSub: {
+      fontSize: 12,
+      color: COLORS.textSubOnPrimary,
+      marginTop: 2,
+      fontWeight: '500',
+      opacity: 0.95,
+    },
+    badgeIndicator: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      backgroundColor: '#FF3B30',
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2.5,
+      borderColor: COLORS.primary,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    badgeNum: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '700',
+    },
 
-  /* SEARCH BOX */
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: FARMER_COLORS.textOnPrimary,
-    fontWeight: '500',
-  },
+    /* SEARCH BOX */
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.22)',
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      height: 52,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 15,
+      color: COLORS.textOnPrimary,
+      fontWeight: '500',
+    },
 
-  /* CATEGORY CHIPS */
-  categorySection: {
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  categoryScrollContainer: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-    paddingHorizontal: 18,
-    borderRadius: 22,
-    gap: 8,
-    elevation: 1,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  chipInactive: {
-    backgroundColor: FARMER_COLORS.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.2)',
-  },
-  chipActive: {
-    backgroundColor: FARMER_COLORS.primary,
-    borderWidth: 1,
-    borderColor: FARMER_COLORS.primary,
-  },
-  categoryChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  chipTextInactive: {
-    color: FARMER_COLORS.textSecondary,
-  },
-  chipTextActive: {
-    color: FARMER_COLORS.textOnPrimary,
-  },
+    /* CATEGORY CHIPS */
+    categorySection: {
+      marginTop: 20,
+      marginBottom: 8,
+    },
+    categoryScrollContainer: {
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    categoryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: 44,
+      paddingHorizontal: 18,
+      borderRadius: 22,
+      gap: 8,
+      elevation: 1,
+      shadowColor: COLORS.accent,
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    chipInactive: {
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.primary + '33',
+    },
+    chipActive: {
+      backgroundColor: COLORS.primary,
+      borderWidth: 1,
+      borderColor: COLORS.primary,
+    },
+    categoryChipText: {
+      fontSize: 14,
+      fontWeight: '600',
+      letterSpacing: 0.2,
+    },
+    chipTextInactive: {
+      color: COLORS.textSecondary,
+    },
+    chipTextActive: {
+      color: COLORS.textOnPrimary,
+    },
 
-  /* LIST STYLES */
-  productListContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  productRow: {
-    justifyContent: 'space-between',
-  },
+    /* LIST STYLES */
+    productListContainer: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    productRow: {
+      justifyContent: 'space-between',
+    },
 
-  /* PRODUCT CARD */
-  card: {
-    width: '48%',
-    backgroundColor: FARMER_COLORS.surface,
-    borderRadius: 20,
-    padding: 12,
-    marginBottom: 16,
-    elevation: 1,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.12)',
-  },
-  imageContainer: {
-    width: '100%',
-    height: 120,
-    backgroundColor: 'rgba(142, 171, 83, 0.05)',
-    borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.1)',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  placeholderIconWrapper: {
-    opacity: 0.3,
-  },
-  variantCountBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(142, 171, 83, 0.95)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  variantCountText: {
-    fontSize: 10,
-    color: FARMER_COLORS.textOnPrimary,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  categoryPillOverlay: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: FARMER_COLORS.accent,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  categoryPillText: {
-    fontSize: 9,
-    color: FARMER_COLORS.textOnPrimary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: FARMER_COLORS.textPrimary,
-    marginBottom: 4,
-    lineHeight: 20,
-    letterSpacing: 0.2,
-  },
-  brandText: {
-    fontSize: 12,
-    color: FARMER_COLORS.textSecondary,
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  priceText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: FARMER_COLORS.primary,
-    letterSpacing: 0.3,
-  },
-  unitText: {
-    fontSize: 11,
-    color: FARMER_COLORS.textTertiary,
-    fontWeight: '500',
-  },
+    /* PRODUCT CARD */
+    card: {
+      width: '48%',
+      backgroundColor: COLORS.surface,
+      borderRadius: 20,
+      padding: 12,
+      marginBottom: 16,
+      elevation: 1,
+      shadowColor: COLORS.accent,
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 3 },
+      borderWidth: 1,
+      borderColor: COLORS.primary + '1F',
+    },
+    imageContainer: {
+      width: '100%',
+      height: 120,
+      backgroundColor: COLORS.primary + '0D',
+      borderRadius: 16,
+      marginBottom: 12,
+      overflow: 'hidden',
+      position: 'relative',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: COLORS.primary + '1A',
+    },
+    productImage: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
+    },
+    placeholderIconWrapper: {
+      opacity: 0.3,
+    },
+    variantCountBadge: {
+      position: 'absolute',
+      bottom: 8,
+      right: 8,
+      backgroundColor: COLORS.primary + 'F2',
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    variantCountText: {
+      fontSize: 10,
+      color: COLORS.textOnPrimary,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+    categoryPillOverlay: {
+      position: 'absolute',
+      top: 8,
+      left: 8,
+      backgroundColor: COLORS.accent,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    categoryPillText: {
+      fontSize: 9,
+      color: COLORS.textOnPrimary,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    cardInfo: {
+      flex: 1,
+    },
+    productName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: COLORS.textPrimary,
+      marginBottom: 4,
+      lineHeight: 20,
+      letterSpacing: 0.2,
+    },
+    brandText: {
+      fontSize: 12,
+      color: COLORS.textSecondary,
+      marginBottom: 8,
+      fontWeight: '500',
+    },
+    priceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    priceText: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: COLORS.primary,
+      letterSpacing: 0.3,
+    },
+    unitText: {
+      fontSize: 11,
+      color: COLORS.textSecondary,
+      fontWeight: '500',
+    },
 
-  /* EMPTY & LOADING STATES */
-  stateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 40,
-  },
-  emptyStateText: {
-    fontSize: 15,
-    color: FARMER_COLORS.textSecondary,
-    marginTop: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  clearFilterButton: {
-    marginTop: 24,
-    backgroundColor: FARMER_COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    elevation: 2,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  clearFilterBtnText: {
-    color: FARMER_COLORS.textOnPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-});
+    /* EMPTY & LOADING STATES */
+    stateContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 80,
+      paddingHorizontal: 40,
+    },
+    emptyStateText: {
+      fontSize: 15,
+      color: COLORS.textSecondary,
+      marginTop: 16,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    clearFilterButton: {
+      marginTop: 24,
+      backgroundColor: COLORS.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 24,
+      elevation: 2,
+      shadowColor: COLORS.accent,
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    clearFilterBtnText: {
+      color: COLORS.textOnPrimary,
+      fontSize: 14,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+  });

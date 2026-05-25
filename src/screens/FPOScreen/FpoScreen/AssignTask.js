@@ -18,12 +18,15 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import NetInfo from '@react-native-community/netinfo';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
+import { useTranslation } from 'react-i18next';
 
 const AssignTask = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState(null);
@@ -194,12 +197,12 @@ const AssignTask = () => {
     setSelectedCategories(prev => {
       // Only allow single selection
       const updated = prev.includes(category) ? [] : [category];
-      
+
       if (__DEV__) {
         console.log('[AssignTask] Category selected:', category);
         console.log('[AssignTask] Updated categories:', updated);
       }
-      
+
       return updated;
     });
   }, []);
@@ -213,52 +216,52 @@ const AssignTask = () => {
       // Network check
       const netState = await NetInfo.fetch();
       if (!netState.isConnected) {
-        alert('No internet connection. Please check and try again.');
+        alert(t('assign_task.no_internet'));
         return;
       }
 
       // Task title validation
       const trimmedTitle = taskTitle.trim();
       if (!trimmedTitle) {
-        alert('Task title is required');
+        alert(t('assign_task.validation.title_required'));
         return;
       }
       if (trimmedTitle.length < 3) {
-        alert('Task title must be at least 3 characters');
+        alert(t('assign_task.validation.title_min_length'));
         return;
       }
       if (trimmedTitle.length > 100) {
-        alert('Task title cannot exceed 100 characters');
+        alert(t('assign_task.validation.title_max_length'));
         return;
       }
       if (!/[a-zA-Z0-9]/.test(trimmedTitle)) {
-        alert('Task title must contain at least one letter or number');
+        alert(t('assign_task.validation.title_invalid'));
         return;
       }
 
       // Description validation
       const trimmedDescription = taskDescription.trim();
       if (trimmedDescription && trimmedDescription.length > 500) {
-        alert('Description cannot exceed 500 characters');
+        alert(t('assign_task.validation.description_max_length'));
         return;
       }
 
       // Member validation
       if (!selectedMemberId) {
-        alert('Please select a team member');
+        alert(t('assign_task.validation.member_required'));
         return;
       }
 
       const memberExists = teamMembers.find(m => m.id === selectedMemberId);
       if (!memberExists) {
-        alert('Selected member is no longer available. Please select again.');
+        alert(t('assign_task.validation.member_invalid'));
         setSelectedMemberId(null);
         return;
       }
 
       // Due date validation
       if (!dueDate) {
-        alert('Due date is required');
+        alert(t('assign_task.validation.due_date_required'));
         return;
       }
 
@@ -268,26 +271,26 @@ const AssignTask = () => {
       selectedDay.setHours(0, 0, 0, 0);
 
       if (selectedDay < today) {
-        alert('Due date cannot be in the past');
+        alert(t('assign_task.validation.due_date_past'));
         return;
       }
 
       // Priority validation
       if (!priority) {
-        alert('Priority level is required');
+        alert(t('assign_task.validation.priority_required'));
         return;
       }
 
       // Category validation
       if (selectedCategories.length === 0) {
-        alert('Please select a category');
+        alert(t('assign_task.validation.category_required'));
         return;
       }
 
       // Location validation
       const trimmedLocation = location.trim();
       if (trimmedLocation && trimmedLocation.length > 200) {
-        alert('Location cannot exceed 200 characters');
+        alert(t('assign_task.validation.location_max_length'));
         return;
       }
 
@@ -307,7 +310,10 @@ const AssignTask = () => {
       if (__DEV__) {
         console.log('[AssignTask] ========== PAYLOAD DEBUG ==========');
         console.log('[AssignTask] Selected category:', selectedCategories[0]);
-        console.log('[AssignTask] Full payload:', JSON.stringify(payload, null, 2));
+        console.log(
+          '[AssignTask] Full payload:',
+          JSON.stringify(payload, null, 2),
+        );
         console.log('[AssignTask] =====================================');
       }
 
@@ -319,7 +325,7 @@ const AssignTask = () => {
 
       if (__DEV__) console.log('[AssignTask] Task created:', response);
 
-      alert('Task created successfully!');
+      alert(t('assign_task.task_created'));
       navigation.goBack();
     } catch (error) {
       if (__DEV__) {
@@ -330,7 +336,7 @@ const AssignTask = () => {
       const backendMessage =
         error.response?.data?.message || error.response?.data?.error || null;
 
-      alert(backendMessage ?? 'Failed to create task. Please try again.');
+      alert(backendMessage ?? t('assign_task.task_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -418,23 +424,39 @@ const AssignTask = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+      />
 
-      {/* TASK 1 — Header with back button and title */}
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            accessibilityLabel="Go back"
-            accessibilityHint="Returns to previous screen"
-          >
-            <Icon name="arrow-back" size={24} color="#333333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Assign task</Text>
-          <View style={styles.placeholder} />
-        </View>
-      </SafeAreaView>
+      {/* HEADER */}
+      <LinearGradient
+        colors={[
+          FPO_COLORS.primary,
+          FPO_COLORS.primaryDark,
+          FPO_COLORS.primaryLight,
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              accessibilityLabel="Go back"
+              accessibilityHint="Returns to previous screen"
+            >
+              <Icon name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('assign_task.title')}</Text>
+            </View>
+            <View style={styles.placeholder} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
       <ScrollView
         style={styles.content}
@@ -444,11 +466,12 @@ const AssignTask = () => {
         {/* TASK 2 — Task Title Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
-            Task Title <Text style={styles.required}>*</Text>
+            {t('assign_task.task_title')}{' '}
+            <Text style={styles.required}>{t('assign_task.required')}</Text>
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="E.g., Visit Ramesh Patil's Farm"
+            placeholder={t('assign_task.task_title_placeholder')}
             placeholderTextColor="#999999"
             value={taskTitle}
             onChangeText={setTaskTitle}
@@ -461,10 +484,10 @@ const AssignTask = () => {
 
         {/* TASK 3 — Description Input */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.label}>{t('assign_task.description')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Describe the task in detail..."
+            placeholder={t('assign_task.description_placeholder')}
             placeholderTextColor="#999999"
             value={taskDescription}
             onChangeText={setTaskDescription}
@@ -479,8 +502,9 @@ const AssignTask = () => {
         {/* TASK 4 — Team Members List */}
         <View style={styles.assignToContainer}>
           <Text style={styles.label}>
-            <Icon name="person-outline" size={14} color="#333333" /> Assign To{' '}
-            <Text style={styles.required}>*</Text>
+            <Icon name="person-outline" size={14} color="#333333" />{' '}
+            {t('assign_task.assign_to')}{' '}
+            <Text style={styles.required}>{t('assign_task.required')}</Text>
           </Text>
 
           {loading ? (
@@ -491,17 +515,21 @@ const AssignTask = () => {
             </>
           ) : error ? (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Failed to load team members</Text>
+              <Text style={styles.errorText}>
+                {t('assign_task.failed_to_load')}
+              </Text>
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={fetchTeamMembers}
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <Text style={styles.retryText}>{t('assign_task.retry')}</Text>
               </TouchableOpacity>
             </View>
           ) : teamMembers.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No team members available</Text>
+              <Text style={styles.emptyText}>
+                {t('assign_task.no_members')}
+              </Text>
             </View>
           ) : !selectedMemberId ? (
             <FlatList
@@ -555,8 +583,9 @@ const AssignTask = () => {
         {/* TASK 5 — Due Date */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
-            <Icon name="calendar-outline" size={14} color="#333333" /> Due Date{' '}
-            <Text style={styles.required}>*</Text>
+            <Icon name="calendar-outline" size={14} color="#333333" />{' '}
+            {t('assign_task.due_date')}{' '}
+            <Text style={styles.required}>{t('assign_task.required')}</Text>
           </Text>
           <TouchableOpacity
             style={styles.input}
@@ -570,7 +599,7 @@ const AssignTask = () => {
                     day: '2-digit',
                     year: 'numeric',
                   })
-                : 'mm/dd/yyyy'}
+                : t('assign_task.due_date_placeholder')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -578,8 +607,9 @@ const AssignTask = () => {
         {/* TASK 5 — Priority Level */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
-            <Icon name="flag-outline" size={14} color="#333333" /> Priority
-            Level <Text style={styles.required}>*</Text>
+            <Icon name="flag-outline" size={14} color="#333333" />{' '}
+            {t('assign_task.priority_level')}{' '}
+            <Text style={styles.required}>{t('assign_task.required')}</Text>
           </Text>
           <View style={styles.priorityContainer}>
             {priorities.map(p => (
@@ -609,8 +639,9 @@ const AssignTask = () => {
         {/* TASK 5 — Category */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
-            <Icon name="pricetag-outline" size={14} color="#333333" /> Category{' '}
-            <Text style={styles.required}>*</Text>
+            <Icon name="pricetag-outline" size={14} color="#333333" />{' '}
+            {t('assign_task.category')}{' '}
+            <Text style={styles.required}>{t('assign_task.required')}</Text>
           </Text>
           <View style={styles.categoryContainer}>
             {categories.map(cat => {
@@ -643,12 +674,12 @@ const AssignTask = () => {
         {/* TASK 6 — Location (Optional) */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
-            <Icon name="location-outline" size={14} color="#333333" /> Location
-            (Optional)
+            <Icon name="location-outline" size={14} color="#333333" />{' '}
+            {t('assign_task.location')}
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="E.g., Village Shiroli, Tal. Khatav"
+            placeholder={t('assign_task.location_placeholder')}
             placeholderTextColor="#999999"
             value={location}
             onChangeText={setLocation}
@@ -672,7 +703,9 @@ const AssignTask = () => {
             accessibilityHint="Double tap to create and assign task"
           >
             <Text style={styles.createButtonText}>
-              {submitting ? 'Creating...' : 'Create Task'}
+              {submitting
+                ? t('assign_task.creating')
+                : t('assign_task.create_task')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -703,41 +736,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: FPO_COLORS.background,
   },
-  safeArea: {
-    backgroundColor: '#FFFFFF',
+  headerGradient: {
+    paddingBottom: 4,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingBottom: 6,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   placeholder: {
-    width: 44,
+    width: 42,
   },
   content: {
     flex: 1,

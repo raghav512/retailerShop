@@ -16,6 +16,7 @@ const AddCrop = ({ navigation }) => {
   const [farms, setFarms] = useState([]);
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [cropName, setCropName] = useState("");
+  const [variety, setVariety] = useState("");
   const [area, setArea] = useState("");
   const [unit, setUnit] = useState("acre");
   const [sowingDate, setSowingDate] = useState(new Date());
@@ -73,10 +74,14 @@ const AddCrop = ({ navigation }) => {
         userId: userId,
         farmId: selectedFarm._id,
         cropName: cropName.trim(),
+        variety: variety.trim(),
         area: area,
         unit: unit,
         sowingDate: sowingDate.toISOString().split('T')[0],
       };
+
+      console.log('🌾 ADD CROP PAYLOAD:', JSON.stringify(payload, null, 2));
+      console.log('🌾 Variety value:', variety);
 
       await apiService.addCrop(payload);
       showAlert({ type: 'success', title: t('success'), message: t('add_crop.success') });
@@ -137,6 +142,15 @@ const AddCrop = ({ navigation }) => {
           value={cropName}
           onChangeText={setCropName}
           placeholder={t('add_crop.crop_name_placeholder')}
+          placeholderTextColor="#9CA3AF"
+        />
+
+        <Text style={styles.label}>Variety</Text>
+        <TextInput
+          style={styles.input}
+          value={variety}
+          onChangeText={setVariety}
+          placeholder="Enter crop variety"
           placeholderTextColor="#9CA3AF"
         />
 

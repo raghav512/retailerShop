@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ScrollView,
   AppState,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
@@ -23,12 +24,6 @@ import { STAFF_COLORS, COLORS } from '../../../colorsList/ColorList';
 /* ---------------- DUMMY DATA (API READY) ---------------- */
 
 /* ---------------- DUMMY DATA (API READY) ---------------- */
-
-const STATS = [
-  { id: '1', key: 'today_procurements', value: '24', icon: 'document-text' },
-  { id: '2', key: 'pending_quality', value: '8', icon: 'time' },
-  { id: '3', key: 'pending_payments', value: '12', icon: 'cash' },
-];
 
 const QUICK_ACTIONS = [
   {
@@ -60,7 +55,6 @@ const QUICK_ACTIONS = [
 const Home = () => {
   const navigation = useNavigation();
   const { t } = useTranslation(); // 🌍
-  const [stats, setStats] = useState([]);
   const [procurements, setProcurements] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -103,15 +97,10 @@ const Home = () => {
     });
 
     return () => {
-      subscription.remove();
-      unsubscribeNotifee();
-      unsubscribeFCM();
+      subscription?.remove?.();
+      unsubscribeNotifee?.();
+      unsubscribeFCM?.();
     };
-  }, []);
-
-  useEffect(() => {
-    // Later replace with backend API
-    setStats(STATS);
   }, []);
 
   const mapPurchaseForUI = item => {
@@ -156,36 +145,12 @@ const Home = () => {
     const fetchHomeData = async () => {
       try {
         const response = await apiService.GetStaffPurches();
-        console.log('HOME PURCHASE DATA 👉', response);
-
-        const mapped = response.map(mapPurchaseForUI);
-
-        // same card UI, just backend data
-        setProcurements(mapped.slice(0, 3));
-
-        // same stats UI
-        setStats([
-          {
-            id: '1',
-            key: 'today_procurements',
-            value: response.length.toString(),
-            icon: 'document-text',
-          },
-          {
-            id: '2',
-            key: 'pending_quality',
-            value: '0',
-            icon: 'time',
-          },
-          {
-            id: '3',
-            key: 'pending_payments',
-            value: '0',
-            icon: 'cash',
-          },
-        ]);
+        if (response && Array.isArray(response)) {
+          const mapped = response.map(mapPurchaseForUI);
+          setProcurements(mapped.slice(0, 3));
+        }
       } catch (error) {
-        console.log('HOME API ERROR 👉', error);
+        setProcurements([]);
       }
     };
 
@@ -194,41 +159,63 @@ const Home = () => {
 
   /* ---------------- RENDERERS ---------------- */
 
-  const renderProcurement = ({ item }) => (
-    <View style={styles.procCard}>
-      <View style={styles.procHeader}>
-        <Text style={styles.procName}>
-          {item.farmer} <Text style={styles.procCode}>— {item.code}</Text>
-        </Text>
-        <View style={styles.completedBadge}>
-          <Text style={styles.completedText}>
-            {' '}
-            {t(`status.${item.status.toLowerCase()}`)}
-          </Text>
-        </View>
-      </View>
-      <Text style={styles.procCrop}>
-        {item.crop} • {item.quantity}
-      </Text>
-      <View style={styles.procFooter}>
-        <View>
-          <Text style={styles.procLabel}>{t('Common.amount')}</Text>
-          <Text style={styles.procAmount}>{item.amount}</Text>
-        </View>
-        <View style={styles.procDateWrap}>
-          <Text style={styles.procLabel}>{t('Common.date')}</Text>
-          <Text style={styles.procDate}>{item.date}</Text>
-        </View>
-      </View>
-    </View>
-  );
+  const renderProcurement = ({ item }) => {
+    const scaleAnim = new Animated.Value(1);
+
+    const handlePressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.97,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          style={styles.procCard}
+          activeOpacity={1}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={() => {
+            console.log('Procurement tapped:', item.id);
+          }}
+        >
+          <View style={styles.procTopRow}>
+            <View style={styles.procFarmerSection}>
+              <View style={styles.farmerAvatar}>
+                <Icon name="person" size={18} color="#fff" />
+              </View>
+              <View style={styles.farmerInfo}>
+                <Text style={styles.procFarmerName} numberOfLines={1}>
+                  {item.farmer}
+                </Text>
+                <Text style={styles.procCrop} numberOfLines={1}>{item.crop} • {item.quantity}</Text>
+              </View>
+            </View>
+            <View style={styles.procRight}>
+              <Text style={styles.procAmount}>{item.amount}</Text>
+              <Text style={styles.procDate}>{item.date}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
       />
 
       {/* MODERN GLASS TOP-BAR JUST LIKE FARMER HOME */}
@@ -241,7 +228,7 @@ const Home = () => {
 
         <View style={styles.headerRight}>
           <LanguageSwitcher
-            iconColor={STAFF_COLORS.accent}
+            iconColor="#FFFFFF"
             style={styles.iconBtn}
           />
 
@@ -253,7 +240,7 @@ const Home = () => {
               navigation.navigate('Broadcasts');
             }}
           >
-            <Icon name="notifications" size={24} color={STAFF_COLORS.accent} />
+            <Icon name="notifications" size={24} color="#FFFFFF" />
 
             {unreadCount > 0 && (
               <View style={styles.badgeIndicator}>
@@ -271,22 +258,6 @@ const Home = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.container}>
-          <View style={styles.statsRow}>
-            {stats.map(item => (
-              <View key={item.id} style={styles.statCard}>
-                <View style={styles.statIconWrapper}>
-                  <Icon
-                    name={item.icon}
-                    size={22}
-                    color={STAFF_COLORS.primary}
-                  />
-                </View>
-                <Text style={styles.statValue}>{item.value}</Text>
-                <Text style={styles.statLabel}>{t(`stats.${item.key}`)}</Text>
-              </View>
-            ))}
-          </View>
-
           {/* EXPLORE SECTION - REPLACES BUTTON ROWS */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
@@ -297,41 +268,63 @@ const Home = () => {
           <View style={styles.quickActionsGrid}>
             {QUICK_ACTIONS.map((item, index) => {
               const isFocused = index === 0;
+              const scaleAnim = new Animated.Value(1);
+
+              const handlePressIn = () => {
+                Animated.spring(scaleAnim, {
+                  toValue: 0.95,
+                  useNativeDriver: true,
+                }).start();
+              };
+
+              const handlePressOut = () => {
+                Animated.spring(scaleAnim, {
+                  toValue: 1,
+                  friction: 3,
+                  useNativeDriver: true,
+                }).start();
+              };
 
               return (
-                <TouchableOpacity
+                <Animated.View
                   key={item.id}
-                  style={[
-                    styles.quickActionCard,
-                    isFocused && styles.quickActionCardFocused,
-                  ]}
-                  onPress={() => navigation.navigate(item.route)}
-                  activeOpacity={0.82}
+                  style={{ transform: [{ scale: scaleAnim }], width: '47.5%' }}
                 >
-                  <View
+                  <TouchableOpacity
                     style={[
-                      styles.quickActionIcon,
-                      isFocused && styles.quickActionIconFocused,
+                      styles.quickActionCard,
+                      isFocused && styles.quickActionCardFocused,
                     ]}
+                    onPress={() => navigation.navigate(item.route)}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    activeOpacity={1}
                   >
-                    <Icon
-                      name={item.icon}
-                      size={26}
-                      color={
-                        isFocused ? STAFF_COLORS.accent : STAFF_COLORS.primary
-                      }
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.quickActionText,
-                      isFocused && styles.quickActionTextFocused,
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {t(item.key)}
-                  </Text>
-                </TouchableOpacity>
+                    <View
+                      style={[
+                        styles.quickActionIcon,
+                        isFocused && styles.quickActionIconFocused,
+                      ]}
+                    >
+                      <Icon
+                        name={item.icon}
+                        size={28}
+                        color={
+                          isFocused ? '#FFFFFF' : STAFF_COLORS.primary
+                        }
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.quickActionText,
+                        isFocused && styles.quickActionTextFocused,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {t(item.key)}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
               );
             })}
           </View>
@@ -364,7 +357,7 @@ export default Home;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: STAFF_COLORS.tint,
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
     paddingBottom: 40,
@@ -376,7 +369,7 @@ const styles = StyleSheet.create({
   /* TOP BAR - Premium Branded Header */
   headerSpacer: {
     height: 0,
-    backgroundColor: STAFF_COLORS.primaryLight,
+    backgroundColor: STAFF_COLORS.primary,
   },
   topBar: {
     flexDirection: 'row',
@@ -384,15 +377,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 24,
-    backgroundColor: STAFF_COLORS.primaryLight,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    elevation: 6,
+    paddingBottom: 26,
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 8,
     shadowColor: STAFF_COLORS.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     zIndex: 10,
     marginBottom: 8,
   },
@@ -400,243 +393,203 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   helloText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: STAFF_COLORS.textPrimary,
-    letterSpacing: 0.3,
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
   },
   subText: {
     fontSize: 14,
-    color: STAFF_COLORS.accent,
-    marginTop: 4,
-    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 5,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   headerRight: {
     flexDirection: 'row',
     gap: 12,
   },
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: STAFF_COLORS.surface,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: STAFF_COLORS.tintMid,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   badgeIndicator: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: COLORS.error,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    backgroundColor: '#EF4444',
+    borderRadius: 11,
+    minWidth: 22,
+    height: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: STAFF_COLORS.surface,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#EF4444',
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   badgeNum: {
-    color: COLORS.white,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-
-  /* STATS - Compact Premium Cards */
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    marginTop: 8,
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: STAFF_COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: STAFF_COLORS.primary,
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    borderWidth: 1,
-    borderColor: STAFF_COLORS.tintMid,
-  },
-  statIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: STAFF_COLORS.primary + '08',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: STAFF_COLORS.primary + '18',
-  },
-  statValue: {
-    color: STAFF_COLORS.textPrimary,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  statLabel: {
-    color: STAFF_COLORS.textSecondary,
+    color: '#FFFFFF',
     fontSize: 11,
-    marginTop: 3,
-    textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   /* QUICK ACTIONS - Equal Size Cards */
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 18,
-    marginBottom: 14,
+    marginTop: 20,
+    marginBottom: 16,
   },
   recentSectionHeader: {
     marginTop: 10,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
-    color: STAFF_COLORS.textPrimary,
-    letterSpacing: 0.3,
+    color: '#111827',
+    letterSpacing: 0.4,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: STAFF_COLORS.primary,
+    letterSpacing: 0.2,
   },
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    gap: 12,
+    paddingHorizontal: 18,
   },
   quickActionCard: {
-    width: '48%',
-    minHeight: 128,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 16,
+    flex: 1,
+    borderRadius: 18,
+    padding: 18,
     elevation: 4,
-    shadowColor: STAFF_COLORS.primary,
-    shadowOpacity: 0.1,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: STAFF_COLORS.tintMid,
-    backgroundColor: STAFF_COLORS.tintCard,
-    marginBottom: 12,
+    shadowOffset: { width: 0, height: 3 },
+    justifyContent: 'flex-start',
+    gap: 12,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
   quickActionCardFocused: {
     backgroundColor: STAFF_COLORS.primary,
-    borderColor: STAFF_COLORS.accent + '30',
+    borderColor: STAFF_COLORS.primary,
+    elevation: 6,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
   },
   quickActionIcon: {
     width: 52,
     height: 52,
-    borderRadius: 15,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: STAFF_COLORS.surface,
-    borderWidth: 1,
-    borderColor: STAFF_COLORS.primary + '20',
+    backgroundColor: STAFF_COLORS.primaryLight + '15',
+    borderWidth: 0,
   },
   quickActionIconFocused: {
-    backgroundColor: STAFF_COLORS.textOnPrimary + '55',
-    borderColor: STAFF_COLORS.textOnPrimary + '88',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   quickActionText: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-    color: STAFF_COLORS.textPrimary,
-    lineHeight: 21,
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    color: '#111827',
+    lineHeight: 18,
   },
   quickActionTextFocused: {
-    color: STAFF_COLORS.accent,
+    color: '#FFFFFF',
   },
 
   nestedWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
   },
 
-  /* RECENT PROCUREMENTS CARD - Compact */
+  /* RECENT PROCUREMENTS CARD - Minimal Compact */
   procCard: {
-    backgroundColor: STAFF_COLORS.surface,
-    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 14,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: STAFF_COLORS.primary,
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    marginBottom: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
-    borderWidth: 1,
-    borderColor: STAFF_COLORS.primary + '12',
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
   },
-  procHeader: {
+  procTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 12,
   },
-  procName: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: STAFF_COLORS.textPrimary,
+  procFarmerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
   },
-  procCode: {
-    fontSize: 12,
-    color: STAFF_COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  completedBadge: {
-    backgroundColor: COLORS.successLight,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  farmerAvatar: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.success + '30',
+    backgroundColor: STAFF_COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  completedText: {
-    fontSize: 9,
-    color: COLORS.success,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+  farmerInfo: {
+    flex: 1,
+  },
+  procFarmerName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 3,
+    letterSpacing: 0.2,
   },
   procCrop: {
     fontSize: 12,
-    color: STAFF_COLORS.textSecondary,
-    fontWeight: '500',
-    marginBottom: 10,
+    fontWeight: '400',
+    color: '#6B7280',
   },
-  procFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: STAFF_COLORS.primary + '10',
-  },
-  procDateWrap: {
+  procRight: {
     alignItems: 'flex-end',
   },
-  procLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-  },
   procAmount: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: STAFF_COLORS.primary,
-    marginTop: 3,
+    marginBottom: 3,
+    letterSpacing: 0.2,
   },
   procDate: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
-    marginTop: 3,
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
   },
 });

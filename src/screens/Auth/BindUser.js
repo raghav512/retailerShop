@@ -1,74 +1,25 @@
-﻿import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+﻿import React from 'react';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import TabStackuser from '../userScreen/Tabs/Stack';
 import Tabfarmer from '../farmer/Tabfarmer';
-import { getUserData } from '../../Redux/Storage';
 import TabFPO from '../../screens/FPOScreen/TabFPO';
-import TabRetailer from '../RetailerScreen/TabRetailer';
+import { normalizeOtpRoleId } from '../../utils/otpRole';
 
-const BindUser = () => {
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //   const getRole = async () => {
-  //     try {
-  //       const user = await getUserData();
-  //       console.log(user)
-  //       setRole(user || 'staff' ); // fallback
-  //     } catch (error) {
-  //       console.log('Error fetching role:', error);
-  //       setRole('user');
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   getRole();
-  // }, []);
-
-  useEffect(() => {
-    const getRole = async () => {
-      try {
-        const user = await getUserData();
-
-        console.log('STORED USER 👉', user);
-
-        const normalizedRole = user?.role?.toLowerCase?.() || 'staff';
-
-        setRole(normalizedRole);
-      } catch (error) {
-        console.log('Error fetching role:', error);
-        setRole('staff');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getRole();
-  }, []);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#D97706" />
-      </SafeAreaView>
-    );
-  }
-
+const BindUser = ({ role }) => {
   // 🔹 Role based rendering
   const renderByRole = () => {
-    switch (role) {
-      case 'farmer':
+    const normalizedRole =
+      normalizeOtpRoleId(role) || role?.toString?.().trim?.() || '';
+
+    switch (normalizedRole) {
+      case 'Farmer':
         return <Tabfarmer />;
-      case 'staff':
+      case 'Staff':
         return <TabStackuser />;
-      case 'distributor':
+      case 'Retailer':
         return <TabFPO />;
-      case 'retailer':
-        return <TabRetailer />;
       default:
         return <TabStackuser />;
     }

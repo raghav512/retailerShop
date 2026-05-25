@@ -22,6 +22,23 @@ import apiService from '../../../Redux/apiService';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
+const reverseGeocode = async (latitude, longitude) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+      { headers: { 'User-Agent': 'BeejseBazar' } }
+    );
+    const data = await response.json();
+    const address = data.address;
+    const city = address.city || address.town || address.village || address.county || '';
+    const state = address.state || '';
+    return city && state ? `${city}, ${state}` : city || state || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  }
+};
+
 const EditListing = () => {
   const [cropName, setCropName] = useState("");
   const [variety, setVariety] = useState("");
@@ -41,22 +58,53 @@ const EditListing = () => {
   const listing = route.params?.listing;
 
   useEffect(() => {
-    if (listing) {
-      setCropName(listing.cropName || "");
-      setVariety(listing.variety || "");
-      setQuantity(listing.quantity?.toString() || "");
-      setPrice(listing.price?.toString() || "");
-      
-      if (listing.location) {
-        if (Array.isArray(listing.location)) {
-          setLocation(`${listing.location[1]}, ${listing.location[0]}`);
-          setCurrentLocation({ latitude: listing.location[1], longitude: listing.location[0] });
-        } else if (typeof listing.location === 'string') {
-          setLocation(listing.location);
+    const loadListingData = async () => {
+      if (listing) {
+        setCropName(listing.cropName || "");
+        setVariety(listing.variety || "");
+        setQuantity(listing.quantity?.toString() || "");
+        setPrice(listing.price?.toString() || "");
+        
+        // Load location - GeoJSON format
+        if (listing.location && listing.location.coordinates && Array.isArray(listing.location.coordinates)) {
+          const longitude = listing.location.coordinates[0];
+          const latitude = listing.location.coordinates[1];
+          setCurrentLocation({ latitude, longitude });
+          const address = await reverseGeocode(latitude, longitude);
+          setLocation(address);
+        }
+        
+        // Load existing images
+        if (listing.cropImages && listing.cropImages.length > 0) {
+          const existingImages = listing.cropImages.map((img, index) => ({
+            uri: img.url,
+            type: 'image/jpeg',
+            fileName: `existing_${index}.jpg`,
+            isExisting: true
+          }));
+          setSelectedImages(existingImages);
         }
       }
-    }
+    };
+    loadListingData();
   }, [listing]);
+
+  const reverseGeocode = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+        { headers: { 'User-Agent': 'BeejseBazar' } }
+      );
+      const data = await response.json();
+      const address = data.address;
+      const city = address.city || address.town || address.village || address.county || '';
+      const state = address.state || '';
+      return city && state ? `${city}, ${state}` : city || state || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+  };
 
   const getCurrentLocation = async () => {
     setLocationLoading(true);
@@ -73,10 +121,11 @@ const EditListing = () => {
       }
 
       Geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords;
           setCurrentLocation({ latitude, longitude });
-          setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          const address = await reverseGeocode(latitude, longitude);
+          setLocation(address);
           setLocationLoading(false);
         },
         (error) => {
@@ -129,9 +178,9 @@ const EditListing = () => {
     setLoading(true);
     
     try {
-      const coords = currentLocation ? 
-        [currentLocation.longitude, currentLocation.latitude] : 
-        [73.9259, 18.5089];
+      const coords = currentLocation 
+        ? { type: 'Point', coordinates: [currentLocation.longitude, currentLocation.latitude] }
+        : listing.location || { type: 'Point', coordinates: [73.9259, 18.5089] };
 
       const updatePayload = {
         cropName: cropName.trim(),
@@ -141,8 +190,10 @@ const EditListing = () => {
         location: coords
       };
       
-      if (selectedImages.length > 0) {
-        updatePayload.cropImages = selectedImages.map(img => 
+      // Only send new images (not existing ones)
+      const newImages = selectedImages.filter(img => !img.isExisting);
+      if (newImages.length > 0) {
+        updatePayload.cropImages = newImages.map(img => 
           `data:${img.type};base64,${img.base64}`
         );
       }
@@ -160,12 +211,14 @@ const EditListing = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+          <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Listing</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Edit Listing</Text>
+        </View>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.card}>
@@ -220,8 +273,8 @@ const EditListing = () => {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Upload New Images ({selectedImages.length}/5)</Text>
-        <Text style={styles.hint}>Add new images (optional)</Text>
+        <Text style={styles.cardTitle}>Images ({selectedImages.length}/5)</Text>
+        <Text style={styles.hint}>Current images shown below. Add new or remove existing.</Text>
         <View style={styles.imageContainer}>
           {selectedImages.map((image, index) => (
             <View key={index} style={styles.imageWrapper}>
@@ -250,43 +303,44 @@ const EditListing = () => {
 export default EditListing;
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
-  },
   container: { 
     flex: 1, 
     backgroundColor: "#F4F6F8" 
   },
   header: { 
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    backgroundColor: FARMER_COLORS.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 8,
+    shadowColor: FARMER_COLORS.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     flexDirection: "row", 
     alignItems: "center",
-    zIndex: 10,
+    justifyContent: "space-between",
   },
   backBtn: { 
     width: 44, 
     height: 44, 
     borderRadius: 22, 
-    backgroundColor: "#FEF9E7", 
+    backgroundColor: 'rgba(255, 255, 255, 0.18)', 
     justifyContent: "center", 
-    alignItems: "center", 
-    marginRight: 16 
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: { 
-    fontSize: 18, 
-    fontWeight: "800", 
-    color: "#1F2937",
-    letterSpacing: 0.5 
+    fontSize: 21, 
+    fontWeight: "700", 
+    color: "#fff",
+    letterSpacing: 0.3 
   },
   card: { 
     backgroundColor: "#ffffff", 
@@ -394,11 +448,11 @@ const styles = StyleSheet.create({
     borderRadius: 16, 
     paddingVertical: 18, 
     alignItems: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: "#16A34A",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowColor: "#16A34A",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
   submitText: { 

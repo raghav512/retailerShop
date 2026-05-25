@@ -21,6 +21,7 @@ import {
   FPO_COLORS,
   STAFF_COLORS,
 } from '../../colorsList/ColorList';
+import { normalizeOtpRoleId, toOtpApiRole } from '../../utils/otpRole';
 
 const Login = () => {
   // 🔹 Hooks
@@ -29,25 +30,28 @@ const Login = () => {
   const { t } = useTranslation();
 
   // 🔹 Role handling
-  const roleId = route.params?.roleId || 'farmer';
+  const roleId = route.params?.roleId || 'Farmer';
+  const normalizedRole = normalizeOtpRoleId(roleId) || 'Farmer';
+  const otpApiRole = toOtpApiRole(normalizedRole) || 'Farmer';
+  const isFpoRole = normalizedRole === 'Retailer';
 
   console.log('Login screen received roleId:', roleId); // Debug log for roleId
 
   const roleName =
-    roleId === 'farmer'
+    normalizedRole === 'Farmer'
       ? t('role_farmer')
-      : roleId === 'staff'
+      : normalizedRole === 'Staff'
       ? t('role_staff')
-      : roleId === 'distributor'
+      : isFpoRole
       ? t('role_fpo')
       : t('role_user');
 
   const colors =
-    roleId === 'farmer'
+    normalizedRole === 'Farmer'
       ? FARMER_COLORS
-      : roleId === 'distributor'
+      : isFpoRole
       ? FPO_COLORS
-      : roleId === 'staff'
+      : normalizedRole === 'Staff'
       ? STAFF_COLORS
       : FARMER_COLORS;
 
@@ -77,7 +81,7 @@ const Login = () => {
       // 2️⃣ Call SendOtp API with the correct field name 'mobile'
       const payload = {
         mobile: mobile, // ✅ CORRECT: backend expects {mobile}
-        role: roleId, // Include role if needed by your API
+        role: otpApiRole, // Backend accepts only Farmer/Staff/Retailer
       };
 
       console.log('Sending OTP with payload:', payload);
@@ -95,7 +99,7 @@ const Login = () => {
         // Navigate to OTPData page with necessary params
         navigation.navigate('OTPData', {
           mobile: mobile, // Pass the mobile number
-          roleId: roleId,
+          roleId: normalizedRole,
         });
       } else {
         // Handle API response that doesn't indicate success

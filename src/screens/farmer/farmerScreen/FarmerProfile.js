@@ -8,9 +8,12 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { logOut } from '../../../Redux/AuthSlice';
 import { useTranslation } from 'react-i18next';
@@ -205,54 +208,72 @@ const FarmerProfile = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.headerSpacer} />
-        <View style={styles.header}>
-          <View style={styles.profileRow}>
-            <TouchableOpacity style={styles.avatar} onPress={pickImage}>
-              {uploading ? (
-                <ActivityIndicator color={FARMER_COLORS.primaryLight} />
-              ) : profileImageNew?.uri || profileImage ? (
-                <Image
-                  source={{ uri: profileImageNew?.uri || profileImage }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <Icon
-                  name="person"
-                  size={36}
-                  color={FARMER_COLORS.primaryLight}
-                />
-              )}
-              <View style={styles.cameraIcon}>
-                <Icon
-                  name="camera"
-                  size={14}
-                  color={FARMER_COLORS.primaryLight}
-                />
-              </View>
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.avatar} onPress={pickImage}>
+            {uploading ? (
+              <ActivityIndicator color={FARMER_COLORS.primaryLight} />
+            ) : profileImageNew?.uri || profileImage ? (
+              <Image
+                source={{ uri: profileImageNew?.uri || profileImage }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Icon
+                name="person"
+                size={36}
+                color={FARMER_COLORS.primaryLight}
+              />
+            )}
+            <View style={styles.cameraIcon}>
+              <Icon
+                name="camera"
+                size={14}
+                color={FARMER_COLORS.primaryLight}
+              />
+            </View>
+          </TouchableOpacity>
 
-            <View style={styles.userInfo}>
-              <Text style={styles.name}>
-                {loading
-                  ? t('common.loading')
-                  : `${userDetails?.firstName || ''} ${
-                      userDetails?.lastName || ''
-                    }`}
-              </Text>
-              <Text style={styles.phone}>
-                {loading
-                  ? t('common.loading')
-                  : `+91 ${userDetails?.phone || 'N/A'}`}
-              </Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>{t('role_farmer')}</Text>
-              </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.name}>
+              {loading
+                ? t('common.loading')
+                : `${userDetails?.firstName || ''} ${
+                    userDetails?.lastName || ''
+                  }`}
+            </Text>
+            <Text style={styles.phone}>
+              {loading
+                ? t('common.loading')
+                : `+91 ${userDetails?.phone || 'N/A'}`}
+            </Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleText}>{t('role_farmer')}</Text>
             </View>
           </View>
         </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
         <View style={styles.listWrapper}>
           {MENU_ITEMS.map(item => (
@@ -283,37 +304,42 @@ const FarmerProfile = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default FarmerProfile;
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 0,
+  safeArea: {
+    flex: 1,
+    backgroundColor: FARMER_COLORS.background,
+  },
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   container: {
     flex: 1,
     backgroundColor: FARMER_COLORS.background,
   },
-  header: {
-    backgroundColor: FARMER_COLORS.primary,
-    paddingTop: 24,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 6,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+
   avatar: {
     width: 88,
     height: 88,

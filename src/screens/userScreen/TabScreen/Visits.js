@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,106 +8,136 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-} from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { useTranslation } from "react-i18next";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import apiService from "../../../Redux/apiService";
+  Animated,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import apiService from '../../../Redux/apiService';
+
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 
 /* ---------------- DUMMY DATA (API READY) ---------------- */
-
 
 /* ---------------- SCREEN ---------------- */
 
 const Visits = () => {
   const [farmers, setFarmers] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const { t } = useTranslation();
   const navigation = useNavigation();
 
- 
+  const fetchFarmers = async () => {
+    try {
+      const response = await apiService.getAllFarmers();
+      console.log('BACKEND FARMERS 👉', response);
 
-const fetchFarmers = async () => {
-  try {
-    const response = await apiService.getAllFarmers();
-    console.log("BACKEND FARMERS 👉", response);
+      const farmersList = response?.data || response || [];
 
-    const mappedFarmers = response.map((item) => ({
-      id: item._id,
-      name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
-      phone: item.phone,
-      fields: item.fields || 0,
-      verified: true,
-    }));
+      const mappedFarmers = farmersList.map(item => {
+        const firstName = item.firstName?.trim() || '';
+        const lastName = item.lastName?.trim() || '';
+        const fullName = `${firstName} ${lastName}`.trim();
 
-    setFarmers(mappedFarmers);
-  } catch (error) {
-    console.log("Farmer API error 👉", error);
-  }
-};
+        return {
+          id: item._id,
+          name: fullName || 'Name Not Updated',
+          phone: item.phone || 'N/A',
+          verified: true,
+        };
+      });
 
-useFocusEffect(
-  useCallback(() => {
-    fetchFarmers();
-  }, [])
-);
+      setFarmers(mappedFarmers);
+    } catch (error) {
+      console.log('Farmer API error 👉', error);
+    }
+  };
 
-
+  useFocusEffect(
+    useCallback(() => {
+      fetchFarmers();
+    }, []),
+  );
 
   /* ---------------- FILTER (API READY) ---------------- */
 
-  const filteredFarmers = farmers.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase())
+  const filteredFarmers = farmers.filter(item =>
+    item.name?.toLowerCase().includes(search.toLowerCase()),
   );
 
   /* ---------------- RENDER ITEM ---------------- */
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.name}>{item.name}</Text>
+  const renderItem = ({ item }) => {
 
-        {item.verified && (
-          <View style={styles.verifiedBadge}>
-            <Icon name="checkmark-circle-outline" size={12} color="#16A34A" />
-            <Text style={styles.verifiedText}> {t("farmers.verified")}</Text>
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardContent}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Icon name="person" size={26} color="#fff" />
+            </View>
+            {item.verified && (
+              <View style={styles.verifiedBadgeSmall}>
+                <Icon name="checkmark-circle" size={16} color="#10B981" />
+              </View>
+            )}
           </View>
-        )}
-      </View>
 
-      <View style={styles.infoRow}>
-        <Icon name="call-outline" size={14} color="#374151" />
-        <Text style={styles.subText}> {item.phone}</Text>
+          <View style={styles.farmerDetails}>
+            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.infoRow}>
+              <View style={styles.phoneIconBox}>
+                <Icon name="call" size={12} color={STAFF_COLORS.primary} />
+              </View>
+              <Text style={styles.phone}>{item.phone}</Text>
+            </View>
+          </View>
+        </View>
       </View>
-      <Text style={styles.fields}> {item.fields} {t("farmers.fields")}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
+      />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>{t("farmers.title")}</Text>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('farmers.title')}</Text>
+          </View>
           <TouchableOpacity
             style={styles.addBtn}
-            onPress={() => navigation.navigate('Screen1', { themeColor: STAFF_COLORS.primary })}
-            activeOpacity={0.8}
+            onPress={() =>
+              navigation.navigate('Screen1', {
+                themeColor: STAFF_COLORS.primary,
+              })
+            }
+            activeOpacity={0.7}
           >
-            <Icon name="person-add-outline" size={18} color="#ffffff" />
-            <Text style={styles.addBtnText}>{t("farmers.add_farmer")}</Text>
+            <Icon name="person-add-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* SEARCH */}
+      {/* SEARCH */}
+      <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
           <Icon name="search-outline" size={20} color="#9CA3AF" />
           <TextInput
-            placeholder={t("farmers.search")}
+            placeholder={t('farmers.search')}
             placeholderTextColor="#9CA3AF"
             value={search}
             onChangeText={setSearch}
@@ -120,13 +150,13 @@ useFocusEffect(
       <View style={styles.container}>
         <FlatList
           data={filteredFarmers}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -137,128 +167,169 @@ export default Visits;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: '#F9FAFB',
   },
-  headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
+
+  /* HEADER */
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingBottom: 16,
+    elevation: 8,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
   header: {
-    backgroundColor: "#ffffff",
-    padding: 20,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    color: "#1F2937",
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
   addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: STAFF_COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 6,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  addBtnText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "700",
+
+  /* SEARCH */
+  searchContainer: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 12,
+    backgroundColor: '#F9FAFB',
   },
   searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    height: 54,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
   },
   searchInput: {
     flex: 1,
-    color: "#1F2937",
-    marginLeft: 12,
+    color: '#1F2937',
+    marginLeft: 14,
     fontSize: 15,
+    fontWeight: '400',
   },
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
-    padding: 16,
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 18,
+    paddingTop: 6,
   },
 
+  /* CARD */
   card: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    marginBottom: 14,
     elevation: 4,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 0.5,
+    borderColor: '#F3F4F6',
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 14,
   },
-
-  name: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
+  avatarContainer: {
+    position: 'relative',
   },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF9E7",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: STAFF_COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  verifiedBadgeSmall: {
+    position: 'absolute',
+    bottom: 0,
+    right: -2,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    padding: 3,
+    elevation: 4,
+    shadowColor: '#10B981',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  verifiedText: {
-    fontSize: 11,
-    color: STAFF_COLORS.primary,
-    fontWeight: "700",
+  farmerDetails: {
+    flex: 1,
+    gap: 8,
+  },
+  name: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#111827',
+    letterSpacing: 0.2,
   },
   infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  subText: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginTop: 2,
-    marginLeft: 4,
-    fontWeight: "500",
+  phoneIconBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F0F9FF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  fields: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 8,
-    fontWeight: "500",
+  phone: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '400',
   },
 });

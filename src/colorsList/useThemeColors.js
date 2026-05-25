@@ -1,5 +1,6 @@
 import { useSelector } from 'react-redux';
 import { FARMER_COLORS, FPO_COLORS, STAFF_COLORS } from './ColorList';
+import { normalizeOtpRoleId } from '../utils/otpRole';
 
 /**
  * Custom hook to get the active Theme colors globally based on the User's Role.
@@ -9,15 +10,15 @@ export const useThemeColors = () => {
   const { userData } = useSelector(state => state.auth);
 
   // Safely extract the role. Fallback to 'farmer'.
-  const role = userData?.role || userData?.user?.role || 'farmer';
-  const normalizedRole = role.toLowerCase();
+  const role = userData?.role || userData?.user?.role || 'Farmer';
+  const normalizedRole = normalizeOtpRoleId(role) || 'Farmer';
 
   switch (normalizedRole) {
-    case 'Distributor':
+    case 'Retailer':
       return FPO_COLORS;
-    case 'staff':
+    case 'Staff':
       return STAFF_COLORS;
-    case 'farmer':
+    case 'Farmer':
     default:
       return FARMER_COLORS;
   }

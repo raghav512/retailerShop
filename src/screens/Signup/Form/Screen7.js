@@ -10,7 +10,7 @@ import {
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { pick, types } from "@react-native-documents/picker";
@@ -22,7 +22,6 @@ const Screen7 = () => {
   // 🔹 Hooks
   const navigation = useNavigation();
   const route = useRoute();
-  const dispatch = useDispatch();
   const [showMoreInfo, setShowMoreInfo] = useState(false);
 
   const { t } = useTranslation();
@@ -37,9 +36,6 @@ const Screen7 = () => {
   const [soilCard, setSoilCard] = useState(null);
   const [labReport, setLabReport] = useState(null);
   const [govDoc, setGovDoc] = useState(null);
-
-  // 🔹 Form validation - documents are optional
-  const isFormValid = true;
 
   /**
    * 📎 Pick document
@@ -60,7 +56,11 @@ const Screen7 = () => {
         size: file.size,
       });
     } catch (error) {
-      if (error.code === "DOCUMENT_PICKER_CANCELED") {
+      const isPickerCancelled =
+        error?.code === "OPERATION_CANCELED" ||
+        error?.code === "DOCUMENT_PICKER_CANCELED";
+
+      if (isPickerCancelled) {
         // User cancelled the picker
         return;
       } else {
@@ -243,7 +243,7 @@ const Screen7 = () => {
         )}
       </TouchableOpacity>
 
-      <View style={{ height: 12 }} />
+      <View style={styles.bottomSpacer} />
  {/* DISCLAIMER SECTION */}
 <View style={styles.disclaimerContainer}>
   <Text style={styles.disclaimerText}>
@@ -437,6 +437,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "700",
+  },
+  bottomSpacer: {
+    height: 12,
   },
   disclaimerContainer: {
    marginHorizontal: 16,

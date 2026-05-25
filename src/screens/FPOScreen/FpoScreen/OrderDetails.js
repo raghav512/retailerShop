@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,11 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const OrderDetails = () => {
@@ -27,9 +28,8 @@ const OrderDetails = () => {
     useCallback(() => {
       setLoading(true);
       fetchOrders();
-    }, [])
+    }, []),
   );
-
 
   const fetchOrders = async () => {
     try {
@@ -46,12 +46,9 @@ const OrderDetails = () => {
   const filteredOrders =
     selectedStatus === 'ALL'
       ? orders
-      : orders.filter(
-        (order) => order.status?.toUpperCase() === selectedStatus
-      );
+      : orders.filter(order => order.status?.toUpperCase() === selectedStatus);
 
-
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status?.toUpperCase()) {
       case 'PENDING':
         return '#F59E0B';
@@ -66,13 +63,19 @@ const OrderDetails = () => {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   };
 
   const renderOrder = ({ item }) => {
-    const farmerName = `${item.farmer?.firstName || ''} ${item.farmer?.lastName || ''}`.trim();
+    const farmerName = `${item.farmer?.firstName || ''} ${
+      item.farmer?.lastName || ''
+    }`.trim();
     const statusColor = getStatusColor(item.status);
 
     return (
@@ -93,14 +96,24 @@ const OrderDetails = () => {
 
         {/* ORDER ID & DATE */}
         <View style={styles.infoRow}>
-          <Text style={styles.orderId}>#{item.orderId || item._id.slice(-8).toUpperCase()}</Text>
+          <Text style={styles.orderId}>
+            #{item.orderId || item._id.slice(-8).toUpperCase()}
+          </Text>
           <Text style={styles.date}>{formatDate(item.placedAt)}</Text>
         </View>
 
         {/* PAYMENT METHOD */}
         {item.paymentMethod && (
           <View style={styles.paymentMethodContainer}>
-            <Icon name={item.paymentMethod.toUpperCase() === 'CREDIT' ? "card-outline" : "cash-outline"} size={16} color="#4B5563" />
+            <Icon
+              name={
+                item.paymentMethod.toUpperCase() === 'CREDIT'
+                  ? 'card-outline'
+                  : 'cash-outline'
+              }
+              size={16}
+              color="#4B5563"
+            />
             <Text style={styles.paymentMethodText}>{item.paymentMethod}</Text>
           </View>
         )}
@@ -115,7 +128,9 @@ const OrderDetails = () => {
                 {orderItem.item?.brand ? ` (${orderItem.item.brand})` : ''}
               </Text>
               <Text style={styles.itemDetails}>
-                {orderItem.quantity} {orderItem.item?.unit || t('fpo_orders.unit')}(s) × ₹{orderItem.expectedPrice}
+                {orderItem.quantity}{' '}
+                {orderItem.item?.unit || t('fpo_orders.unit')}(s) × ₹
+                {orderItem.expectedPrice}
               </Text>
             </View>
           ))}
@@ -123,12 +138,19 @@ const OrderDetails = () => {
 
         {/* TOTAL & STATUS */}
         <View style={styles.footer}>
-          <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${statusColor}20` },
+            ]}
+          >
             <Text style={[styles.statusText, { color: statusColor }]}>
               {t(`fpo_orders.${item.status?.toLowerCase()}`) || item.status}
             </Text>
           </View>
-          <Text style={styles.totalAmount}>{t('fpo_orders.total')}: ₹{item.totalAmount ?? item.totalPrice ?? item.finalAmount ?? 0}</Text>
+          <Text style={styles.totalAmount}>
+            {t('fpo_orders.total')}: {item.totalAmount ?? item.totalPrice ?? item.finalAmount ?? 0}
+          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -136,26 +158,49 @@ const OrderDetails = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" translucent={true} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
+      />
 
-      {/* HEADER SPACER */}
-      <View style={[styles.headerSpacer, { backgroundColor: '#ffffff' }]} />
-
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('fpo_orders.orders_title')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      {/* BEAUTIFUL HEADER */}
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark, FPO_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
+            <Icon name="receipt-outline" size={28} color="#fff" style={styles.headerIcon} />
+            <View>
+              <Text style={styles.headerTitle}>{t('fpo_orders.orders_title')}</Text>
+              <Text style={styles.headerSubtitle}>
+                {filteredOrders.length} {filteredOrders.length === 1 ? 'Order' : 'Orders'}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       {/* FILTER BUTTONS */}
       <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollProps}>
-          {['ALL', 'PENDING', 'APPROVED', 'SOLD', 'REJECTED'].map((status) => {
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollProps}
+        >
+          {['ALL', 'PENDING', 'APPROVED', 'SOLD', 'REJECTED'].map(status => {
             const isActive = selectedStatus === status;
 
             return (
@@ -181,7 +226,6 @@ const OrderDetails = () => {
         </ScrollView>
       </View>
 
-
       {/* ORDER LIST */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -190,14 +234,16 @@ const OrderDetails = () => {
       ) : orders.length > 0 ? (
         <FlatList
           data={filteredOrders}
-          keyExtractor={(item) => item._id}
+          keyExtractor={item => item._id}
           renderItem={renderOrder}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>{t('fpo_orders.no_orders_found')}</Text>
+          <Text style={styles.emptyText}>
+            {t('fpo_orders.no_orders_found')}
+          </Text>
         </View>
       )}
     </SafeAreaView>
@@ -205,41 +251,64 @@ const OrderDetails = () => {
 };
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-  },
   safeArea: {
     flex: 1,
     backgroundColor: FPO_COLORS.background,
   },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+  },
   header: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 16,
     paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 0,
+  },
+  headerIcon: {
+    marginRight: 12,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#1F2937',
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 20,
     fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
   },
   listContent: {
     padding: 16,
@@ -392,7 +461,6 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: '#fff',
   },
-
 });
 
 export default OrderDetails;

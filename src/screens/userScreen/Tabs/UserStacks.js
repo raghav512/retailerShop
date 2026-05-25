@@ -4,11 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Home from '../TabScreen/Home';
 import Profile from '../TabScreen/Profile';
+import StaffAttendance from '../TabScreen/StaffAttendance';
 import Visits from '../TabScreen/Visits';
 import Performance from '../TabScreen/Performance';
 import HomeSecond from '../TabScreen/HomeSecond';
 import Inquiry from '../TabScreen/Inquiry';
 import InquiryDetails from '../TabScreen/InquiryDetails';
+import StaffInquiry from '../TabScreen/StaffInquiry';
 import Attendance from '../TabScreen/Attendance';
 import ApplyLeave from '../TabScreen/ApplyLeave';
 import Orders from '../TabScreen/Orders';
@@ -27,6 +29,10 @@ import StaffInventory from '../TabScreen/StaffInventory';
 import StaffAddProduct from '../TabScreen/StaffAddProduct';
 import StaffUpdateProduct from '../TabScreen/StaffUpdateProduct';
 import StaffProductDetails from '../TabScreen/StaffProductDetails';
+import AddFarmerOrder from '../TabScreen/AddFarmerOrder';
+import MarketPlace from '../../farmer/farmerScreen/MarketPlace';
+import MarketplaceProductDetails from '../../farmer/farmerScreen/MarketplaceProductDetails';
+import Cart from '../../farmer/farmerScreen/Cart';
 import Screen1 from '../../Signup/Form/Screen1';
 import Screen2 from '../../Signup/Form/Screen2';
 import Screen3 from '../../Signup/Form/Screen3';
@@ -55,6 +61,7 @@ export const UserStackHome = () => (
       />
       <Stack.Screen name="HomeSecond" component={HomeSecond} />
       <Stack.Screen name="Inquiry" component={Inquiry} />
+      <Stack.Screen name="StaffInquiry" component={StaffInquiry} />
       <Stack.Screen name="InquiryDetails" component={InquiryDetails} />
       <Stack.Screen name="Attendance" component={Attendance} />
       <Stack.Screen name="ApplyLeave" component={ApplyLeave} />
@@ -66,6 +73,10 @@ export const UserStackHome = () => (
       <Stack.Screen name="ListingDetails" component={ListingDetails} />
       <Stack.Screen name="StaffCreateListing" component={StaffCreateListing} />
       <Stack.Screen name="StaffCommunity" component={StaffCommunity} />
+      <Stack.Screen name="AddFarmerOrder" component={AddFarmerOrder} />
+      <Stack.Screen name="MarketPlace" component={MarketPlace} />
+      <Stack.Screen name="MarketplaceProductDetails" component={MarketplaceProductDetails} />
+      <Stack.Screen name="Cart" component={Cart} />
     </Stack.Navigator>
   </Suspense>
 );
@@ -114,6 +125,7 @@ export const UserStackProfile = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
+      <Stack.Screen name="StaffAttendance" component={StaffAttendance} />
     </Stack.Navigator>
   </Suspense>
 );

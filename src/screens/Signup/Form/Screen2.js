@@ -197,6 +197,8 @@ const Screen2 = () => {
                 </TouchableOpacity>
               )}
               showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+              style={{ maxHeight: 160 }}
             />
           </View>
         )}
@@ -248,6 +250,8 @@ const Screen2 = () => {
                 </TouchableOpacity>
               )}
               showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+              style={{ maxHeight: 160 }}
             />
           </View>
         )}

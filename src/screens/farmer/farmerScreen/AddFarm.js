@@ -14,6 +14,7 @@ import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { GOOGLE_MAPS_API_KEY } from '../../../config';
 import apiService from '../../../Redux/apiService';
 import { getUserData, getAccessToken } from '../../../Redux/Storage';
@@ -228,22 +229,32 @@ const AddFarm = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FARMER_COLORS.primary}
+        translucent={false}
       />
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('add_farm.title')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('add_farm.title')}</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <View style={styles.searchContainer}>
         <TextInput
@@ -423,48 +434,44 @@ export default AddFarm;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F6F8',
+    backgroundColor: FARMER_COLORS.primary,
   },
-  headerSpacer: {
-    height: 6,
-    backgroundColor: '#ffffff',
+  /* GRADIENT HEADER */
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    paddingVertical: 14,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
   },
   searchContainer: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'transparent',
     alignItems: 'center',
     position: 'absolute',
-    top: 130,
+    top: 100,
     left: 0,
     right: 0,
     zIndex: 5,
@@ -516,11 +523,12 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+    backgroundColor: '#F4F6F8',
   },
   undoButton: {
     position: 'absolute',
     right: 16,
-    top: 220,
+    top: 190,
     width: 50,
     height: 50,
     backgroundColor: '#EF4444',
@@ -558,7 +566,7 @@ const styles = StyleSheet.create({
   },
   markerInfo: {
     position: 'absolute',
-    top: 170,
+    bottom: 100,
     left: 16,
     backgroundColor: 'rgba(31, 41, 55, 0.8)',
     paddingHorizontal: 16,

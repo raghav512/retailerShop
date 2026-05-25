@@ -31,6 +31,17 @@ const DOCUMENT_TYPES = [
   { key: "addressProof", labelKey: "address_proof", icon: "location-outline", color: "#009688", maxCount: 2 },
 ];
 
+const getUploadedFileKey = (docTypeKey, upFile, index) =>
+  upFile?._id ||
+  upFile?.id ||
+  upFile?.url ||
+  upFile?.fileUrl ||
+  upFile?.path ||
+  upFile?.link ||
+  upFile?.fileName ||
+  upFile?.name ||
+  `${docTypeKey}-${index}`;
+
 const RetailerDocuments = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
@@ -94,7 +105,11 @@ const RetailerDocuments = () => {
 
       showAlert({ type: "success", title: t("file_selected_title"), message: t("file_selected_success", { name: fileData.name }) });
     } catch (err) {
-      if (err.code !== "DOCUMENT_PICKER_CANCELED") {
+      const isPickerCancelled =
+        err?.code === "OPERATION_CANCELED" ||
+        err?.code === "DOCUMENT_PICKER_CANCELED";
+
+      if (!isPickerCancelled) {
         console.error("Document picker error:", err);
       }
     }
@@ -237,19 +252,22 @@ const RetailerDocuments = () => {
           {uploadedArray.map((upFile, idx) => {
             const fileName = upFile.fileName || upFile.name || `Document ${idx + 1}`;
             return (
-              <View key={idx} style={{ marginBottom: 12 }}>
-                <View style={[styles.uploadedDoc, { marginBottom: 6 }]}>
+              <View
+                key={getUploadedFileKey(docType.key, upFile, idx)}
+                style={styles.fileBlock}
+              >
+                <View style={[styles.uploadedDoc, styles.uploadedDocSpacing]}>
                   <Icon name="checkmark-circle" size={16} color="#4CAF50" />
                   <Text style={styles.uploadedText} numberOfLines={1}>{fileName}</Text>
                 </View>
                 {!doc && (
-                  <View style={[styles.cardActions, { flexWrap: "wrap" }]}>
+                  <View style={[styles.cardActions, styles.wrapActions]}>
                     <TouchableOpacity
                       style={[styles.btn, styles.viewBtn]}
                       onPress={() => handleAction(upFile)}
                     >
                       <Icon name="eye-outline" size={14} color={RETAILER_COLORS.primary} />
-                      <Text style={[styles.btnText, { color: RETAILER_COLORS.primary }]}>{t("view")}</Text>
+                      <Text style={[styles.btnText, styles.viewBtnText]}>{t("view")}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -257,7 +275,7 @@ const RetailerDocuments = () => {
                       onPress={() => handleDownload(upFile)}
                     >
                       <Icon name="download-outline" size={14} color="#fff" />
-                      <Text style={[styles.btnText, { color: "#fff" }]}>{t("download")}</Text>
+                      <Text style={[styles.btnText, styles.lightBtnText]}>{t("download")}</Text>
                     </TouchableOpacity>
 
                     {docType.maxCount > 1 ? (
@@ -267,7 +285,7 @@ const RetailerDocuments = () => {
                         disabled={isUploading}
                       >
                         <Icon name="trash-outline" size={14} color="#EF4444" />
-                        <Text style={[styles.btnText, { color: "#EF4444" }]}>{t("delete")}</Text>
+                        <Text style={[styles.btnText, styles.deleteBtnText]}>{t("delete")}</Text>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
@@ -276,7 +294,7 @@ const RetailerDocuments = () => {
                         disabled={isUploading}
                       >
                         <Icon name="swap-horizontal-outline" size={14} color="#FF9800" />
-                        <Text style={[styles.btnText, { color: "#FF9800" }]}>{t("replace")}</Text>
+                        <Text style={[styles.btnText, styles.replaceBtnText]}>{t("replace")}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -286,7 +304,7 @@ const RetailerDocuments = () => {
           })}
 
           {doc ? (
-            <View style={{ marginTop: 8 }}>
+            <View style={styles.pendingUploadBlock}>
               <View style={styles.selectedDoc}>
                 <Icon name="document" size={16} color="#666" />
                 <Text style={styles.docName} numberOfLines={1}>
@@ -295,11 +313,11 @@ const RetailerDocuments = () => {
               </View>
               <View style={styles.cardActions}>
                 <TouchableOpacity
-                  style={[styles.btn, styles.selectBtn, { backgroundColor: "#FFEBEE" }]}
+                  style={[styles.btn, styles.selectBtn, styles.cancelBtn]}
                   onPress={() => setDocuments(p => ({...p, [docType.key]: null}))}
                   disabled={isUploading}
                 >
-                  <Text style={[styles.btnText, { color: "#D32F2F" }]}>{t("cancel")}</Text>
+                  <Text style={[styles.btnText, styles.cancelBtnText]}>{t("cancel")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -312,7 +330,7 @@ const RetailerDocuments = () => {
                   ) : (
                     <>
                       <Icon name="cloud-upload-outline" size={16} color="#fff" />
-                      <Text style={[styles.btnText, { color: "#fff" }]}>{t("upload")}</Text>
+                      <Text style={[styles.btnText, styles.lightBtnText]}>{t("upload")}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -320,14 +338,19 @@ const RetailerDocuments = () => {
             </View>
           ) : (
             canAddNew && (
-              <View style={[styles.cardActions, { marginTop: uploadedArray.length > 0 ? 8 : 0 }]}>
+              <View
+                style={[
+                  styles.cardActions,
+                  uploadedArray.length > 0 && styles.cardActionsTopSpacing,
+                ]}
+              >
                 <TouchableOpacity
                   style={[styles.btn, styles.selectBtn]}
                   onPress={() => pickDocument(docType.key, -1)}
                   disabled={isUploading}
                 >
                   <Icon name="add-circle-outline" size={16} color={RETAILER_COLORS.primary} />
-                  <Text style={[styles.btnText, { color: RETAILER_COLORS.primary }]}>
+                  <Text style={[styles.btnText, styles.viewBtnText]}>
                     {uploadedArray.length > 0 ? t("upload_new") : t("select")}
                   </Text>
                 </TouchableOpacity>
@@ -516,6 +539,9 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     marginBottom: 10,
   },
+  fileBlock: {
+    marginBottom: 12,
+  },
 
   uploadedDoc: {
     flexDirection: "row",
@@ -528,6 +554,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#BBF7D0",
+  },
+  uploadedDocSpacing: {
+    marginBottom: 6,
   },
   uploadedText: {
     fontSize: 12,
@@ -558,6 +587,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  wrapActions: {
+    flexWrap: "wrap",
+  },
+  pendingUploadBlock: {
+    marginTop: 8,
+  },
+  cardActionsTopSpacing: {
+    marginTop: 8,
+  },
   btn: {
     flex: 1,
     flexDirection: "row",
@@ -571,10 +609,26 @@ const styles = StyleSheet.create({
   downloadBtn: { backgroundColor: RETAILER_COLORS.primary },
   deleteBtn: { backgroundColor: "#FEE2E2" },
   selectBtn: { backgroundColor: "#FFF4E6" },
+  cancelBtn: { backgroundColor: "#FFEBEE" },
   uploadBtn: { backgroundColor: RETAILER_COLORS.primary },
   btnText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  viewBtnText: {
+    color: RETAILER_COLORS.primary,
+  },
+  lightBtnText: {
+    color: "#fff",
+  },
+  deleteBtnText: {
+    color: "#EF4444",
+  },
+  replaceBtnText: {
+    color: "#FF9800",
+  },
+  cancelBtnText: {
+    color: "#D32F2F",
   },
 
   loadingContainer: {

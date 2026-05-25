@@ -13,6 +13,7 @@ import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from "../../../Redux/apiService";
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
@@ -104,14 +105,29 @@ const Performance = () => {
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar barStyle="light-content" backgroundColor={FPO_COLORS.primary} />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t("inventory.title")}</Text>
-        <Text style={styles.headerSub}>{products.length} products</Text>
-      </View>
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark, FPO_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("inventory.title")}</Text>
+            <Text style={styles.headerSub}>{products.length} products</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollContainer}
@@ -156,16 +172,50 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F4F6F8" },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: "#ffffff" },
-  header: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
-    elevation: 8, shadowColor: "#000", shadowOpacity: 0.08,
-    shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, zIndex: 10,
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
   },
-  headerTitle: { fontSize: 24, fontWeight: "800", color: "#1F2937" },
-  headerSub: { fontSize: 14, color: "#6B7280", fontWeight: "500", marginTop: 2 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  headerSub: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '500',
+    marginTop: 2,
+    textAlign: 'center',
+  },
 
   /* SCROLL */
   scrollContainer: { flex: 1 },

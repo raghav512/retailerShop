@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const THEME = FPO_COLORS.primary; // Distributor Steel Blue
@@ -111,16 +112,31 @@ const Profile = () => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('fpo_profile.title')}</Text>
-      </View>
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark, FPO_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('fpo_profile.title')}</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -152,13 +168,13 @@ const Profile = () => {
           </Text>
           <Text style={styles.heroPhone}>+91 {profile?.phone}</Text>
 
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>
-              {profile?.role
-                ? t(`role.${profile.role.toLowerCase()}`)
-                : t('role.Distributor')}
-            </Text>
-          </View>
+          {profile?.role && (
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleText}>
+                {t(`fpo_profile.role.${profile.role.toLowerCase()}`)}
+              </Text>
+            </View>
+          )}
 
           {/* Edit Button */}
           <TouchableOpacity
@@ -270,7 +286,7 @@ const Profile = () => {
           activeOpacity={0.8}
           onPress={handleLogout}
         >
-          <Icon name="log-out-outline" size={20} color="#EF4444" />
+          <Icon name="log-out-outline" size={20} color="#FFFFFF" />
           <Text style={styles.logoutText}>
             {t('fpo_profile.settings.logout')}
           </Text>
@@ -286,22 +302,43 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
-  header: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
     elevation: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
   scrollContent: { padding: 16, paddingBottom: 40 },
 
   /* HERO CARD */
@@ -459,17 +496,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     paddingVertical: 16,
     marginBottom: 8,
     elevation: 4,
-    shadowColor: '#EF4444',
-    shadowOpacity: 0.12,
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    borderWidth: 1.5,
-    borderColor: '#FEE2E2',
   },
-  logoutText: { fontSize: 16, fontWeight: '700', color: '#EF4444' },
+  logoutText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

@@ -259,6 +259,19 @@ const RetailerCart = () => {
                 try {
                   setLoading(true);
                   
+                  // ========== STEP 1: FRONTEND PAYLOAD TRACE ==========
+                  console.log("========== ORDER SUBMIT TRACE ==========");
+                  console.log("Selected Payment Method:", paymentMethod);
+                  console.log("Cart Items:", JSON.stringify(cartItems, null, 2));
+                  
+                  const payload = { paymentMethod };
+                  console.log(
+                    "FINAL ORDER PAYLOAD:",
+                    JSON.stringify(payload, null, 2)
+                  );
+                  console.log("paymentMethod in payload:", payload.paymentMethod);
+                  console.log("========================================");
+                  
                   const profile = await apiService.getProfileDetails();
                   const userData = profile?.data || profile;
                   
@@ -273,7 +286,11 @@ const RetailerCart = () => {
                     return;
                   }
 
-                  await apiService.placeOrder(paymentMethod);
+                  const orderResponse = await apiService.placeOrder(paymentMethod);
+                  console.log("========== ORDER RESPONSE TRACE ==========");
+                  console.log("Order Response:", JSON.stringify(orderResponse, null, 2));
+                  console.log("===========================================");
+                  
                   setCartItems([]);
                   showAlert({ type: 'success', title: t('success'), message: t('cart.order_success') });
                 } catch (error) {

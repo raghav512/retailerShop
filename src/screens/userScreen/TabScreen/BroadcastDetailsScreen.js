@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,8 +9,12 @@ import {
     ActivityIndicator,
     Share,
     TouchableOpacity,
+    SafeAreaView,
+    StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { STAFF_COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
 
 const { width } = Dimensions.get('window');
@@ -24,12 +28,10 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // If data was passed directly (e.g. from FCM notification), use it
         if (title && description) {
             setBroadcast({ title, description, image, sentAt: timestamp });
             setLoading(false);
         }
-        // Otherwise fetch from API using broadcastId
         else if (broadcastId) {
             fetchBroadcastDetails();
         } else {
@@ -71,23 +73,81 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-            </View>
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar
+                    barStyle="light-content"
+                    backgroundColor={STAFF_COLORS.primary}
+                    translucent={false}
+                />
+
+                <LinearGradient
+                    colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.headerGradient}
+                >
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backBtn}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.8}
+                        >
+                            <Icon name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <View style={styles.headerCenter}>
+                            <Text style={styles.headerTitle}>Broadcast</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color={STAFF_COLORS.primary} />
+                </View>
+            </SafeAreaView>
         );
     }
 
     if (error || !broadcast) {
         return (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error || "Broadcast not found"}</Text>
-                <TouchableOpacity
-                    style={styles.backButtonInline}
-                    onPress={() => navigation.goBack()}
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar
+                    barStyle="light-content"
+                    backgroundColor={STAFF_COLORS.primary}
+                    translucent={false}
+                />
+
+                <LinearGradient
+                    colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.headerGradient}
                 >
-                    <Text style={styles.backButtonText}>Go Back</Text>
-                </TouchableOpacity>
-            </View>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backBtn}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.8}
+                        >
+                            <Icon name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <View style={styles.headerCenter}>
+                            <Text style={styles.headerTitle}>Broadcast</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error || "Broadcast not found"}</Text>
+                    <TouchableOpacity
+                        style={styles.backButtonInline}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={styles.backButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -99,7 +159,7 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
                 const parsed = JSON.parse(img);
                 return parsed?.url || img;
             } catch (e) {
-                return img; // Return the plain string if it's not JSON
+                return img;
             }
         }
         if (typeof img === 'object') return img.url || null;
@@ -109,42 +169,60 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
     const imageUrl = getImageUrl(broadcast.image);
 
     return (
-        <View style={styles.container}>
-            {/* ── Custom Header ── */}
-            <View style={styles.navHeader}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Icon name="arrow-back" size={24} color="#212121" />
-                </TouchableOpacity>
-                <Text style={styles.navTitle} numberOfLines={1}>
-                    Broadcast
-                </Text>
-            </View>
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar
+                barStyle="light-content"
+                backgroundColor={STAFF_COLORS.primary}
+                translucent={false}
+            />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {imageUrl && (
-                    <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                    />
-                )}
+            <LinearGradient
+                colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.headerGradient}
+            >
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.backBtn}
+                        onPress={() => navigation.goBack()}
+                        activeOpacity={0.8}
+                    >
+                        <Icon name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
 
-                <View style={styles.content}>
-                    <Text style={styles.title}>{broadcast.title}</Text>
-                    <Text style={styles.timestamp}>
-                        {formatFullDate(broadcast.sentAt || broadcast.createdAt)}
-                    </Text>
-
-                    <View style={styles.divider} />
-
-                    <Text style={styles.description}>{broadcast.description}</Text>
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>Broadcast</Text>
+                    </View>
                 </View>
-            </ScrollView>
-        </View>
+            </LinearGradient>
+
+            <View style={styles.container}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    {imageUrl && (
+                        <Image
+                            source={{ uri: imageUrl }}
+                            style={styles.image}
+                            resizeMode="cover"
+                        />
+                    )}
+
+                    <View style={styles.content}>
+                        <Text style={styles.title}>{broadcast.title}</Text>
+                        <Text style={styles.timestamp}>
+                            {formatFullDate(broadcast.sentAt || broadcast.createdAt)}
+                        </Text>
+
+                        <View style={styles.divider} />
+
+                        <Text style={styles.description}>{broadcast.description}</Text>
+                    </View>
+                </ScrollView>
+            </View>
+        </SafeAreaView>
     );
 };
 
-/* ================= HELPERS ================= */
 const formatFullDate = dateString => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -158,11 +236,40 @@ const formatFullDate = dateString => {
     });
 };
 
-/* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-  },
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    headerGradient: {
+        paddingBottom: 12,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+    },
+    headerCenter: {
+        flex: 1,
+        alignItems: 'center',
+        marginHorizontal: 12,
+    },
+    backBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#fff',
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',
@@ -171,7 +278,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
     },
     errorContainer: {
         flex: 1,
@@ -197,33 +303,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 15,
     },
-
-    /* ── Nav Header ── */
-    navHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        backgroundColor: '#fff',
-    },
-    backBtn: {
-        padding: 4,
-    },
-    navTitle: {
-        flex: 1,
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#212121',
-        marginHorizontal: 8,
-    },
-    shareBtn: {
-        padding: 4,
-    },
-
-    /* ── Content ── */
     image: {
         width: width,
         height: 250,

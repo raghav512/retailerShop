@@ -324,13 +324,17 @@ const PostCard = React.memo(({ post, userId, onAction, onOpenComments }) => {
             <Text style={styles.actionText}>{post.comments?.length || 0}</Text>
           </TouchableOpacity>
 
-          <ActionButton
-            icon={isShared ? "share" : "share-outline"}
-            count={post.shares?.length}
-            isActive={isShared}
-            activeColor="#3498db"
+          <TouchableOpacity
             onPress={() => onAction(post.id, "share")}
-          />
+            style={styles.iconButton}
+            activeOpacity={0.7}
+          >
+            <Icon
+              name={isShared ? "share" : "share-outline"}
+              size={20}
+              color={isShared ? "#3498db" : "#6B7280"}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -380,6 +384,15 @@ const AllPosts = () => {
 
   const fetchPosts = useCallback(async () => {
     try {
+      // Get current user's profile image from AsyncStorage
+      let currentUserProfileImage = null;
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const user = JSON.parse(userData);
+        currentUserProfileImage = user?.profileImage;
+        console.log("Current user profile image:", currentUserProfileImage);
+      }
+      
       const response = await fetch(`${API_BASE_URL}/api/posts/getAllPosts`);
       
       if (!response.ok) {
@@ -399,10 +412,23 @@ const AllPosts = () => {
               : `${API_BASE_URL}${post.post_image}`;
           }
           
+          // Determine avatar - check post user data first, then post.avatar, then current user's profile
+          let postAvatar = post.avatar;
+          
+          // If this is the current user's post, use their profile image
+          if (userId && post.userId === userId) {
+            postAvatar = currentUserProfileImage;
+          }
+          
+          // If post has user object with profile image, use that
+          if (post.user && post.user.profileImage) {
+            postAvatar = post.user.profileImage;
+          }
+          
           return {
             id: post._id,
-            avatar: post.avatar,
-            user: post.user || "User",
+            avatar: postAvatar,
+            user: post.user?.name || post.user || "User",
             time: new Date(post.createdAt).toLocaleString(),
             title: post.caption || "",
             post_image: postImageUrl,
@@ -421,7 +447,7 @@ const AllPosts = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [userId]);
 
   const handleAction = async (postId, action) => {
     if (!userId) {
@@ -480,8 +506,8 @@ const AllPosts = () => {
             } else if (action === "share") {
               if (!newPost.shares.some(share => share._id === userId)) {
                 newPost.shares = [...newPost.shares, { _id: userId }];
-                handleShare(post);
               }
+              handleShare(post);
             }
             return newPost;
           })

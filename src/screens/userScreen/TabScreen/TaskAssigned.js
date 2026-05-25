@@ -13,10 +13,13 @@ import {
 
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
+import { useTranslation } from 'react-i18next';
 
 const TaskAssigned = ({ navigation }) => {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,22 +98,20 @@ const TaskAssigned = ({ navigation }) => {
   // Error message helper
   const getErrorMessage = err => {
     if (!err.response) {
-      return 'No internet connection. Please check and retry.';
+      return t('task_assigned.no_internet');
     }
     switch (err.response?.status) {
       case 401:
-        return 'Session expired. Please login again.';
+        return t('task_assigned.session_expired');
       case 429:
         const retryAfter = err.response?.headers['retry-after'];
-        return `Too many requests. ${
-          retryAfter
-            ? `Retry after ${retryAfter} seconds.`
-            : 'Please try again later.'
-        }`;
+        return retryAfter
+          ? t('task_assigned.too_many_requests_retry', { retryAfter })
+          : t('task_assigned.too_many_requests');
       case 500:
-        return 'Server error. Please try again later.';
+        return t('task_assigned.server_error');
       default:
-        return 'Something went wrong. Please retry.';
+        return t('task_assigned.something_went_wrong');
     }
   };
 
@@ -180,12 +181,12 @@ const TaskAssigned = ({ navigation }) => {
 
   // Format date
   const formatDate = dateString => {
-    if (!dateString) return 'No deadline';
+    if (!dateString) return t('task_assigned.no_deadline');
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-GB').replace(/\//g, '/');
     } catch {
-      return 'Invalid date';
+      return t('task_assigned.invalid_date');
     }
   };
 
@@ -277,16 +278,16 @@ const TaskAssigned = ({ navigation }) => {
     }
 
     // Get display name from assignedTo object
-    let displayName = 'Unassigned';
+    let displayName = t('task_assigned.unassigned');
 
     if (item?.assignedTo && typeof item.assignedTo === 'object') {
       const firstName = item.assignedTo.firstName || '';
       const lastName = item.assignedTo.lastName || '';
-      displayName = `${firstName} ${lastName}`.trim() || 'Unassigned';
+      displayName = `${firstName} ${lastName}`.trim() || t('task_assigned.unassigned');
     }
 
     // Get task title
-    const taskTitle = item?.title || item?.name || 'Untitled Task';
+    const taskTitle = item?.title || item?.name || t('task_assigned.untitled_task');
 
     // Get task ID for navigation - try both _id and id
     const taskId = item?._id || item?.id;
@@ -350,7 +351,7 @@ const TaskAssigned = ({ navigation }) => {
               <Ionicons name="flag" size={16} color={priorityColor} />
             </View>
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Priority</Text>
+              <Text style={styles.infoLabel}>{t('task_assigned.priority')}</Text>
               <Text style={[styles.infoValue, { color: priorityColor }]}>
                 {item?.priority || 'Medium'}
               </Text>
@@ -364,7 +365,7 @@ const TaskAssigned = ({ navigation }) => {
                 <Ionicons name="pricetag" size={16} color="#9C27B0" />
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Category</Text>
+                <Text style={styles.infoLabel}>{t('task_assigned.category')}</Text>
                 <Text style={styles.infoValue} numberOfLines={1}>
                   {categoryText}
                 </Text>
@@ -391,7 +392,7 @@ const TaskAssigned = ({ navigation }) => {
           <View style={styles.deadlineContainer}>
             <Ionicons name="time-outline" size={14} color="#666666" />
             <View>
-              <Text style={styles.deadlineLabel}>Due Date</Text>
+              <Text style={styles.deadlineLabel}>{t('task_assigned.due_date')}</Text>
               <Text style={styles.deadlineText}>
                 {formatDate(item?.deadline || item?.dueDate)}
               </Text>
@@ -407,22 +408,31 @@ const TaskAssigned = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Task Assigned</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Skeleton Loader */}
         <View style={styles.container}>
@@ -446,34 +456,43 @@ const TaskAssigned = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Task Assigned</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Error State */}
         <View style={styles.emptyContainer}>
           <Ionicons name="alert-circle-outline" size={64} color="#F44336" />
-          <Text style={styles.emptyTitle}>Failed to load tasks</Text>
+          <Text style={styles.emptyTitle}>{t('task_assigned.failed_to_load')}</Text>
           <Text style={styles.emptySubtitle}>{error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => fetchTasks()}
             accessibilityLabel="Retry loading tasks"
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('task_assigned.retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -485,29 +504,38 @@ const TaskAssigned = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent
+          barStyle="light-content"
+          backgroundColor={STAFF_COLORS.primary}
+          translucent={false}
         />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Task Assigned</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <LinearGradient
+          colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{t('task_assigned.title')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Empty State */}
         <View style={styles.emptyContainer}>
           <Ionicons name="clipboard-outline" size={64} color="#9E9E9E" />
-          <Text style={styles.emptyTitle}>No tasks assigned yet</Text>
+          <Text style={styles.emptyTitle}>{t('task_assigned.no_tasks')}</Text>
           <Text style={styles.emptySubtitle}>
-            Check back later for new assignments
+            {t('task_assigned.no_tasks_subtitle')}
           </Text>
         </View>
       </SafeAreaView>
@@ -518,28 +546,34 @@ const TaskAssigned = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
       />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>My Tasks</Text>
-          <Text style={styles.headerSubtitle}>
-            {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
-          </Text>
+      <LinearGradient
+        colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('task_assigned.my_tasks')}</Text>
+            <Text style={styles.headerSubtitle}>
+              {t('task_assigned.task_count', { count: tasks.length })}
+            </Text>
+          </View>
         </View>
-        <View style={styles.headerRight} />
-      </View>
+      </LinearGradient>
 
       {/* Task List */}
       <FlatList
@@ -575,39 +609,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  backButton: {
-    width: 44,
-    height: 44,
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -42,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: 16,
-  },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: '800',
+    color: '#fff',
   },
   headerSubtitle: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 2,
-  },
-  headerRight: {
-    width: 32,
   },
   container: {
     flex: 1,

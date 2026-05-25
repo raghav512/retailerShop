@@ -8,7 +8,6 @@ import {
   FARMER_COLORS,
   FPO_COLORS,
   STAFF_COLORS,
-  RETAILER_COLORS,
 } from '../../colorsList/ColorList';
 
 const Roll = () => {
@@ -18,31 +17,24 @@ const Roll = () => {
 
   const roles = [
     {
-      id: 'farmer',
+      id: 'Farmer',
       name: t('role_farmer'),
       desc: t('role_farmer_desc'),
       icon: '👨‍🌾',
       bgColor: FARMER_COLORS.primaryLight,
     },
     {
-      id: 'staff',
+      id: 'Staff',
       name: t('role_staff'),
       desc: t('role_staff_desc'),
       icon: '🚜',
       bgColor: STAFF_COLORS.primaryLight,
     },
     {
-      id: 'retailer',
-      name: t('role_retailer'),
-      desc: t('role_retailer_desc'),
-      icon: '🏪',
-      bgColor: RETAILER_COLORS.primaryLight, // Tailwind's emerald-400
-    },
-    {
-      id: 'distributor',
+      id: 'Retailer',
       name: t('role_fpo'),
       desc: t('role_fpo_desc'),
-      icon: '🏢',
+      icon: '🏪',
       bgColor: FPO_COLORS.primaryLight,
     },
   ];
@@ -60,23 +52,18 @@ const Roll = () => {
     console.log('selectedRole', selectedRole);
 
     // role-based navigation
-    if (selectedRole === 'farmer') {
-      navigation.navigate('Login', { roleId: 'farmer' });
+    if (selectedRole === 'Farmer') {
+      navigation.navigate('Login', { roleId: 'Farmer' });
       return;
     }
 
-    if (selectedRole === 'staff') {
-      navigation.navigate('StafLogin', { roleId: 'staff' });
+    if (selectedRole === 'Staff') {
+      navigation.navigate('StafLogin', { roleId: 'Staff' });
       return;
     }
 
-    if (selectedRole === 'distributor') {
-      navigation.navigate('FPOLogin', { roleId: 'distributor' });
-      return;
-    }
-
-    if (selectedRole === 'retailer') {
-      navigation.navigate('RetailerLogin', { roleId: 'retailer' });
+    if (selectedRole === 'Retailer') {
+      navigation.navigate('FPOLogin', { roleId: 'Retailer' });
       return;
     }
   };

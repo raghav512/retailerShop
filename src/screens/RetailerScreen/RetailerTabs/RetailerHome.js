@@ -69,10 +69,13 @@ const RetailerHome = ({ navigation }) => {
           <Text style={styles.title}>{t('retailer_home.dashboard_title')}</Text>
         </View>
         <View style={styles.headerRight}>
-          <LanguageSwitcher iconColor={RETAILER_COLORS.textOnPrimary} style={styles.iconBtn} />
-          <TouchableOpacity 
+          <LanguageSwitcher
+            iconColor={RETAILER_COLORS.textOnPrimary}
+            style={styles.iconBtn}
+          />
+          <TouchableOpacity
             style={styles.notificationBadge}
-            onPress={() => navigation.navigate('BroadcastDetailsScreen')}
+            onPress={() => navigation.navigate('BroadcastsScreen')}
           >
             <Icon
               name="notifications"
@@ -87,7 +90,9 @@ const RetailerHome = ({ navigation }) => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>{t('retailer_home.quick_actions')}</Text>
+        <Text style={styles.sectionTitle}>
+          {t('retailer_home.quick_actions')}
+        </Text>
 
         <View style={styles.grid}>
           {QUICK_ACTIONS.map(item => (

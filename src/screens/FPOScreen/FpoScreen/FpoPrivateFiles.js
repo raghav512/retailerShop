@@ -45,12 +45,6 @@ const TABS = [
     icon: 'receipt-outline',
   },
   {
-    key: 'CINCertificate',
-    labelKey: 'cin_certificate',
-    label: 'CIN Certificate',
-    icon: 'business-outline',
-  },
-  {
     key: 'PANCard',
     labelKey: 'pan_card',
     label: 'PAN Card',
@@ -63,24 +57,29 @@ const TABS = [
     icon: 'bug-outline',
   },
   {
-    key: 'CEODocuments',
-    labelKey: 'ceo_documents',
-    label: 'CEO Documents',
-    icon: 'person-outline',
-  },
-  {
-    key: 'BODDocuments',
-    labelKey: 'bod_documents',
-    label: 'BOD Documents',
-    icon: 'people-outline',
-  },
-  {
     key: 'FinancialDocuments',
     labelKey: 'financial_documents',
     label: 'Financial Documents',
     icon: 'pie-chart-outline',
   },
+  {
+    key: 'OtherDocuments',
+    labelKey: 'other_documents',
+    label: 'Other Documents',
+    icon: 'folder-open-outline',
+  },
 ];
+
+const DOCUMENT_PREFIX = {
+  seedLicense: 'SDL',
+  fertilizerLicense: 'FTL',
+  procurementLicense: 'PRC',
+  GSTCertificate: 'GST',
+  PANCard: 'PAN',
+  InsecticidesLicense: 'INS',
+  FinancialDocuments: 'FIN',
+  OtherDocuments: 'OTH',
+};
 
 const getFileIcon = (url = '') => {
   const lower = url.toLowerCase();
@@ -109,6 +108,13 @@ const cleanFileName = (url = '') => {
     return 'Unnamed File';
   }
 };
+
+const getDocumentIdentifier = (type, index) => {
+  const prefix = DOCUMENT_PREFIX[type] || 'DOC';
+  return `${prefix}-${String(index + 1).padStart(2, '0')}`;
+};
+
+const EMPTY_LIST_STYLE = { flex: 1 };
 
 const FpoPrivateFiles = () => {
   const navigation = useNavigation();
@@ -273,7 +279,7 @@ const FpoPrivateFiles = () => {
     }
   };
 
-  const renderFile = ({ item }) => {
+  const renderFile = ({ item, index }) => {
     const url = item?.url || item?.fileUrl || item?.path || item?.link || '';
     const name =
       item?.fileName || item?.name || item?.originalName || cleanFileName(url);
@@ -296,6 +302,7 @@ const FpoPrivateFiles = () => {
     const fileId = item?._id || item?.id || url;
     const isDownloading = downloading === fileId;
     const fileIcon = getFileIcon(url);
+    const documentId = getDocumentIdentifier(activeTab, index);
 
     return (
       <View style={styles.card}>
@@ -309,9 +316,14 @@ const FpoPrivateFiles = () => {
         </View>
 
         <View style={styles.cardInfo}>
-          <Text style={styles.fileName} numberOfLines={2}>
-            {name}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.fileName} numberOfLines={2}>
+              {name}
+            </Text>
+            <View style={styles.identifierBadge}>
+              <Text style={styles.identifierText}>{documentId}</Text>
+            </View>
+          </View>
           <Text style={styles.fileDate}>
             {t('uploaded_colon')}
             {date}
@@ -325,9 +337,7 @@ const FpoPrivateFiles = () => {
             accessibilityLabel="View file"
           >
             <Icon name="eye-outline" size={16} color="#1565C0" />
-            <Text style={[styles.actionText, { color: '#1565C0' }]}>
-              {t('view')}
-            </Text>
+            <Text style={[styles.actionText, styles.viewActionText]}>{t('view')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -341,9 +351,7 @@ const FpoPrivateFiles = () => {
             ) : (
               <>
                 <Icon name="download-outline" size={16} color="#fff" />
-                <Text style={[styles.actionText, { color: '#fff' }]}>
-                  {t('download')}
-                </Text>
+                <Text style={[styles.actionText, styles.downloadActionText]}>{t('download')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -360,7 +368,7 @@ const FpoPrivateFiles = () => {
         <Text style={styles.emptyTitle}>{t('no_files_found')}</Text>
         <Text style={styles.emptyDesc}>
           {t('no_label_uploaded_yet', {
-            label: t(TABS.find(t => t.key === activeTab)?.labelKey),
+            label: t(TABS.find(tab => tab.key === activeTab)?.labelKey),
           })}
         </Text>
       </View>
@@ -400,7 +408,7 @@ const FpoPrivateFiles = () => {
                   name={tab.icon}
                   size={16}
                   color={active ? FPO_COLORS.primary : '#888'}
-                  style={{ marginBottom: 4 }}
+                  style={styles.tabIcon}
                 />
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>
                   {t(tab.labelKey)}
@@ -424,7 +432,7 @@ const FpoPrivateFiles = () => {
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={[
             styles.listContent,
-            files.length === 0 && { flex: 1 },
+            files.length === 0 && EMPTY_LIST_STYLE,
           ]}
           showsVerticalScrollIndicator={false}
         />
@@ -500,6 +508,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  tabIcon: {
+    marginBottom: 4,
+  },
   tabTextActive: {
     color: FPO_COLORS.primary,
   },
@@ -528,11 +539,29 @@ const styles = StyleSheet.create({
   cardInfo: {
     marginBottom: 10,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 4,
+  },
   fileName: {
     fontSize: 14,
     fontWeight: '700',
     color: '#1A1A2E',
-    marginBottom: 4,
+    flex: 1,
+  },
+  identifierBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  identifierText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: FPO_COLORS.primary,
   },
   fileDate: {
     fontSize: 11,
@@ -560,6 +589,12 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  viewActionText: {
+    color: '#1565C0',
+  },
+  downloadActionText: {
+    color: '#fff',
   },
   loadingContainer: {
     flex: 1,

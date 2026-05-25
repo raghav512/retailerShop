@@ -18,12 +18,13 @@ import {
   DeviceEventEmitter,
   PermissionsAndroid,
   StatusBar,
+  SafeAreaView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LottieView from 'lottie-react-native';
 import { Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import SpeechService from './SpeechService';
 import Tts from 'react-native-tts';
 import HelloRobot from '../../../animations/HelloRobot.json';
@@ -644,31 +645,37 @@ export default function ChatBox({ navigation }) {
     input.trim().length > 0 && dailyChatCount < MAX_DAILY_CHATS && !botTyping;
 
   return (
-    <View style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
-      />
-
-      {/* Header */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Assistant AI</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Assistant AI</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <SafeAreaView style={styles.safeArea} edges={['bottom']}>
           <View style={styles.background}>
@@ -710,25 +717,27 @@ export default function ChatBox({ navigation }) {
                 </Text>
               </View>
             )}
+          </View>
 
-            {/* Floating Lottie Animation */}
-            <TouchableOpacity
-              style={styles.floatingAnimation}
-              activeOpacity={0.8}
-              onPress={startListening}
-            >
-              <LottieView
-                source={HelloRobot}
-                autoPlay
-                loop
-                style={styles.lottieIcon}
-                pointerEvents="none"
-              />
-            </TouchableOpacity>
-
-            {/* Input Container */}
-            <View style={styles.inputWrapper}>
+          {/* Input Container - Fixed at bottom */}
+          <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
+                <TouchableOpacity
+                  onPress={isListening ? stopListening : startListening}
+                  style={[
+                    styles.voiceButton,
+                    isListening && styles.voiceButtonActive,
+                  ]}
+                  disabled={dailyChatCount >= MAX_DAILY_CHATS || botTyping}
+                  activeOpacity={0.7}
+                >
+                  <Icon 
+                    name={isListening ? "mic-off" : "mic"} 
+                    size={20} 
+                    color={isListening ? "#fff" : FARMER_COLORS.primaryLight} 
+                  />
+                </TouchableOpacity>
+                
                 <TextInput
                   ref={inputRef}
                   style={styles.input}
@@ -839,10 +848,9 @@ export default function ChatBox({ navigation }) {
                 </View>
               </View>
             </Modal>
-          </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -853,45 +861,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: FARMER_COLORS.background,
   },
-  headerSpacer: {
-    height: 6,
-    backgroundColor: FARMER_COLORS.surface,
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: FARMER_COLORS.surface,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 12,
-    shadowColor: FARMER_COLORS.primary,
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    zIndex: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: FARMER_COLORS.tintMid,
+    paddingVertical: 14,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: FARMER_COLORS.tint,
-    alignItems: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
-    elevation: 2,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: FARMER_COLORS.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
   keyboardView: {
     flex: 1,
@@ -918,7 +916,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 90,
   },
   separator: {
     alignItems: 'center',
@@ -1041,69 +1039,77 @@ const styles = StyleSheet.create({
     fontSize: 11,
     opacity: 0.9,
   },
-  floatingAnimation: {
-    position: 'absolute',
-    right: 5,
-    bottom: 120,
-    width: 140,
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: FARMER_COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-  lottieIcon: {
-    width: 140,
-    height: 140,
-  },
+
   inputWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: FARMER_COLORS.surface,
-    borderRadius: 32,
-    marginHorizontal: 16,
-    marginBottom: Platform.OS === 'ios' ? 24 : 16,
-    paddingBottom: 8,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginHorizontal: 0,
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === 'ios' ? 6 : 12,
+    paddingTop: 6,
     elevation: 16,
     shadowColor: FARMER_COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
-    borderWidth: 1,
-    borderColor: FARMER_COLORS.tintMid,
+    borderTopWidth: 1,
+    borderTopColor: FARMER_COLORS.tintMid,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 2,
+    gap: 6,
+  },
+  voiceButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: FARMER_COLORS.tint,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: FARMER_COLORS.tintMid,
+    elevation: 2,
+    shadowColor: FARMER_COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  voiceButtonActive: {
+    backgroundColor: FARMER_COLORS.primaryLight,
+    borderColor: FARMER_COLORS.primary,
   },
   input: {
     flex: 1,
     backgroundColor: FARMER_COLORS.tint,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 14,
-    marginRight: 8,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
     fontSize: 15,
-    maxHeight: 120,
-    minHeight: 52,
+    maxHeight: 100,
+    minHeight: 40,
     color: FARMER_COLORS.textPrimary,
     borderWidth: 1,
     borderColor: FARMER_COLORS.tintMid,
   },
   sendButton: {
     backgroundColor: FARMER_COLORS.primaryLight,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 26,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 52,
-    minWidth: 80,
+    minHeight: 40,
+    minWidth: 70,
     elevation: 4,
     shadowColor: FARMER_COLORS.primary,
     shadowOffset: { width: 0, height: 3 },
@@ -1121,7 +1127,7 @@ const styles = StyleSheet.create({
   },
   chatCounter: {
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   chatCounterText: {
     fontSize: 11,

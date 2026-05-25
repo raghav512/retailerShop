@@ -16,6 +16,7 @@ import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+
 import apiService from "../../../Redux/apiService";
 import { launchImageLibrary } from "react-native-image-picker";
 import { API_BASE_URL } from "../../../config";
@@ -134,20 +135,19 @@ const EditProfile = ({ route }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar barStyle="light-content" backgroundColor={STAFF_COLORS.primary} translucent={false} />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t("edit_profile.title")}</Text>
-          <Text style={styles.headerSub}>{t("edit_profile.subtitle")}</Text>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("edit_profile.title")}</Text>
+          </View>
+          <View style={{ width: 42 }} />
         </View>
-
-        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -287,17 +287,33 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F4F6F8" },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: "#ffffff" },
-  header: {
-    flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 16,
-    backgroundColor: "#ffffff", borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
-    elevation: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 }, zIndex: 10, justifyContent: "space-between",
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#F3F4F6", justifyContent: "center", alignItems: "center" },
-  headerCenter: { alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#1F2937" },
-  headerSub: { fontSize: 12, color: "#6B7280", marginTop: 2, fontWeight: "500" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
+  },
   scroll: { padding: 20, paddingBottom: 40 },
 
   /* AVATAR */

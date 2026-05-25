@@ -35,6 +35,10 @@ import BroadcastDetailsScreen from './farmerScreen/BroadcastDetailsScreen';
 import PrivateFiles from './farmerScreen/PrivateFiles';
 import CropCalendarDetail from './farmerScreen/CropCalendarDetail';
 import MandiPricesScreen from './farmerScreen/MandiPricesScreen';
+import FarmerDiary from './farmerScreen/FarmerDiary';
+import AddIncomeToDiary from './farmerScreen/AddIncomeToDiary';
+import AddNewExpense from './farmerScreen/AddNewExpense';
+import FarmerInquiry from './farmerScreen/FarmerInquiry';
 const Stack = createNativeStackNavigator();
 
 // ✅ define color (or import if you already have it)
@@ -74,10 +78,20 @@ export const FarmerStackHome = () => {
         <Stack.Screen name="Community" component={Community} />
         <Stack.Screen name="MyOrders" component={MyOrders} />
         <Stack.Screen name="Broadcasts" component={BroadcastsScreen} />
-        <Stack.Screen name="BroadcastDetails" component={BroadcastDetailsScreen} />
+        <Stack.Screen
+          name="BroadcastDetails"
+          component={BroadcastDetailsScreen}
+        />
         <Stack.Screen name="PrivateFiles" component={PrivateFiles} />
-        <Stack.Screen name="CropCalendarDetail" component={CropCalendarDetail} />
+        <Stack.Screen
+          name="CropCalendarDetail"
+          component={CropCalendarDetail}
+        />
         <Stack.Screen name="MandiPricesScreen" component={MandiPricesScreen} />
+        <Stack.Screen name="FarmerDiary" component={FarmerDiary} />
+        <Stack.Screen name="AddIncomeToDiary" component={AddIncomeToDiary} />
+        <Stack.Screen name="AddNewExpense" component={AddNewExpense} />
+        <Stack.Screen name="FarmerInquiry" component={FarmerInquiry} />
       </Stack.Navigator>
     </Suspense>
   );
@@ -88,7 +102,10 @@ export const FarmerStackMarket = () => {
     <Suspense fallback={<LoadingIndicator />}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MarketPlace" component={MarketPlace} />
-        <Stack.Screen name="MarketplaceProductDetails" component={MarketplaceProductDetails} />
+        <Stack.Screen
+          name="MarketplaceProductDetails"
+          component={MarketplaceProductDetails}
+        />
         <Stack.Screen name="Cart" component={Cart} />
       </Stack.Navigator>
     </Suspense>
@@ -138,4 +155,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

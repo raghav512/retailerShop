@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
+import { useTranslation } from 'react-i18next';
 
 const THEME = FARMER_COLORS.primaryLight;
 const THEME_LIGHT = '#e2f0c9';
@@ -37,19 +39,19 @@ const formatDate = (dateStr) => {
  * Safely convert any value to a readable string —
  * handles nested objects and arrays of objects.
  */
-const safeFormat = (val, depth = 0) => {
-  if (val === null || val === undefined) return 'N/A';
+const safeFormat = (val, depth = 0, t) => {
+  if (val === null || val === undefined) return t ? t('crop_calendar.na') : 'N/A';
   if (typeof val === 'boolean') return val ? 'Yes' : 'No';
   if (typeof val !== 'object') return String(val);
 
   if (Array.isArray(val)) {
-    if (val.length === 0) return 'None';
+    if (val.length === 0) return t ? t('crop_calendar.none') : 'None';
     return val
       .map((item) =>
         typeof item === 'object' && item !== null
           ? Object.entries(item)
               .filter(([k]) => k !== '_id')
-              .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${safeFormat(v, depth + 1)}`)
+              .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${safeFormat(v, depth + 1, t)}`)
               .join(' | ')
           : String(item)
       )
@@ -59,7 +61,7 @@ const safeFormat = (val, depth = 0) => {
   // Plain object
   return Object.entries(val)
     .filter(([k]) => k !== '_id')
-    .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${safeFormat(v, depth + 1)}`)
+    .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${safeFormat(v, depth + 1, t)}`)
     .join(' | ');
 };
 
@@ -122,7 +124,7 @@ const pb = StyleSheet.create({
 });
 
 /* ─── ProgressStageCard ─── */
-const ProgressStageCard = ({ stage, index, isLast }) => {
+const ProgressStageCard = ({ stage, index, isLast, t }) => {
   const [expanded, setExpanded] = useState(stage.status === 'active');
 
   const statusColor =
@@ -134,8 +136,8 @@ const ProgressStageCard = ({ stage, index, isLast }) => {
     stage.status === 'active'   ? '#FFFBEB' : '#F9FAFB';
 
   const statusLabel =
-    stage.status === 'completed' ? 'Done' :
-    stage.status === 'active'   ? 'Active' : 'Upcoming';
+    stage.status === 'completed' ? t('crop_calendar.status_done') :
+    stage.status === 'active'   ? t('crop_calendar.status_active') : t('crop_calendar.status_upcoming');
 
   const dotIcon =
     stage.status === 'completed' ? 'checkmark-circle' :
@@ -181,14 +183,14 @@ const ProgressStageCard = ({ stage, index, isLast }) => {
               {stage.status === 'active' && (
                 <View style={tl.livePulse}>
                   <View style={tl.liveDot} />
-                  <Text style={tl.liveText}>Live</Text>
+                  <Text style={tl.liveText}>{t('crop_calendar.status_live')}</Text>
                 </View>
               )}
             </View>
 
             {/* Day range */}
             <Text style={tl.dayRange}>
-              Day {stage.startDay} → {stage.endDay}  ({stage.duration} days)
+              {t('crop_calendar.day')} {stage.startDay} → {stage.endDay}  ({stage.duration} {t('crop_calendar.day')}s)
             </Text>
 
             {/* Progress bar */}
@@ -212,7 +214,7 @@ const ProgressStageCard = ({ stage, index, isLast }) => {
                   {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                 </Text>
                 <Text style={tl.detailVal}>
-                  {safeFormat(val)}
+                  {safeFormat(val, 0, t)}
                 </Text>
               </View>
             ))}
@@ -266,11 +268,11 @@ const tl = StyleSheet.create({
 });
 
 /* ─── renderValue helper (for non-stage sections) ─── */
-const renderValue = (value, depth = 0) => {
-  if (value === null || value === undefined) return <Text style={s.sectionContent}>N/A</Text>;
+const renderValue = (value, depth = 0, t) => {
+  if (value === null || value === undefined) return <Text style={s.sectionContent}>{t ? t('crop_calendar.na') : 'N/A'}</Text>;
 
   if (Array.isArray(value)) {
-    if (value.length === 0) return <Text style={s.sectionContent}>None</Text>;
+    if (value.length === 0) return <Text style={s.sectionContent}>{t ? t('crop_calendar.none') : 'None'}</Text>;
     return (
       <View style={{ marginLeft: depth * 10 }}>
         {value.map((item, i) => (
@@ -278,7 +280,7 @@ const renderValue = (value, depth = 0) => {
             <Icon name="checkmark-circle" size={14} color="#10B981" />
             <View style={{ flex: 1, marginLeft: 6 }}>
               {typeof item === 'object' && item !== null
-                ? renderValue(item, depth + 1)
+                ? renderValue(item, depth + 1, t)
                 : <Text style={s.listItemText}>{String(item)}</Text>}
             </View>
           </View>
@@ -292,12 +294,18 @@ const renderValue = (value, depth = 0) => {
       <View style={{ marginLeft: depth * 10 }}>
         {Object.entries(value).map(([key, val]) => {
           if (key === '_id') return null;
+          
+          // Try to translate the key
+          const translationKey = `crop_calendar.${key.toLowerCase()}`;
+          const translatedKey = t ? t(translationKey) : key;
+          const displayKey = translatedKey !== translationKey ? translatedKey : key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          
           return (
             <View key={key} style={s.objectItem}>
               <Text style={s.objectKey}>
-                {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
+                {displayKey}:
               </Text>
-              {renderValue(val, depth + 1)}
+              {renderValue(val, depth + 1, t)}
             </View>
           );
         })}
@@ -338,8 +346,19 @@ const ICON_MAP = {
   notes: 'document-text-outline',
 };
 
-const fmtKey = (k) =>
-  k.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+const fmtKey = (k, t) => {
+  // Try to get translation first
+  const translationKey = `crop_calendar.${k.toLowerCase()}`;
+  const translated = t(translationKey);
+  
+  // If translation exists and is different from the key, use it
+  if (translated !== translationKey) {
+    return translated;
+  }
+  
+  // Otherwise, format the key as before
+  return k.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
 
 /* ══════════════════════════════════════════════
    MAIN SCREEN
@@ -347,7 +366,8 @@ const fmtKey = (k) =>
 const CropCalendarDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { cropName, sowingDate } = route.params;   // sowingDate optional
+  const { cropName, variety, sowingDate } = route.params;   // variety and sowingDate optional
+  const { t } = useTranslation();
 
   const [cropData, setCropData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -360,10 +380,10 @@ const CropCalendarDetail = () => {
   const fetchCropDetail = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getCropCalendarByName(cropName);
+      const response = await apiService.getCropCalendarByName(cropName, variety);
       setCropData(response.data);
     } catch (error) {
-      showAlert({ type: 'error', title: 'Error', message: 'Failed to fetch crop details' });
+      showAlert({ type: 'error', title: t('error'), message: t('crop_calendar.error_fetch') });
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -378,23 +398,51 @@ const CropCalendarDetail = () => {
   const enriched = sowingDate ? enrichStages(stages, currentDay) : [];
   const activeStage = enriched.find(st => st.status === 'active');
   const completedCount = enriched.filter(st => st.status === 'completed').length;
+  
+  // Get crop name based on language
+  const currentLanguage = t('i18n_locale');
+  const displayCropName = currentLanguage === 'hi-IN' && cropData?.crop_name 
+    ? cropData.crop_name 
+    : (cropData?.crop_name_english || cropData?.crop_name || 'Unknown Crop');
+  
+  // Get crop type based on language
+  const displayCropType = cropData?.crop_type 
+    ? (t(`crop_calendar.${cropData.crop_type.toLowerCase()}`) !== `crop_calendar.${cropData.crop_type.toLowerCase()}` 
+        ? t(`crop_calendar.${cropData.crop_type.toLowerCase()}`) 
+        : cropData.crop_type)
+    : null;
 
   /* ── Loading state ── */
   if (loading) {
     return (
       <View style={s.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-        <View style={s.headerSpacer} />
-        <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Icon name="arrow-back" size={20} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Crop Details</Text>
-          <View style={{ width: 36 }} />
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+        
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.gradientHeader}
+        >
+          <View style={s.header}>
+            <TouchableOpacity
+              style={s.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Icon name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={s.headerCenter}>
+              <Text style={s.headerTitle}>{t('crop_calendar.header_title')}</Text>
+            </View>
+            <View style={{ width: 42 }} />
+          </View>
+        </LinearGradient>
+        
         <View style={s.loadingContainer}>
           <ActivityIndicator size="large" color={THEME} />
-          <Text style={s.loadingText}>Loading crop details...</Text>
+          <Text style={s.loadingText}>{t('crop_calendar.loading')}</Text>
         </View>
       </View>
     );
@@ -402,35 +450,55 @@ const CropCalendarDetail = () => {
 
   return (
     <View style={s.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
 
-      {/* ── Header ── */}
-      <View style={s.headerSpacer} />
-      <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={20} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>{cropData?.crop_name}</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.gradientHeader}
+      >
+        <View style={s.header}>
+          <TouchableOpacity
+            style={s.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={s.headerCenter}>
+            <Text style={s.headerTitle}>{t('crop_calendar.header_title')}</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Hero card ── */}
         <View style={s.heroCard}>
           <Icon name="leaf" size={44} color={THEME} />
-          <Text style={s.heroName}>{cropData?.crop_name || 'Unknown Crop'}</Text>
-          {cropData?.crop_type && (
+          <View style={s.heroNameContainer}>
+            <Text style={s.heroName}>{displayCropName}</Text>
+            {variety && (
+              <Text style={s.heroVariety}>- {variety}</Text>
+            )}
+          </View>
+          {displayCropType && (
             <View style={s.typePill}>
-              <Text style={s.typePillText}>{cropData.crop_type}</Text>
+              <Text style={s.typePillText}>{displayCropType}</Text>
             </View>
+          )}
+          {cropData?.scientific_name && (
+            <Text style={s.scientificName}>{cropData.scientific_name}</Text>
           )}
           {sowingDate && (
             <View style={s.sownRow}>
               <Icon name="calendar-outline" size={13} color="#6B7280" />
-              <Text style={s.sownText}>Sown: {formatDate(sowingDate)}</Text>
+              <Text style={s.sownText}>{t('crop_calendar.sown')} {formatDate(sowingDate)}</Text>
               <View style={s.dayBadge}>
-                <Text style={s.dayBadgeText}>Day {currentDay}</Text>
+                <Text style={s.dayBadgeText}>{t('crop_calendar.day')} {currentDay}</Text>
               </View>
             </View>
           )}
@@ -440,22 +508,22 @@ const CropCalendarDetail = () => {
         {overallProgress !== null && (
           <View style={s.overallCard}>
             <View style={s.overallTop}>
-              <Text style={s.overallTitle}>🌱 Overall Growth Progress</Text>
+              <Text style={s.overallTitle}>{t('crop_calendar.overall_progress')}</Text>
               <Text style={s.overallPct}>{Math.round(overallProgress * 100)}%</Text>
             </View>
 
             <AnimatedProgressBar progress={overallProgress} color={THEME} />
 
             <View style={s.overallBottom}>
-              <Text style={s.overallSub}>Day {currentDay} of {totalDays}</Text>
-              <Text style={s.overallSub}>{completedCount}/{enriched.length} stages done</Text>
+              <Text style={s.overallSub}>{t('crop_calendar.day')} {currentDay} {t('crop_calendar.of')} {totalDays}</Text>
+              <Text style={s.overallSub}>{completedCount}/{enriched.length} {t('crop_calendar.stages_done')}</Text>
             </View>
 
             {activeStage && (
               <View style={s.activeStagePill}>
                 <Icon name="flash" size={13} color="#F59E0B" />
                 <Text style={s.activeStagePillText}>
-                  Currently: {activeStage.stage_name || activeStage.name}
+                  {t('crop_calendar.currently')} {activeStage.stage_name || activeStage.name}
                 </Text>
               </View>
             )}
@@ -467,9 +535,9 @@ const CropCalendarDetail = () => {
           <View style={s.section}>
             <View style={s.sectionHeader}>
               <Icon name="git-network-outline" size={18} color={THEME} />
-              <Text style={s.sectionTitle}>Growth Stages</Text>
+              <Text style={s.sectionTitle}>{t('crop_calendar.growth_stages')}</Text>
               {!sowingDate && (
-                <Text style={s.noDateHint}>(Add sowing date to track progress)</Text>
+                <Text style={s.noDateHint}>{t('crop_calendar.add_sowing_hint')}</Text>
               )}
             </View>
 
@@ -482,28 +550,29 @@ const CropCalendarDetail = () => {
                     stage={stage}
                     index={i}
                     isLast={i === enriched.length - 1}
+                    t={t}
                   />
                 ))}
               </View>
             ) : (
               /* Plain accordion (no sowing date) */
-              <PlainStagesAccordion stages={stages} />
+              <PlainStagesAccordion stages={stages} t={t} />
             )}
           </View>
         )}
 
         {/* ══ OTHER INFO SECTIONS ══ */}
         {cropData && Object.entries(cropData).map(([key, value]) => {
-          if (['_id', 'crop_name', 'crop_type', '__v', 'generated_at', 'stages'].includes(key)) return null;
+          if (['_id', 'crop_name', 'crop_name_english', 'scientific_name', 'crop_type', '__v', 'generated_at', 'stages', 'createdAt', 'updatedAt'].includes(key)) return null;
           if (value === null || value === undefined || value === '') return null;
 
           return (
             <View key={key} style={s.section}>
               <View style={s.sectionHeader}>
                 <Icon name={ICON_MAP[key] || 'information-circle-outline'} size={18} color={THEME} />
-                <Text style={s.sectionTitle}>{fmtKey(key)}</Text>
+                <Text style={s.sectionTitle}>{fmtKey(key, t)}</Text>
               </View>
-              {renderValue(value)}
+              {renderValue(value, 0, t)}
             </View>
           );
         })}
@@ -515,7 +584,7 @@ const CropCalendarDetail = () => {
 };
 
 /* Plain stages accordion (no sowing date) */
-const PlainStagesAccordion = ({ stages }) => {
+const PlainStagesAccordion = ({ stages, t }) => {
   const [expanded, setExpanded] = useState({});
   const toggle = (i) => setExpanded(p => ({ ...p, [i]: !p[i] }));
 
@@ -537,7 +606,7 @@ const PlainStagesAccordion = ({ stages }) => {
             <Icon name={expanded[i] ? 'chevron-up' : 'chevron-down'} size={18} color={THEME} />
           </TouchableOpacity>
           {expanded[i] && (
-            <View style={s.accordionBody}>{renderValue(stage)}</View>
+            <View style={s.accordionBody}>{renderValue(stage, 0, t)}</View>
           )}
         </View>
       ))}
@@ -547,41 +616,48 @@ const PlainStagesAccordion = ({ stages }) => {
 
 /* ─── Styles ─── */
 const s = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-    backgroundColor: '#ffffff',
-  },
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
+  /* GRADIENT HEADER */
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
+  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    zIndex: 10,
+    paddingVertical: 14,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
     textTransform: 'capitalize',
+  },
+  headerVariety: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    fontStyle: 'italic',
+    opacity: 0.9,
   },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
@@ -601,12 +677,24 @@ const s = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
+  heroNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
   heroName: {
     fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
-    marginTop: 10,
     textTransform: 'capitalize',
+  },
+  heroVariety: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: THEME,
+    fontStyle: 'italic',
   },
   typePill: {
     backgroundColor: THEME_LIGHT,
@@ -616,6 +704,7 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
   typePillText: { fontSize: 13, fontWeight: '600', color: THEME },
+  scientificName: { fontSize: 12, color: '#6B7280', fontStyle: 'italic', marginTop: 4 },
   sownRow: {
     flexDirection: 'row',
     alignItems: 'center',

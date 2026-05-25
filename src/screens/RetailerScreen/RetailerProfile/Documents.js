@@ -62,7 +62,11 @@ const Documents = () => {
         size: file.size,
       });
     } catch (error) {
-      if (error.code === 'DOCUMENT_PICKER_CANCELED') {
+      const isPickerCancelled =
+        error?.code === 'OPERATION_CANCELED' ||
+        error?.code === 'DOCUMENT_PICKER_CANCELED';
+
+      if (isPickerCancelled) {
         return;
       } else {
         console.log('Picker error:', error);
@@ -176,7 +180,7 @@ const Documents = () => {
         <Text style={styles.headerTitle}>
           {t('profile_screens.document_upload')}
         </Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacerView} />
       </View>
 
       <ScrollView
@@ -281,7 +285,7 @@ const Documents = () => {
           )}
         </TouchableOpacity>
 
-        <View style={{ height: 30 }} />
+        <View style={styles.sectionSpacer} />
 
         {/* DISCLAIMER SECTION */}
         <View style={styles.disclaimerContainer}>
@@ -308,7 +312,7 @@ const Documents = () => {
           )}
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
@@ -354,6 +358,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  headerSpacerView: {
+    width: 40,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -429,6 +436,12 @@ const styles = StyleSheet.create({
     color: RETAILER_COLORS.textOnPrimary,
     fontSize: 16,
     fontWeight: '700',
+  },
+  sectionSpacer: {
+    height: 30,
+  },
+  bottomSpacer: {
+    height: 40,
   },
   disclaimerContainer: {
     marginHorizontal: 16,

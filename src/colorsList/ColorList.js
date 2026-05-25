@@ -26,31 +26,31 @@ export const FARMER_COLORS = {
 };
 
 export const RETAILER_COLORS = {
-  primary: '#C85A17', // Deeper orange — headers, icons (white text readable)
-  primaryDark: '#A04A13', // Darkest — status bar
-  primaryLight: '#E67E22', // Brand orange — tab active, accents
-  secondary: '#FADEC9', // Light shade orange — secondary accents, selected cards
-  tint: '#FFF8F0', // Very light orange — page background
-  tintMid: '#FFE5CC', // Mid tint — card borders/dividers
-  tintCard: '#FFF0E0', // Light orange — card backgrounds
-  accent: '#8B4513', // Deep brown-orange — dark accents
-  background: '#FFF8F0', // Page bg
+  primary: '#653228', // Deep brown — headers, icons (white text readable)
+  primaryDark: '#4A241D', // Darkest brown — status bar
+  primaryLight: '#8B4A3F', // Light brown — tab active, accents
+  secondary: '#E8D5D1', // Soft beige — secondary accents, selected cards
+  tint: '#FAF6F5', // Very light beige — page background
+  tintMid: '#E8D5D1', // Mid tint — card borders/dividers
+  tintCard: '#F5EBE8', // Light beige — card backgrounds
+  accent: '#A0522D', // Sienna brown — dark accents
+  background: '#FAF6F5', // Page bg
   surface: '#FFFFFF', // Card / modal bg
   textPrimary: '#2C1810', // Near-black — main text
-  textSecondary: '#8B5A3C', // Muted orange — secondary text
+  textSecondary: '#8B4A3F', // Muted brown — secondary text
   textOnPrimary: '#FFFFFF', // White — on primary bg
-  textSubOnPrimary: '#FFE5CC', // Soft orange — header subtitle
-  tabActive: '#E67E22', // Tab active icon/label
-  tabInactive: '#F5A76B', // Tab inactive icon/label
+  textSubOnPrimary: '#E8D5D1', // Soft beige — header subtitle
+  tabActive: '#8B4A3F', // Tab active icon/label
+  tabInactive: '#B8887A', // Tab inactive icon/label
   tabBar: '#FFFFFF', // Tab bar bg
-  statusBar: '#A04A13', // StatusBar color
-  primaryDisabled: '#F5C99B', // Light shade for disabled state
+  statusBar: '#4A241D', // StatusBar color
+  primaryDisabled: '#D4B5AE', // Light shade for disabled state
 };
 // ─── FPO PALETTE (Deep Indigo) ────────────────────
 export const FPO_COLORS = {
-  primary: '#4338CA', // Rich indigo — headers, primary actions
-  primaryDark: '#312E81', // Deep indigo — status bar, dark accents
-  primaryLight: '#6366F1', // Bright indigo — lighter header, highlights
+  primary: '#1A1953', // Deep navy blue — headers, primary actions
+  primaryDark: '#1A1953', // Deep navy blue — status bar, dark accents
+  primaryLight: '#1A1953', // Deep navy blue — lighter header, highlights
   secondary: '#C7D2FE', // Soft lavender — secondary accents
   tint: '#F5F7FF', // Ultra light indigo — page background
   tintMid: '#E0E7FF', // Light lavender — card borders/dividers
@@ -64,34 +64,35 @@ export const FPO_COLORS = {
   textTertiary: '#94A3B8', // Slate gray — tertiary text
   textOnPrimary: '#FFFFFF', // White — on primary bg
   textSubOnPrimary: '#E0E7FF', // Soft lavender — header subtitle
-  tabActive: '#4338CA', // Tab active icon/label
+  tabActive: '#1A1953', // Tab active icon/label - deep navy blue
   tabInactive: '#A5B4FC', // Tab inactive icon/label
   tabBar: '#FFFFFF', // Tab bar bg
-  statusBar: '#312E81', // StatusBar color
+  statusBar: '#1A1953', // StatusBar color - deep navy blue
   border: '#E0E7FF', // Subtle borders
   borderLight: '#EEF2FF', // Ultra light borders
-  shadow: '#4338CA', // Shadow tint
+  shadow: '#1A1953', // Shadow tint - deep navy blue
 };
 
-// ─── STAFF PALETTE (Warm Gold #d8c96c) ───────────────────
+// ─── STAFF PALETTE (#fb8b24 - Vibrant Orange) ───────────────────
 export const STAFF_COLORS = {
-  primary: '#FFC100', // Deeper warm gold — headers (white text readable)
-  primaryDark: '#FFC100', // Darkest — status bar
-  primaryLight: '#FFD54F', // Light warm gold — lighter header variant
-  tint: '#FFFDF0', // Very light gold — page background
-  tintMid: '#F5E88A', // Mid tint — card borders/dividers
-  tintCard: '#FFFBCC', // Light gold — card backgrounds
-  accent: '#6B5A00', // Deep brown-gold — dark accents
-  background: '#FFFDF0', // Page bg
+  primary: '#fb8b24', // Vibrant orange — headers, primary actions
+  primaryDark: '#d97706', // Darker orange — status bar
+  primaryLight: '#fca34d', // Light orange — lighter header variant
+  secondary: '#fed7aa', // Soft peach — secondary accents
+  tint: '#fffbf5', // Very light cream — page background
+  tintMid: '#ffedd5', // Mid tint — card borders/dividers
+  tintCard: '#fff7ed', // Light peach — card backgrounds
+  accent: '#ea580c', // Deep orange — dark accents
+  background: '#fffbf5', // Page bg
   surface: '#FFFFFF', // Card / modal bg
-  textPrimary: '#1A1A00', // Near-black — main text
-  textSecondary: '#6B5F00', // Muted gold — secondary text
+  textPrimary: '#431407', // Dark brown — main text
+  textSecondary: '#9a3412', // Muted orange-brown — secondary text
   textOnPrimary: '#FFFFFF', // White — on primary bg
-  textSubOnPrimary: '#FFF8CC', // Soft gold white — header subtitle
-  tabActive: '#d8c96c', // Tab active icon/label
-  tabInactive: '#C4B870', // Tab inactive icon/label
+  textSubOnPrimary: '#ffedd5', // Soft peach — header subtitle
+  tabActive: '#fb8b24', // Tab active icon/label
+  tabInactive: '#fdba74', // Tab inactive icon/label
   tabBar: '#FFFFFF', // Tab bar bg
-  statusBar: '#9E8D2E', // StatusBar color
+  statusBar: '#d97706', // StatusBar color
 };
 
 // ─── SHARED / SEMANTIC COLORS ─────────────────────────────

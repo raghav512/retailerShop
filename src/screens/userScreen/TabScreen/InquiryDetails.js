@@ -12,7 +12,11 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
 import { COLORS, STAFF_COLORS } from '../../../colorsList/ColorList';
 
@@ -91,9 +95,8 @@ const parsePhotoUri = photo => {
   }
 
   if (typeof photo === 'object') {
-    const url = safeString(photo?.url);
-    const uri = safeString(photo?.uri);
-    return url || uri;
+    // Handle multiple possible field names
+    return photo?.url || photo?.uri || photo?.path || '';
   }
 
   return '';
@@ -105,16 +108,46 @@ const normalizeInquiry = (item, t) => {
     item?.inquiryType,
     t('inquiry_screen.fallback_na'),
   );
-  const productName = safeString(
+  const productName = item?.productName === 'undefined' ? t('inquiry_screen.fallback_not_specified') : safeString(
     item?.productName,
     t('inquiry_screen.fallback_not_specified'),
   );
   const cropName = safeString(item?.cropName, t('inquiry_screen.fallback_na'));
 
-  const farmerId =
-    typeof item?.farmer === 'string'
-      ? safeString(item.farmer, t('inquiry_screen.fallback_unknown'))
-      : safeString(item?.farmer?._id, t('inquiry_screen.fallback_unknown'));
+  // Handle farmer field (can be populated object or ID string)
+  let farmerId = null;
+  let farmerName = null;
+  let farmerPhone = null;
+  let farmerProfileImage = null;
+  
+  if (item?.farmer) {
+    if (typeof item.farmer === 'string') {
+      farmerId = item.farmer;
+      farmerName = null;
+    } else if (typeof item.farmer === 'object') {
+      farmerId = item.farmer._id ?? null;
+      farmerPhone = item.farmer.phone ?? null;
+      farmerProfileImage = item.farmer.profileImage?.url ?? null;
+      const firstName = safeString(item.farmer.firstName ?? '');
+      const lastName = safeString(item.farmer.lastName ?? '');
+      farmerName = `${firstName} ${lastName}`.trim() || `Farmer - ${item.farmer.phone ?? farmerId}`;
+    }
+  }
+  
+  // Fallback to user field if farmer not present
+  if (!farmerId && item?.user) {
+    if (typeof item.user === 'string') {
+      farmerId = item.user;
+      farmerName = null;
+    } else if (typeof item.user === 'object') {
+      farmerId = item.user._id ?? null;
+      farmerPhone = item.user.phone ?? null;
+      farmerProfileImage = item.user.profileImage?.url ?? null;
+      const firstName = safeString(item.user.firstName ?? '');
+      const lastName = safeString(item.user.lastName ?? '');
+      farmerName = `${firstName} ${lastName}`.trim() || `${item.user.role ?? 'User'} - ${item.user.phone ?? farmerId}`;
+    }
+  }
 
   const numericQuantity = Number(item?.requiredQuantity);
   const quantityUnit = safeString(item?.quantityUnit, 'unit');
@@ -124,15 +157,20 @@ const normalizeInquiry = (item, t) => {
       : t('inquiry_screen.fallback_not_specified');
 
   const status = normalizeStatus(item?.status);
+  const isToolsInquiry = inquiryType === 'Tools';
 
   return {
     id,
     inquiryType,
     productName,
     cropName,
-    farmerId,
+    farmerId: farmerId ?? t('inquiry_screen.fallback_unknown'),
+    farmerName: farmerName ?? t('inquiry_screen.fallback_not_specified'),
+    farmerPhone: farmerPhone ?? null,
+    farmerProfileImage,
     quantityLabel,
     status,
+    isToolsInquiry,
     createdAtLabel: formatDateTime(
       item?.createdAt,
       t('inquiry_screen.fallback_date'),
@@ -141,7 +179,7 @@ const normalizeInquiry = (item, t) => {
       item?.updatedAt,
       t('inquiry_screen.fallback_date'),
     ),
-    photoUri: parsePhotoUri(item?.photo),
+    photoUri: parsePhotoUri(item?.photo || item?.inquiryPhoto),
   };
 };
 
@@ -198,7 +236,7 @@ const InquiryDetails = () => {
   useFocusEffect(
     useCallback(() => {
       loadInquiryDetails();
-    }, [loadInquiryDetails])
+    }, [loadInquiryDetails]),
   );
 
   const statusStyle = useMemo(() => {
@@ -312,26 +350,41 @@ const InquiryDetails = () => {
             </Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Icon name="leaf-outline" size={18} color={COLORS.textMuted} />
-            <Text style={styles.infoText}>
-              {t('inquiry_screen.crop_label')}: {inquiry.cropName}
-            </Text>
-          </View>
+          {!inquiry.isToolsInquiry && (
+            <>
+              <View style={styles.infoRow}>
+                <Icon name="leaf-outline" size={18} color={COLORS.textMuted} />
+                <Text style={styles.infoText}>
+                  {t('inquiry_screen.crop_label')}: {inquiry.cropName}
+                </Text>
+              </View>
 
-          <View style={styles.infoRow}>
-            <Icon name="cube-outline" size={18} color={COLORS.textMuted} />
-            <Text style={styles.infoText}>
-              {t('inquiry_screen.quantity_label')}: {inquiry.quantityLabel}
-            </Text>
-          </View>
+              <View style={styles.infoRow}>
+                <Icon name="cube-outline" size={18} color={COLORS.textMuted} />
+                <Text style={styles.infoText}>
+                  {t('inquiry_screen.quantity_label')}: {inquiry.quantityLabel}
+                </Text>
+              </View>
+            </>
+          )}
 
-          <View style={styles.infoRow}>
-            <Icon name="person-outline" size={18} color={COLORS.textMuted} />
-            <Text style={styles.infoText}>
-              {t('inquiry_screen.farmer_id_label')}: {inquiry.farmerId}
-            </Text>
-          </View>
+          {inquiry.farmerName && (
+            <View style={styles.infoRow}>
+              <Icon name="person-outline" size={18} color={COLORS.textMuted} />
+              <Text style={styles.infoText}>
+                Farmer: {inquiry.farmerName}
+              </Text>
+            </View>
+          )}
+
+          {inquiry.farmerPhone && (
+            <View style={styles.infoRow}>
+              <Icon name="call-outline" size={18} color={COLORS.textMuted} />
+              <Text style={styles.infoText}>
+                Phone: {inquiry.farmerPhone}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
             <Icon name="calendar-outline" size={18} color={COLORS.textMuted} />

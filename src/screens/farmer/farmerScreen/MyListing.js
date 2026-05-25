@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,15 @@ import {
   ActivityIndicator,
   Image,
   Platform,
-} from "react-native";
-import { showAlert } from "../../../common/reusableComponent/CustomAlert";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import Icon from "react-native-vector-icons/Ionicons";
-import apiService from "../../../Redux/apiService";
+  StatusBar,
+  SafeAreaView,
+} from 'react-native';
+import { showAlert } from '../../../common/reusableComponent/CustomAlert';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import apiService from '../../../Redux/apiService';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
 const MyListing = () => {
@@ -21,7 +24,6 @@ const MyListing = () => {
   const { t } = useTranslation();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchListings();
   }, []);
@@ -29,22 +31,31 @@ const MyListing = () => {
   useFocusEffect(
     useCallback(() => {
       fetchListings();
-    }, [])
+    }, []),
   );
 
   const fetchListings = async () => {
     try {
       const response = await apiService.getUserCropListings();
-      setListings(response.data || []);
+      const listingsData = response.data || [];
+      // Sort by createdAt in descending order (latest first)
+      const sortedListings = listingsData.sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+      setListings(sortedListings);
     } catch (error) {
-      console.error("Failed to fetch listings:", error);
-      showAlert({ type: 'error', title: t('error'), message: t('listing.load_failed') });
+      console.error('Failed to fetch listings:', error);
+      showAlert({
+        type: 'error',
+        title: t('error'),
+        message: t('listing.load_failed'),
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async id => {
     showAlert({
       type: 'confirm',
       title: t('listing.delete_title'),
@@ -57,20 +68,28 @@ const MyListing = () => {
           onPress: async () => {
             try {
               await apiService.deleteCropListing(id);
-              setListings((prev) => prev.filter((item) => item._id !== id));
-              showAlert({ type: 'success', title: t('success'), message: t('listing.deleted_success') });
+              setListings(prev => prev.filter(item => item._id !== id));
+              showAlert({
+                type: 'success',
+                title: t('success'),
+                message: t('listing.deleted_success'),
+              });
             } catch (error) {
-              console.error("Failed to delete listing:", error);
-              showAlert({ type: 'error', title: t('error'), message: t('listing.delete_failed') });
+              console.error('Failed to delete listing:', error);
+              showAlert({
+                type: 'error',
+                title: t('error'),
+                message: t('listing.delete_failed'),
+              });
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
   };
 
   const handleCreateListing = () => {
-    navigation.navigate("CreateListing");
+    navigation.navigate('CreateListing');
   };
 
   const renderItem = ({ item }) => {
@@ -88,7 +107,7 @@ const MyListing = () => {
               source={{ uri: item.cropImages[0].url }}
               style={styles.cropImage}
               resizeMode="cover"
-              defaultSource={require("../../../assets/Images/home.png")}
+              defaultSource={require('../../../assets/Images/home.png')}
             />
           ) : (
             <View style={styles.imageBox}>
@@ -100,22 +119,43 @@ const MyListing = () => {
             <Text style={styles.title} numberOfLines={1}>
               {item.cropName || item.name}
             </Text>
-            <Text style={styles.subText} numberOfLines={1}>
+            <Text style={styles.subText} numberOfLines={2}>
               {item.variety || t('listing.variety')}
             </Text>
             <Text style={styles.subText}>
-              <Text style={{fontWeight:'700', color:'#1F2937'}}>{item.quantity}</Text> quintal • <Text style={{fontWeight:'700', color:FARMER_COLORS.primaryLight}}>₹{item.price}</Text>/quintal
+              <Text style={{ fontWeight: '500', color: '#1F2937' }}>
+                {item.quantity}
+              </Text>{' '}
+              quintal •{' '}
+              <Text
+                style={{ fontWeight: '500', color: FARMER_COLORS.primaryLight }}
+              >
+                ₹{item.price}
+              </Text>
+              /quintal
             </Text>
           </View>
 
-          <View style={[
-            styles.status, 
-            isApproved ? styles.statusApproved : isSold ? styles.statusSold : styles.statusPending
-          ]}>
-            <Text style={[
-              styles.statusText,
-              isApproved ? {color: '#047857'} : isSold ? {color: '#1D4ED8'} : {color: '#B45309'}
-            ]}>
+          <View
+            style={[
+              styles.status,
+              isApproved
+                ? styles.statusApproved
+                : isSold
+                ? styles.statusSold
+                : styles.statusPending,
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                isApproved
+                  ? { color: '#047857' }
+                  : isSold
+                  ? { color: '#1D4ED8' }
+                  : { color: '#B45309' },
+              ]}
+            >
               {t(`listing.status.${rawStatus}`)}
             </Text>
           </View>
@@ -125,9 +165,16 @@ const MyListing = () => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.editBtn}
-            onPress={() => navigation.navigate("EditListing", { listing: item })}
+            onPress={() =>
+              navigation.navigate('EditListing', { listing: item })
+            }
           >
-            <Icon name="pencil" size={14} color={FARMER_COLORS.primaryLight} style={styles.btnIcon} />
+            <Icon
+              name="pencil"
+              size={14}
+              color={FARMER_COLORS.primaryLight}
+              style={styles.btnIcon}
+            />
             <Text style={styles.editText}>{t('common.edit')}</Text>
           </TouchableOpacity>
 
@@ -135,7 +182,12 @@ const MyListing = () => {
             style={styles.deleteBtn}
             onPress={() => handleDelete(item._id)}
           >
-            <Icon name="trash" size={14} color="#DC2626" style={styles.btnIcon} />
+            <Icon
+              name="trash"
+              size={14}
+              color="#DC2626"
+              style={styles.btnIcon}
+            />
             <Text style={styles.deleteText}>{t('common.delete')}</Text>
           </TouchableOpacity>
         </View>
@@ -144,27 +196,41 @@ const MyListing = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <View style={styles.headerTitleGroup}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>{t("listing.my_listings")}</Text>
+          
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('listing.my_listings')}</Text>
             <Text style={styles.headerSub}>
-              {t("listing.total", { count: listings.length })}
+              {t('listing.total', { count: listings.length })}
             </Text>
           </View>
-        </View>
 
-        {/* ADD BUTTON */}
-        <TouchableOpacity style={styles.addBtn} onPress={handleCreateListing}>
-          <Icon name="add" size={24} color="#ffffff" style={styles.addIcon} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.addBtn} onPress={handleCreateListing}>
+            <Icon name="add" size={24} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+
+      <View style={styles.container}>
 
       {/* LIST */}
       {loading ? (
@@ -175,7 +241,7 @@ const MyListing = () => {
       ) : listings.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconBox}>
-             <Icon name="leaf" size={64} color={FARMER_COLORS.primaryLight} />
+            <Icon name="leaf" size={64} color={FARMER_COLORS.primaryLight} />
           </View>
           <Text style={styles.emptyText}>{t('listing.empty')}</Text>
           <Text style={styles.emptySub}>{t('listing.empty_sub')}</Text>
@@ -183,110 +249,100 @@ const MyListing = () => {
       ) : (
         <FlatList
           data={listings}
-          keyExtractor={(item) => item._id || item.id}
+          keyExtractor={item => item._id || item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
         />
       )}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6, backgroundColor: '#ffffff',
-  },
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#F4F6F8",
+    backgroundColor: FARMER_COLORS.background,
+  },
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 20,
   },
   header: {
-    backgroundColor: "#ffffff",
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  headerTitleGroup: {
-    flexDirection: "row",
-    alignItems: "center",
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FEF9E7",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#1F2937",
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.3,
+    textAlign: 'center',
   },
   headerSub: {
     fontSize: 13,
-    color: "#6B7280",
-    marginTop: 4,
-    fontWeight: "600",
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+    fontWeight: '500',
   },
   addBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: FARMER_COLORS.primaryLight,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 4,
-    shadowColor: FARMER_COLORS.primaryLight,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  addIcon: {
-    marginLeft: 2, // optical alignment
+  container: {
+    flex: 1,
+    backgroundColor: '#F4F6F8',
   },
   listContainer: {
     padding: 16,
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
   row: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   imageBox: {
     width: 64,
     height: 64,
     borderRadius: 14,
-    backgroundColor: "#FEF9E7",
+    backgroundColor: '#FEF9E7',
     marginRight: 14,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cropImage: {
     width: 64,
@@ -299,14 +355,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
+    fontWeight: '700',
+    color: '#1F2937',
   },
   subText: {
-    fontSize: 13,
-    color: "#6B7280",
+    fontSize: 11,
+    color: '#6B7280',
     marginTop: 4,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   status: {
     paddingHorizontal: 10,
@@ -315,39 +371,39 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   statusApproved: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: '#D1FAE5',
   },
   statusPending: {
-    backgroundColor: "#e2f0c9",
+    backgroundColor: '#e2f0c9',
   },
   statusSold: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: '#DBEAFE',
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: '#F3F4F6',
     gap: 12,
   },
   editBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF9E7",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF9E7',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
   },
   deleteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
@@ -358,53 +414,52 @@ const styles = StyleSheet.create({
   editText: {
     fontSize: 13,
     color: FARMER_COLORS.primaryLight,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   deleteText: {
     fontSize: 13,
-    color: "#DC2626",
-    fontWeight: "700",
+    color: '#DC2626',
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   loadingText: {
     marginTop: 14,
     fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "600",
+    color: '#6B7280',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 40,
   },
   emptyIconBox: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#FEF9E7",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#FEF9E7',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#374151",
+    fontWeight: '700',
+    color: '#374151',
     marginBottom: 8,
   },
   emptySub: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    fontWeight: "500",
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 
 export default MyListing;
-

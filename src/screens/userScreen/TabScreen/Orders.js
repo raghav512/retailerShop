@@ -1,499 +1,695 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
-  Platform,
-  RefreshControl,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import RNBlobUtil from 'react-native-blob-util';
-import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
-import Images from '../../../assets/Images/Images';
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import apiService from '../../../Redux/apiService';
+import { useTranslation } from 'react-i18next';
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STAFF_GOLD = '#F59E0B';
+const STAFF_GOLD_BG = '#FFF4CC';
+const STAFF_GOLD_DARK = '#B45309';
+const FARMER_GREEN = '#10B981';
+const FARMER_GREEN_BG = '#ECFDF5';
+const FARMER_GREEN_DARK = '#047857';
 
 const Orders = () => {
-  const navigation = useNavigation();
   const { t } = useTranslation();
-
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
   const [orders, setOrders] = useState([]);
-  const [downloadingOrderId, setDownloadingOrderId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [storedFarmerData, setStoredFarmerData] = useState({});
+
+  // Function to retrieve stored farmer data by orderId with fallback to recent temp storage
+  const getStoredFarmerDataByOrderId = async (orderId, orderTimestamp) => {
+    try {
+      // First try to get data by orderId
+      const storedData = await AsyncStorage.getItem(`staff_order_${orderId}`);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        console.log('📦 Retrieved stored farmer data by orderId:', parsedData);
+        return parsedData;
+      }
+      
+      // Fallback: Look for recent temp storage (within last 5 minutes)
+      console.log('⚠️ No orderId-based data found, checking temp storage...');
+      const allKeys = await AsyncStorage.getAllKeys();
+      const tempKeys = allKeys.filter(key => key.startsWith('temp_staff_order_'));
+      
+      // Clean up old temp storage (older than 10 minutes)
+      const now = Date.now();
+      const keysToDelete = [];
+      
+      for (const tempKey of tempKeys) {
+        try {
+          const tempData = await AsyncStorage.getItem(tempKey);
+          if (tempData) {
+            const parsedTempData = JSON.parse(tempData);
+            const timeDiff = Math.abs(new Date(orderTimestamp) - new Date(parsedTempData.timestamp));
+            const ageInMinutes = (now - parsedTempData.timestamp) / (60 * 1000);
+            
+            // If temp data is within 5 minutes of order time, use it
+            if (timeDiff < 5 * 60 * 1000) {
+              console.log('✅ Using recent temp farmer data:', parsedTempData);
+              return parsedTempData;
+            }
+            
+            // Mark old temp keys for deletion (older than 10 minutes)
+            if (ageInMinutes > 10) {
+              keysToDelete.push(tempKey);
+            }
+          }
+        } catch (tempError) {
+          console.log('Error parsing temp data:', tempError);
+          keysToDelete.push(tempKey); // Delete corrupted data
+        }
+      }
+      
+      // Clean up old temp storage
+      if (keysToDelete.length > 0) {
+        await AsyncStorage.multiRemove(keysToDelete);
+        console.log('🧹 Cleaned up old temp storage:', keysToDelete.length, 'keys');
+      }
+    } catch (error) {
+      console.log('⚠️ Error retrieving farmer data by orderId:', error);
+    }
+    return null;
+  };
+
+  // Function to load all stored farmer data for current orders
+  const loadStoredFarmerData = async (ordersList) => {
+    const farmerDataMap = {};
+    
+    for (const order of ordersList) {
+      // Check if this is a staff order by looking at farmer role
+      if (order?.farmer?.role?.toLowerCase() === 'staff') {
+        const orderId = order?.orderId;
+        const orderTimestamp = order?.placedAt || order?.createdAt;
+        
+        if (orderId && !farmerDataMap[orderId]) {
+          const storedData = await getStoredFarmerDataByOrderId(orderId, orderTimestamp);
+          if (storedData) {
+            farmerDataMap[orderId] = storedData;
+          }
+        }
+      }
+    }
+    
+    setStoredFarmerData(farmerDataMap);
+    console.log('📦 Loaded stored farmer data map by orderId:', farmerDataMap);
+  };
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
+      setLoading(true);
       fetchOrders();
     }, []),
   );
 
   const fetchOrders = async () => {
     try {
-      setLoading(true);
-      const data = await apiService.getAllOrders();
-      setOrders(data?.data || []);
+      const response = await apiService.getAllOrders();
+      const orderData = response.data || [];
+      setOrders(orderData);
+      
+      // Load stored farmer data for staff orders
+      await loadStoredFarmerData(orderData);
     } catch (error) {
-      console.log('Failed to fetch orders:', error);
-      showAlert({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to fetch orders. Please try again.',
-      });
+      console.error('Failed to fetch orders:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    try {
-      setRefreshing(true);
-      const data = await apiService.getAllOrders();
-      setOrders(data?.data || []);
-    } catch (error) {
-      console.log('Failed to refresh orders:', error);
-    } finally {
-      setRefreshing(false);
+  const filteredOrders =
+    selectedStatus === 'ALL'
+      ? orders
+      : orders.filter(order => order.status?.toUpperCase() === selectedStatus);
+
+  const getStatusColor = status => {
+    switch (status?.toUpperCase()) {
+      case 'PENDING':
+        return '#F59E0B';
+      case 'APPROVED':
+        return '#10B981';
+      case 'SOLD':
+        return '#3B82F6';
+      case 'REJECTED':
+        return '#EF4444';
+      default:
+        return '#6B7280';
     }
   };
 
-  const handleDownloadReceipt = async order => {
-    try {
-      setDownloadingOrderId(order._id);
-      console.log(
-        '📦 Fetching all receipts to find receipt for order:',
-        order._id,
-      );
-
-      const receiptsRes = await apiService.getAllReceipts();
-      const receiptsList = receiptsRes.data || receiptsRes || [];
-
-      const receipt = receiptsList.find(
-        r => r.order === order._id || r.order?._id === order._id,
-      );
-
-      const receiptId = receipt?._id;
-      console.log('🧾 Receipt found:', receiptId);
-
-      if (!receiptId) {
-        showAlert({
-          type: 'warning',
-          title: 'No Receipt',
-          message: 'Could not find a receipt for this order.',
-        });
-        return;
-      }
-
-      const { url, token } = await apiService.downloadReceipt(receiptId);
-      const fileName = `Receipt_${order.orderId || receiptId}.pdf`;
-
-      const downloadDir = RNBlobUtil.fs.dirs.DownloadDir;
-      const filePath = `${downloadDir}/${fileName}`;
-
-      const res = await RNBlobUtil.config({
-        path: filePath,
-        addAndroidDownloads: {
-          useDownloadManager: false,
-          notification: true,
-          title: fileName,
-          description: 'Receipt downloaded',
-          mime: 'application/pdf',
-          mediaScannable: true,
-          path: filePath,
-        },
-      }).fetch('GET', url, { Authorization: `Bearer ${token}` });
-
-      const status = res.info().status;
-      if (status !== 200 && status !== 201) {
-        const textError = await res.text();
-        console.error('❌ Server returned error instead of PDF:', textError);
-        throw new Error(`Server Error (${status}): ${textError}`);
-      }
-
-      console.log('✅ Receipt downloaded to:', res.path());
-
-      showAlert({
-        type: 'success',
-        title: 'Downloaded!',
-        message: `Receipt saved to Downloads as ${fileName}`,
-        buttons: [
-          { text: 'OK' },
-          {
-            text: 'Open PDF',
-            onPress: () => {
-              if (Platform.OS === 'android') {
-                RNBlobUtil.android.actionViewIntent(
-                  res.path(),
-                  'application/pdf',
-                );
-              } else {
-                RNBlobUtil.ios.previewDocument(res.path());
-              }
-            },
-          },
-        ],
-      });
-    } catch (error) {
-      console.error('❌ Download error:', error.message);
-      showAlert({
-        type: 'error',
-        title: 'Download Failed',
-        message: error.message || 'Failed to download receipt.',
-      });
-    } finally {
-      setDownloadingOrderId(null);
-    }
-  };
-
-  const filteredOrders = useMemo(() => {
-    if (!search) return orders;
-    return orders.filter(order => {
-      const idToSearch = order.orderId ? String(order.orderId) : order._id;
-      return idToSearch.toLowerCase().includes(search.toLowerCase());
+  const formatDate = dateString => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
-  }, [search, orders]);
+  };
+
+  const renderOrder = ({ item }) => {
+    // Check if the farmer field contains a staff member (indicating staff placed order)
+    const isStaffOrder = item?.farmer?.role?.toLowerCase() === 'staff';
+    
+    let farmerName = 'N/A';
+    let farmerPhone = 'N/A';
+    
+    if (isStaffOrder) {
+      // For staff orders, try to get farmer data from stored data using orderId
+      const orderId = item?.orderId;
+      
+      if (orderId && storedFarmerData[orderId]) {
+        const storedData = storedFarmerData[orderId];
+        
+        // Validate stored data
+        if (storedData && (storedData.farmerName || storedData.farmerData)) {
+          farmerName = storedData.farmerName || `${storedData.farmerData?.firstName || ''} ${storedData.farmerData?.lastName || ''}`.trim();
+          farmerPhone = storedData.farmerData?.phone || 'N/A';
+          
+          // Final validation
+          if (!farmerName || farmerName === '') {
+            farmerName = 'Farmer Info Not Available';
+          }
+          
+          console.log('✅ Using stored farmer data for orderId:', orderId, { farmerName, farmerPhone });
+        } else {
+          farmerName = 'Farmer Info Not Available';
+          farmerPhone = 'N/A';
+          console.log('⚠️ Invalid stored data structure for orderId:', orderId);
+        }
+      } else {
+        // Fallback: Show that farmer info is not available
+        farmerName = 'Farmer Info Not Available';
+        farmerPhone = 'N/A';
+        console.log('⚠️ No stored farmer data found for orderId:', orderId);
+      }
+    } else {
+      // For farmer direct orders, use the farmer field
+      const farmerSource = item?.farmer;
+      const farmerNameFromParts = `${farmerSource?.firstName || ''} ${farmerSource?.lastName || ''}`.trim();
+      farmerName = farmerSource?.name || farmerNameFromParts || 'N/A';
+      farmerPhone = farmerSource?.phone || 'N/A';
+    }
+    const statusColor = getStatusColor(item.status);
+    const orderTypeIcon = isStaffOrder ? 'business' : 'person';
+    const orderTypeIconColor = isStaffOrder
+      ? STAFF_GOLD_DARK
+      : FARMER_GREEN_DARK;
+    const orderTypeText = isStaffOrder
+      ? '🏢 STAFF PLACED ORDER'
+      : '👤 FARMER SELF ORDER';
+    const farmerSectionLabel = isStaffOrder
+      ? '👤 Order Placed For:'
+      : '👤 Farmer:';
+    const orderIdLabel =
+      item?.orderId || (item?._id ? item._id.slice(-8).toUpperCase() : 'NA');
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.orderCard,
+          isStaffOrder ? styles.staffOrderCard : styles.farmerOrderCard,
+        ]}
+        activeOpacity={0.8}
+        onPress={() => {
+          navigation.navigate('OrderDetails', { order: item });
+        }}
+      >
+        {/* Order Type Header */}
+        <View
+          style={[
+            styles.orderTypeHeader,
+            isStaffOrder ? styles.staffOrderHeader : styles.farmerOrderHeader,
+          ]}
+        >
+          <View style={styles.orderTypeLeft}>
+            <Icon name={orderTypeIcon} size={16} color={orderTypeIconColor} />
+            <Text
+              style={[
+                styles.orderTypeText,
+                isStaffOrder
+                  ? styles.staffOrderTypeText
+                  : styles.farmerOrderTypeText,
+              ]}
+            >
+              {orderTypeText}
+            </Text>
+          </View>
+          <Text style={styles.orderId}>#{orderIdLabel}</Text>
+        </View>
+
+        {/* Farmer Information */}
+        <View style={styles.farmerSection}>
+          <View style={styles.farmerHeader}>
+            <Icon name="person-circle" size={20} color={'#374151'} />
+            <Text style={styles.farmerSectionTitle}>{farmerSectionLabel}</Text>
+          </View>
+
+          <View style={styles.farmerDetails}>
+            <Text style={styles.farmerName}>{farmerName}</Text>
+            <View style={styles.contactRow}>
+              <Icon name="call" size={14} color="#6B7280" />
+              <Text style={styles.phone}>{farmerPhone}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Order Info */}
+        <View style={styles.orderInfoRow}>
+          <View style={styles.dateContainer}>
+            <Icon name="calendar" size={14} color="#6B7280" />
+            <Text style={styles.date}>{formatDate(item.placedAt)}</Text>
+          </View>
+
+          {item.paymentMethod && (
+            <View style={styles.paymentMethodContainer}>
+              <Icon
+                name={
+                  item.paymentMethod.toUpperCase() === 'CREDIT'
+                    ? 'card-outline'
+                    : 'cash-outline'
+                }
+                size={14}
+                color="#4B5563"
+              />
+              <Text style={styles.paymentMethodText}>{item.paymentMethod}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Items */}
+        <View style={styles.itemsContainer}>
+          <Text style={styles.itemsLabel}>{t('my_orders.ordered_items')}</Text>
+          {item.items.map((orderItem, index) => (
+            <View key={`${orderItem._id}-${index}`} style={styles.itemRow}>
+              <Text style={styles.itemName}>
+                {orderItem.item?.itemName || t('my_orders.unknown_item')}
+                {orderItem.item?.brand ? ` (${orderItem.item.brand})` : ''}
+              </Text>
+              <Text style={styles.itemDetails}>
+                {orderItem.quantity}{' '}
+                {orderItem.item?.unit || t('my_orders.unit')}(s) × ₹
+                {orderItem.expectedPrice}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${statusColor}20` },
+            ]}
+          >
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {t(`my_orders.${item.status?.toLowerCase()}`) || item.status}
+            </Text>
+          </View>
+          <Text style={styles.totalAmount}>
+            {t('my_orders.total')}: {item.totalAmount ?? item.totalPrice ?? item.finalAmount ?? 0}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
+      />
+
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
           >
-            <Icon name="chevron-back" size={24} color={STAFF_COLORS.primary} />
+            <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('my_orders.title')}</Text>
-          <View style={{ width: 44 }} />
-        </View>
 
-        <View style={styles.searchBox}>
-          <Image style={styles.searchIcon} source={Images.Search} />
-          <TextInput
-            placeholder={t('my_orders.search_id')}
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor="#9CA3AF"
-            style={styles.searchInput}
-          />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('my_orders.orders_title')}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => navigation.navigate('AddFarmerOrder')}
+            activeOpacity={0.8}
+          >
+            <Icon name="add" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 30 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[STAFF_COLORS.primary]}
-            tintColor={STAFF_COLORS.primary}
-          />
-        }
-      >
-        {loading && (
-          <ActivityIndicator
-            size="large"
-            color={STAFF_COLORS.primary}
-            style={{ marginTop: 20 }}
-          />
-        )}
+      <View style={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollProps}
+        >
+          {['ALL', 'PENDING', 'APPROVED', 'SOLD', 'REJECTED'].map(status => {
+            const isActive = selectedStatus === status;
 
-        {!loading && filteredOrders.length === 0 && (
-          <Text style={styles.noData}>{t('my_orders.no_orders')}</Text>
-        )}
-
-        {!loading &&
-          filteredOrders.map(order => (
-            <TouchableOpacity
-              key={order._id}
-              style={styles.orderCard}
-              onPress={() => navigation.navigate('OrderDetails', { order })}
-            >
-              <View style={styles.orderHeader}>
-                <Text style={styles.orderId}>
-                  {t('my_orders.order_id')}{' '}
-                  {order.orderId || order._id.slice(-6)}
-                </Text>
-                <View
+            return (
+              <TouchableOpacity
+                key={status}
+                style={[
+                  styles.filterButton,
+                  isActive && styles.activeFilterButton,
+                ]}
+                onPress={() => setSelectedStatus(status)}
+              >
+                <Text
                   style={[
-                    styles.statusBadge,
-                    order.status === 'APPROVED' || order.status === 'SOLD'
-                      ? styles.approvedBg
-                      : styles.pendingBg,
+                    styles.filterText,
+                    isActive && styles.activeFilterText,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.statusText,
-                      order.status === 'APPROVED' || order.status === 'SOLD'
-                        ? { color: '#047857' }
-                        : { color: STAFF_COLORS.accent },
-                    ]}
-                  >
-                    {order.status}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.date}>
-                {new Date(order.placedAt).toLocaleDateString()}
-              </Text>
-
-              {order.paymentMethod && (
-                <View style={styles.paymentMethodContainer}>
-                  <Icon
-                    name={
-                      order.paymentMethod.toUpperCase() === 'CREDIT'
-                        ? 'card'
-                        : 'cash'
-                    }
-                    size={14}
-                    color={STAFF_COLORS.primary}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text style={styles.paymentMethodText}>
-                    {order.paymentMethod.toUpperCase()}
-                  </Text>
-                </View>
-              )}
-
-              {order.items.map(itemObj => (
-                <View key={itemObj._id} style={styles.itemRow}>
-                  <Text style={styles.itemName}>
-                    {itemObj?.item?.itemName}{' '}
-                    <Text style={{ color: '#6B7280' }}>
-                      ({itemObj?.item?.brand})
-                    </Text>
-                  </Text>
-                  <Text style={styles.itemQty}>
-                    {t('my_orders.qty')} {itemObj?.quantity}
-                  </Text>
-                </View>
-              ))}
-
-              <View style={styles.bottomRow}>
-                <Text style={styles.totalAmount}>
-                  {t('my_orders.total')}{' '}
-                  <Text style={{ color: STAFF_COLORS.primary }}>
-                    ₹
-                    {order.totalAmount ??
-                      order.totalPrice ??
-                      order.finalAmount ??
-                      0}
-                  </Text>
+                  {t(`my_orders.${status.toLowerCase()}`) || status}
                 </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-                {(order.status?.toUpperCase() === 'APPROVED' ||
-                  order.status?.toUpperCase() === 'SOLD') && (
-                  <TouchableOpacity
-                    style={styles.downloadBtn}
-                    onPress={e => {
-                      e.stopPropagation();
-                      handleDownloadReceipt(order);
-                    }}
-                    disabled={downloadingOrderId === order._id}
-                  >
-                    {downloadingOrderId === order._id ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <>
-                        <Icon
-                          name="download"
-                          size={16}
-                          color="#fff"
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text style={styles.downloadBtnText}>Receipt</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-      </ScrollView>
-    </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={STAFF_COLORS.primary} />
+        </View>
+      ) : orders.length > 0 ? (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={item =>
+            item._id?.toString() || item.orderId?.toString()
+          }
+          renderItem={renderOrder}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>{t('my_orders.no_orders_found')}</Text>
+        </View>
+      )}
+    </SafeAreaView>
   );
 };
 
-export default Orders;
-
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-    backgroundColor: '#ffffff',
-  },
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: STAFF_COLORS.background,
   },
-  header: {
-    backgroundColor: '#ffffff',
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    zIndex: 10,
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  headerRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 12,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: STAFF_COLORS.tintCard,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: STAFF_COLORS.textPrimary,
-    letterSpacing: 0.5,
+    color: '#fff',
   },
-  searchBox: {
-    backgroundColor: STAFF_COLORS.tintMid,
-    borderRadius: 16,
-    marginTop: 20,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 50,
-  },
-  searchIcon: {
-    width: 18,
-    height: 18,
-    resizeMode: 'contain',
-    tintColor: STAFF_COLORS.textSecondary,
-  },
-  searchInput: {
-    flex: 1,
-    paddingHorizontal: 12,
-    color: STAFF_COLORS.textPrimary,
-    fontSize: 15,
+  listContent: {
+    padding: 16,
+    paddingBottom: 30,
   },
   orderCard: {
-    backgroundColor: STAFF_COLORS.surface,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 18,
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 0,
+    marginBottom: 14,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    overflow: 'hidden',
   },
-  orderHeader: {
+  staffOrderCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: STAFF_GOLD,
+  },
+  farmerOrderCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: FARMER_GREEN,
+  },
+  orderTypeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 0,
+  },
+  staffOrderHeader: {
+    backgroundColor: STAFF_GOLD_BG,
+    borderBottomWidth: 1,
+    borderBottomColor: STAFF_GOLD,
+  },
+  farmerOrderHeader: {
+    backgroundColor: FARMER_GREEN_BG,
+    borderBottomWidth: 1,
+    borderBottomColor: FARMER_GREEN,
+  },
+  orderTypeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  orderTypeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  staffOrderTypeText: {
+    color: STAFF_GOLD_DARK,
+  },
+  farmerOrderTypeText: {
+    color: FARMER_GREEN_DARK,
+  },
+  farmerSection: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: '#FAFAFA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  farmerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 8,
   },
-  orderId: {
+  farmerSectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textTransform: 'uppercase',
+  },
+  farmerDetails: {
+    paddingLeft: 26,
+  },
+  farmerName: {
+    fontSize: 16,
     fontWeight: '700',
-    color: STAFF_COLORS.textPrimary,
-    fontSize: 15,
+    color: '#111827',
+    marginBottom: 4,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  phone: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  farmerId: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  orderInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   date: {
-    fontSize: 13,
-    color: STAFF_COLORS.textSecondary,
-    marginBottom: 12,
+    fontSize: 12,
+    color: '#6B7280',
     fontWeight: '500',
+  },
+  orderId: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1F2937',
   },
   paymentMethodContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: STAFF_COLORS.tintCard,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 12,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
   },
   paymentMethodText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4B5563',
+    textTransform: 'capitalize',
+  },
+  itemsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  itemsLabel: {
     fontSize: 12,
-    fontWeight: '700',
-    color: STAFF_COLORS.primary,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  approvedBg: {
-    backgroundColor: '#D1FAE5',
-  },
-  pendingBg: {
-    backgroundColor: STAFF_COLORS.tintCard,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
   },
   itemRow: {
-    marginBottom: 8,
+    marginBottom: 6,
+    paddingLeft: 8,
   },
   itemName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
-  },
-  itemQty: {
     fontSize: 13,
-    color: STAFF_COLORS.textSecondary,
-    marginTop: 2,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  itemDetails: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    backgroundColor: '#FAFAFA',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   totalAmount: {
-    fontWeight: '700',
     fontSize: 15,
-    color: STAFF_COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#111827',
   },
-  bottomRow: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: STAFF_COLORS.tintMid,
   },
-  downloadBtn: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: STAFF_COLORS.primary,
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  filterContainer: {
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  filterScrollProps: {
+    paddingHorizontal: 16,
+    gap: 10,
+    alignItems: 'center',
+  },
+  filterButton: {
     paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: STAFF_COLORS.primary,
   },
-  downloadBtnText: {
-    color: STAFF_COLORS.textOnPrimary,
-    fontSize: 13,
-    fontWeight: '700',
+  activeFilterButton: {
+    backgroundColor: STAFF_COLORS.primary,
   },
-  noData: {
-    textAlign: 'center',
-    marginTop: 40,
-    color: STAFF_COLORS.textSecondary,
-    fontSize: 15,
-    fontWeight: '500',
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: STAFF_COLORS.primary,
+  },
+  activeFilterText: {
+    color: '#fff',
   },
 });
+
+export default Orders;

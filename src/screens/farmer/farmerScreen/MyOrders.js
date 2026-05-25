@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -9,8 +9,10 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  StatusBar,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import LinearGradient from 'react-native-linear-gradient';
 import RNBlobUtil from "react-native-blob-util";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import { useNavigation } from "@react-navigation/native";
@@ -30,6 +32,14 @@ const MyOrders = () => {
   const handleDownloadReceipt = async (order) => {
     try {
       setDownloadingOrderId(order._id);
+      
+      // ========== STEP 7: ORDER DATA TRACE ==========
+      console.log("========== ORDER DATA FOR RECEIPT ==========");
+      console.log("Order Object:", JSON.stringify(order, null, 2));
+      console.log("Order Payment Method:", order.paymentMethod);
+      console.log("Order Status:", order.status);
+      console.log("=============================================");
+      
       console.log('📦 Fetching all receipts to find receipt for order:', order._id);
 
       const receiptsRes = await apiService.getAllReceipts();
@@ -43,6 +53,14 @@ const MyOrders = () => {
 
       const receiptId = receipt?._id;
       console.log('🧾 Receipt found:', receiptId);
+      
+      // ========== STEP 8: RECEIPT DATA TRACE ==========
+      if (receipt) {
+        console.log("========== RECEIPT DATA TRACE ==========");
+        console.log("Receipt Object:", JSON.stringify(receipt, null, 2));
+        console.log("Receipt Payment Method:", receipt.paymentMethod);
+        console.log("=========================================");
+      }
 
       if (!receiptId) {
         showAlert({ type: 'warning', title: 'No Receipt', message: 'Could not find a receipt for this order. Make sure the order was sold.' });
@@ -52,30 +70,44 @@ const MyOrders = () => {
       const { url, token } = await apiService.downloadReceipt(receiptId);
       const fileName = `Receipt_${order.orderId || receiptId}.pdf`;
 
+      console.log('📥 Starting download:', { url, fileName, hasToken: !!token });
+
       const downloadDir = RNBlobUtil.fs.dirs.DownloadDir;
       const filePath = `${downloadDir}/${fileName}`;
 
-      const res = await RNBlobUtil.config({
-        path: filePath,
-        addAndroidDownloads: {
-          useDownloadManager: false,
-          notification: true,
-          title: fileName,
-          description: 'Receipt downloaded',
-          mime: 'application/pdf',
-          mediaScannable: true,
-          path: filePath,
-        },
-      }).fetch('GET', url, { Authorization: `Bearer ${token}` });
+      console.log('📁 Download path:', filePath);
 
+      const res = await RNBlobUtil.config({
+        fileCache: true,
+        path: filePath,
+      }).fetch('GET', url, {
+        Authorization: `Bearer ${token}`,
+      });
+
+      console.log('📊 Response info:', res.info());
       const status = res.info().status;
+      
       if (status !== 200 && status !== 201) {
         const textError = await res.text();
         console.error('❌ Server returned error instead of PDF:', textError);
         throw new Error(`Server Error (${status}): ${textError}`);
       }
 
-      console.log('✅ Receipt downloaded to:', res.path());
+      const downloadedPath = res.path();
+      console.log('✅ File downloaded to:', downloadedPath);
+
+      if (Platform.OS === 'android') {
+        await RNBlobUtil.MediaCollection.copyToMediaStore(
+          {
+            name: fileName,
+            parentFolder: '',
+            mimeType: 'application/pdf',
+          },
+          'Download',
+          downloadedPath
+        );
+        console.log('✅ File copied to Downloads folder');
+      }
 
       showAlert({
         type: 'success',
@@ -87,9 +119,9 @@ const MyOrders = () => {
             text: 'Open PDF',
             onPress: () => {
               if (Platform.OS === 'android') {
-                RNBlobUtil.android.actionViewIntent(res.path(), 'application/pdf');
+                RNBlobUtil.android.actionViewIntent(downloadedPath, 'application/pdf');
               } else {
-                RNBlobUtil.ios.previewDocument(res.path());
+                RNBlobUtil.ios.previewDocument(downloadedPath);
               }
             },
           },
@@ -112,6 +144,16 @@ const MyOrders = () => {
       setLoading(true);
 
       const data = await apiService.MyOrders(); // ✅ directly array
+      
+      // ========== STEP 5: ORDERS FETCH TRACE ==========
+      console.log("========== ORDERS FETCH TRACE ==========");
+      console.log("Orders Count:", data?.length || 0);
+      if (data && data.length > 0) {
+        console.log("First Order Sample:", JSON.stringify(data[0], null, 2));
+        console.log("First Order Payment Method:", data[0]?.paymentMethod);
+      }
+      console.log("=========================================");
+      
       setOrders(data || []);
 
       console.log("Orders:", data);
@@ -135,23 +177,31 @@ const MyOrders = () => {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
           >
-            <Icon name="chevron-back" size={24} color={FARMER_COLORS.primaryLight} />
+            <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>{t("my_orders.title")}</Text>
-          <View style={{ width: 44 }} />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("my_orders.title")}</Text>
+          </View>
+          <View style={{ width: 42 }} />
         </View>
-
+        
         <View style={styles.searchBox}>
-          <Image style={styles.searchIcon} source={Images.Search} />
+          <Icon name="search" size={20} color="#9CA3AF" />
           <TextInput
             placeholder={t("my_orders.search_id")}
             value={search}
@@ -160,7 +210,7 @@ const MyOrders = () => {
             style={styles.searchInput}
           />
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
         {/* LOADING */}
@@ -251,7 +301,7 @@ const MyOrders = () => {
                     ) : (
                       <>
                         <Icon name="download" size={16} color="#fff" style={{ marginRight: 6 }} />
-                        <Text style={styles.downloadBtnText}>Receipt</Text>
+                        <Text style={styles.downloadBtnText}>{t("my_orders.receipt_btn")}</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -267,76 +317,55 @@ const MyOrders = () => {
 export default MyOrders;
 
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 0,
-  },
   container: {
     flex: 1,
     backgroundColor: FARMER_COLORS.background,
   },
-
-  header: {
-    backgroundColor: FARMER_COLORS.surface,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 3,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    zIndex: 10,
+  /* GRADIENT HEADER */
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 20,
   },
-
-  headerRow: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: FARMER_COLORS.tintCard,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.15)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: FARMER_COLORS.textPrimary,
+    fontWeight: "800",
+    color: "#fff",
     letterSpacing: 0.3,
   },
-
   searchBox: {
-    backgroundColor: FARMER_COLORS.tintCard,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
-    marginTop: 20,
+    marginHorizontal: 16,
+    marginTop: 8,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.15)',
   },
-
-  searchIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: "contain",
-    tintColor: FARMER_COLORS.textSecondary,
-  },
-
   searchInput: {
     flex: 1,
     paddingHorizontal: 12,
-    color: FARMER_COLORS.textPrimary,
+    color: '#1F2937',
     fontSize: 15,
   },
 

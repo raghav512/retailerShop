@@ -93,6 +93,7 @@ const MyCrops = ({ navigation }) => {
   const openCalendarDetail = (item) => {
     navigation.navigate("CropCalendarDetail", {
       cropName: item.cropName,
+      variety: item.variety || null,
       sowingDate: item.sowingDate || null,
     });
   };
@@ -110,7 +111,12 @@ const MyCrops = ({ navigation }) => {
 
       {/* Centre content */}
       <View style={styles.cardContent}>
-        <Text style={styles.cropName}>{item.cropName}</Text>
+        <View style={styles.cropNameRow}>
+          <Text style={styles.cropName}>{item.cropName}</Text>
+          {item.variety && (
+            <Text style={styles.varietyText}>- {item.variety}</Text>
+          )}
+        </View>
         <View style={styles.farmInfo}>
           <Icon name="location-outline" size={14} color={FARMER_COLORS.textSecondary} />
           <Text style={styles.farmName}>{item.farmName || t('my_crops.unknown_farm')}</Text>
@@ -264,7 +270,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   cardContent: { flex: 1 },
-  cropName: { fontSize: 16, fontWeight: "700", color: FARMER_COLORS.textPrimary, marginBottom: 6, letterSpacing: 0.2 },
+  cropNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, gap: 6 },
+  cropName: { fontSize: 16, fontWeight: "700", color: FARMER_COLORS.textPrimary, letterSpacing: 0.2 },
+  varietyText: { fontSize: 14, color: FARMER_COLORS.primary, fontWeight: "600", fontStyle: 'italic' },
   farmInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   farmName: { fontSize: 13, color: FARMER_COLORS.textSecondary, marginLeft: 4, fontWeight: '500' },
   cropArea: { fontSize: 14, color: FARMER_COLORS.primary, fontWeight: "700", letterSpacing: 0.3 },

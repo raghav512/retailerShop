@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
+import { normalizeOtpRoleId, toOtpApiRole } from '../../../utils/otpRole';
 
 const StaffLogin = () => {
   const navigation = useNavigation();
@@ -34,17 +35,20 @@ const StaffLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Added missing state
 
-  const roleId = route.params?.roleId || 'staff';
+  const roleId = route.params?.roleId || 'Staff';
+  const normalizedRole = normalizeOtpRoleId(roleId) || 'Staff';
+  const otpApiRole = toOtpApiRole(normalizedRole) || 'Staff';
+  const isFpoRole = normalizedRole === 'Retailer';
 
   // 🔹 Mobile number validation (India – 10 digits)
   const isValidMobile = /^\d{10}$/.test(mobile);
 
   const roleName =
-    roleId === 'farmer'
+    normalizedRole === 'Farmer'
       ? t('role_farmer')
-      : roleId === 'staff'
+      : normalizedRole === 'Staff'
       ? t('role_staff')
-      : roleId === 'distributor'
+      : isFpoRole
       ? t('role_fpo')
       : t('role_user');
 
@@ -116,7 +120,7 @@ const StaffLogin = () => {
       // 2️⃣ Call SendOtp API with the correct field name 'mobile'
       const payload = {
         mobile: mobile, // ✅ CORRECT: backend expects {mobile}
-        role: roleId, // Include role if needed by your API
+        role: otpApiRole, // Include role if needed by your API
       };
 
       console.log('Sending OTP with payload:', payload);
@@ -134,7 +138,7 @@ const StaffLogin = () => {
         // Navigate to OTPData page with necessary params
         navigation.navigate('OTPData', {
           mobile: mobile, // Pass the mobile number
-          roleId: roleId,
+          roleId: normalizedRole,
         });
       } else {
         // Handle API response that doesn't indicate success
@@ -174,29 +178,35 @@ const StaffLogin = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=90' }}
+        source={{
+          uri: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=90',
+        }}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Icon name="briefcase-outline" size={36} color="#fff" />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View style={styles.iconCircle}>
+              <Icon name="briefcase-outline" size={36} color="#fff" />
+            </View>
+            <Text style={styles.title}>
+              {t('employee_login', { role: roleName })}
+            </Text>
+            <Text style={styles.subtitle}>{t('employee_login_sub')}</Text>
           </View>
-          <Text style={styles.title}>
-            {t('employee_login', { role: roleName })}
-          </Text>
-          <Text style={styles.subtitle}>{t('employee_login_sub')}</Text>
-        </View>
 
-        {/* LOGIN TYPE */}
-        {/* <View style={styles.toggleContainer}>
+          {/* LOGIN TYPE */}
+          {/* <View style={styles.toggleContainer}>
           <TouchableOpacity
             style={[
               styles.toggleBtn,
@@ -232,8 +242,8 @@ const StaffLogin = () => {
           </TouchableOpacity>
         </View> */}
 
-        {/* ID TYPE */}
-        {/* <View style={styles.toggleContainer}>
+          {/* ID TYPE */}
+          {/* <View style={styles.toggleContainer}>
           <TouchableOpacity
             style={[
               styles.toggleBtn,
@@ -269,28 +279,28 @@ const StaffLogin = () => {
           </TouchableOpacity>
         </View> */}
 
-        {/* FORM */}
-        <View style={styles.form}>
-          <Text style={styles.label}>{t('mobile_number')}</Text>
-          <View style={styles.inputBox}>
-            <Icon
-              name="call-outline"
-              size={18}
-              color="#6B7280"
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              placeholder={t('mobile_placeholder')}
-              placeholderTextColor="#9CA3AF"
-              keyboardType="number-pad"
-              value={mobile}
-              onChangeText={setMobile}
-              style={styles.input}
-              maxLength={10}
-            />
-          </View>
+          {/* FORM */}
+          <View style={styles.form}>
+            <Text style={styles.label}>{t('mobile_number')}</Text>
+            <View style={styles.inputBox}>
+              <Icon
+                name="call-outline"
+                size={18}
+                color="#6B7280"
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                placeholder={t('mobile_placeholder')}
+                placeholderTextColor="#9CA3AF"
+                keyboardType="number-pad"
+                value={mobile}
+                onChangeText={setMobile}
+                style={styles.input}
+                maxLength={10}
+              />
+            </View>
 
-          {/* <Text style={styles.label}>{t("password")}</Text>
+            {/* <Text style={styles.label}>{t("password")}</Text>
           <View style={styles.inputBox}>
             <Icon name="lock-closed-outline" size={18} color="#6B7280" style={{marginRight: 8}} />
             <TextInput
@@ -305,29 +315,29 @@ const StaffLogin = () => {
             </TouchableOpacity>
           </View> */}
 
-          {/* SEND OTP BUTTON */}
-          <TouchableOpacity
-            style={[
-              styles.loginBtn,
-              (!isValidMobile || isLoading) && styles.disabledBtn,
-            ]}
-            disabled={!isValidMobile || isLoading}
-            onPress={handleSendOtp}
-          >
-            {isLoading ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={[styles.loginText, { marginLeft: 10 }]}>
-                  {t('sending_otp')}
-                </Text>
-              </View>
-            ) : (
-              <Text style={styles.loginText}>{t('login_with_otp')}</Text>
-            )}
-          </TouchableOpacity>
+            {/* SEND OTP BUTTON */}
+            <TouchableOpacity
+              style={[
+                styles.loginBtn,
+                (!isValidMobile || isLoading) && styles.disabledBtn,
+              ]}
+              disabled={!isValidMobile || isLoading}
+              onPress={handleSendOtp}
+            >
+              {isLoading ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <Text style={[styles.loginText, { marginLeft: 10 }]}>
+                    {t('sending_otp')}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.loginText}>{t('login_with_otp')}</Text>
+              )}
+            </TouchableOpacity>
 
-          {/* BUTTON */}
-          {/* <TouchableOpacity
+            {/* BUTTON */}
+            {/* <TouchableOpacity
             style={styles.loginBtn}
             activeOpacity={0.85}
             onPress={handleLogin}
@@ -337,11 +347,11 @@ const StaffLogin = () => {
             </Text>
           </TouchableOpacity> */}
 
-          <TouchableOpacity>
-            {/* <Text style={styles.forgot}>{t("forgot_password")}</Text> */}
-          </TouchableOpacity>
+            <TouchableOpacity>
+              {/* <Text style={styles.forgot}>{t("forgot_password")}</Text> */}
+            </TouchableOpacity>
 
-          {/*
+            {/*
           <Text style={styles.register}>
             {t("no_account")}
             {" "}
@@ -353,8 +363,8 @@ const StaffLogin = () => {
             </Text>
           </Text>
           */}
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );

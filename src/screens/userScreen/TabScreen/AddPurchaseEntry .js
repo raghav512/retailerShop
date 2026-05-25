@@ -9,6 +9,7 @@ import {
   Modal,
   FlatList,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import DatePicker from "react-native-date-picker";
@@ -16,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
 import apiService from "../../../Redux/apiService";
 import Icon from "react-native-vector-icons/Ionicons";
+
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 
 const EMPTY_CROP = { cropName: "", variety: "", rate: "", quantity: "" };
@@ -100,20 +102,20 @@ const AddPurchaseEntry = () => {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={STAFF_COLORS.primary} translucent={false} />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t("purchase.add_title")}</Text>
-          <Text style={styles.headerSubtitle}>{t("purchase.add_subtitle")}</Text>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("purchase.add_title")}</Text>
+          </View>
+          <View style={{ width: 42 }} />
         </View>
-        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
@@ -320,7 +322,7 @@ const AddPurchaseEntry = () => {
 
       </ScrollView>
 
-      {/* ── FARMER MODAL ── */}
+      {/* FARMER MODAL */}
       <Modal visible={showFarmerModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -356,7 +358,7 @@ const AddPurchaseEntry = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -366,31 +368,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F6F8" },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: "#ffffff" },
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    paddingVertical: 14,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center", justifyContent: "center",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#1F2937" },
-  headerSubtitle: { fontSize: 12, color: "#6B7280", marginTop: 2, fontWeight: "500" },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
 
   /* BODY */
   body: { padding: 16, paddingBottom: 40 },
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
 
   /* SUBMIT */
   submitBtn: {
-    backgroundColor: "#1F2937",
+    backgroundColor: STAFF_COLORS.primary,
     paddingVertical: 18,
     borderRadius: 24,
     alignItems: "center",

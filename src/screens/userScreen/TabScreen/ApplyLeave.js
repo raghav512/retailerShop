@@ -121,33 +121,48 @@ const ApplyLeave = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
+      />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          activeOpacity={0.6}
-        >
-          <Icon name="arrow-back" size={22} color={STAFF_COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Apply for leave</Text>
+      {/* HEADER */}
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Apply for Leave</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Title Dropdown */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Title</Text>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Title */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIcon}>
+              <Icon name="document-text" size={18} color={STAFF_COLORS.primary} />
+            </View>
+            <Text style={styles.sectionTitle}>Leave Details</Text>
+          </View>
+
+          <Text style={styles.label}>Title *</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setShowTitleDropdown(!showTitleDropdown)}
           >
-            <Text style={[styles.dropdownText, !formData.title && styles.placeholder]}>
-              {formData.title || 'Sick Leave'}
+            <Text style={[styles.dropdownText, !formData.title && styles.placeholderText]}>
+              {formData.title || 'Select leave title'}
             </Text>
-            <Text style={styles.dropdownIcon}>▼</Text>
+            <Icon name="chevron-down" size={20} color={STAFF_COLORS.primary} />
           </TouchableOpacity>
           {showTitleDropdown && (
             <View style={styles.dropdownList}>
@@ -165,19 +180,17 @@ const ApplyLeave = ({ navigation }) => {
               ))}
             </View>
           )}
-        </View>
 
-        {/* Leave Type Dropdown */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Leave Type</Text>
+          {/* Leave Type */}
+          <Text style={styles.label}>Leave Type *</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setShowLeaveTypeDropdown(!showLeaveTypeDropdown)}
           >
-            <Text style={[styles.dropdownText, !formData.leaveType && styles.placeholder]}>
-              {formData.leaveType || 'Medical Leave'}
+            <Text style={[styles.dropdownText, !formData.leaveType && styles.placeholderText]}>
+              {formData.leaveType || 'Select leave type'}
             </Text>
-            <Text style={styles.dropdownIcon}>▼</Text>
+            <Icon name="chevron-down" size={20} color={STAFF_COLORS.primary} />
           </TouchableOpacity>
           {showLeaveTypeDropdown && (
             <View style={styles.dropdownList}>
@@ -197,41 +210,54 @@ const ApplyLeave = ({ navigation }) => {
           )}
         </View>
 
-        {/* Start Date */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Start Date</Text>
+        {/* Dates Section */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIcon}>
+              <Icon name="calendar" size={18} color={STAFF_COLORS.primary} />
+            </View>
+            <Text style={styles.sectionTitle}>Duration</Text>
+          </View>
+
+          {/* Start Date */}
+          <Text style={styles.label}>Start Date *</Text>
           <TouchableOpacity
             style={styles.dateInput}
             onPress={() => setShowStartDatePicker(true)}
           >
-            <Text style={[styles.dateText, !formData.startDate && styles.placeholder]}>
+            <Text style={[styles.dateText, !formData.startDate && styles.placeholderText]}>
               {formatDate(formData.startDate)}
             </Text>
-            <Text style={styles.calendarIcon}>📅</Text>
+            <Icon name="calendar-outline" size={20} color={STAFF_COLORS.primary} />
           </TouchableOpacity>
-        </View>
 
-        {/* End Date */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>End Date</Text>
+          {/* End Date */}
+          <Text style={styles.label}>End Date *</Text>
           <TouchableOpacity
             style={styles.dateInput}
             onPress={() => setShowEndDatePicker(true)}
           >
-            <Text style={[styles.dateText, !formData.endDate && styles.placeholder]}>
+            <Text style={[styles.dateText, !formData.endDate && styles.placeholderText]}>
               {formatDate(formData.endDate)}
             </Text>
-            <Text style={styles.calendarIcon}>📅</Text>
+            <Icon name="calendar-outline" size={20} color={STAFF_COLORS.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* Reason */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Reason For leave</Text>
+        {/* Reason Section */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIcon}>
+              <Icon name="chatbox-ellipses" size={18} color={STAFF_COLORS.primary} />
+            </View>
+            <Text style={styles.sectionTitle}>Reason</Text>
+          </View>
+
+          <Text style={styles.label}>Reason For Leave *</Text>
           <TextInput
             style={styles.textArea}
-            placeholder="I need to go to hospital"
-            placeholderTextColor="#999"
+            placeholder="Enter your reason for leave..."
+            placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -245,12 +271,15 @@ const ApplyLeave = ({ navigation }) => {
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={loading}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text style={styles.submitText}>Submit</Text>
+            <>
+              <Icon name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.submitText}>Submit Leave Application</Text>
+            </>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -289,163 +318,181 @@ export default ApplyLeave;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F6F8',
+  },
+
+  /* HEADER */
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  backButton: {
-    marginRight: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
+    fontWeight: '800',
+    color: '#fff',
   },
+
+  /* BODY */
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+
+  /* CARD SECTIONS */
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#FAF6F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
   },
   fieldContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: STAFF_COLORS.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
     marginBottom: 8,
   },
   dropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: STAFF_COLORS.primary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    minHeight: 56,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    backgroundColor: '#FAFAFA',
+    marginBottom: 14,
   },
   dropdownText: {
-    fontSize: 16,
-    color: STAFF_COLORS.textPrimary,
+    fontSize: 15,
+    color: '#1F2937',
   },
-  placeholder: {
-    color: '#999',
-  },
-  dropdownIcon: {
-    fontSize: 12,
-    color: STAFF_COLORS.primary,
+  placeholderText: {
+    color: '#9CA3AF',
   },
   dropdownList: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
+    marginTop: -6,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#F3F4F6',
   },
   dropdownItemText: {
-    fontSize: 16,
-    color: STAFF_COLORS.textPrimary,
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '500',
   },
   dateInput: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: STAFF_COLORS.primary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    minHeight: 56,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    backgroundColor: '#FAFAFA',
+    marginBottom: 14,
   },
   dateText: {
-    fontSize: 16,
-    color: STAFF_COLORS.textPrimary,
-  },
-  calendarIcon: {
-    fontSize: 20,
+    fontSize: 15,
+    color: '#1F2937',
   },
   textArea: {
-    borderWidth: 2,
-    borderColor: STAFF_COLORS.primary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: STAFF_COLORS.textPrimary,
-    minHeight: 150,
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: '#1F2937',
+    minHeight: 120,
+    backgroundColor: '#FAFAFA',
   },
   submitButton: {
     backgroundColor: STAFF_COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 24,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-    minHeight: 52,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    flexDirection: 'row',
+    marginBottom: 20,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });

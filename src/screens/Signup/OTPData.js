@@ -21,26 +21,27 @@ import {
   FARMER_COLORS,
   FPO_COLORS,
   STAFF_COLORS,
-  RETAILER_COLORS,
 } from '../../colorsList/ColorList';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { normalizeOtpRoleId, toOtpApiRole } from '../../utils/otpRole';
 
 const OTPData = ({ route }) => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
   // 🔹 Role handling
-  const roleId = route.params?.roleId || 'farmer';
-  const mobile = route?.params?.mobile;
+  const roleId = route.params?.roleId || 'Farmer';
+  const normalizedRole = normalizeOtpRoleId(roleId) || 'Farmer';
+  const otpApiRole = toOtpApiRole(normalizedRole) || 'Farmer';
+  const isFpoRole = normalizedRole === 'Retailer';
+  const mobile = (route?.params?.mobile || '').toString().trim();
 
   const colorPalette =
-    roleId === 'farmer'
+    normalizedRole === 'Farmer'
       ? FARMER_COLORS
-      : roleId === 'Distributor' || roleId === 'distributor'
+      : isFpoRole
       ? FPO_COLORS
-      : roleId === 'retailer' || roleId === 'Retailer'
-      ? RETAILER_COLORS
-      : roleId === 'staff'
+      : normalizedRole === 'Staff'
       ? STAFF_COLORS
       : FARMER_COLORS;
 
@@ -48,11 +49,43 @@ const OTPData = ({ route }) => {
     colorPalette;
   const disabledColor = '#D1D5DB';
 
+  // 🔹 Image URLs based on role
+  const retailerImageUrl =
+    'https://scontent.fjdh1-3.fna.fbcdn.net/v/t39.30808-6/485866580_1090035703137705_3246541318555590973_n.jpg?stp=cp6_dst-jpg_s720x720_tt6&_nc_cat=111&ccb=1-7&_nc_sid=7b2446&_nc_ohc=yEGyBc6WzL4Q7kNvwHUyP72&_nc_oc=AdolLiK0otCeVSz9gcpJYzvEpDpDQECXRo4tHPr_Kih-0StMdR_FCK5saBBHl-xaL8Q&_nc_zt=23&_nc_ht=scontent.fjdh1-3.fna&_nc_gid=0zJoFWPLQOAOxDiiCnU-ag&_nc_ss=7b289&oh=00_Af6_F57ZxwZXUlyojqoTfC9iNDt0Zr90lLl2fD0h4dIEHw&oe=69FF9035';
+  const staffImageUrl =
+    'https://geolife.com/dealer/maharashtra/assets/images/nade-krishi-seva-kendra-fertilizers-and-pesticides-murud.jpeg';
+  const defaultImageUrl =
+    'https://th.bing.com/th/id/OIG1.sGIyrNmTqoWI.CyRdMbt?pid=ImgGn';
+  const imageUrl = isFpoRole
+    ? retailerImageUrl
+    : normalizedRole === 'Staff'
+    ? staffImageUrl
+    : defaultImageUrl;
+
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
   const inputRefs = useRef([]);
+
+  const resolveResponseRole = responsePayload => {
+    const candidates = [
+      { value: responsePayload?.data?.role, source: 'data.role' },
+      { value: responsePayload?.data?.user?.role, source: 'data.user.role' },
+      { value: responsePayload?.data?.roleId, source: 'data.roleId' },
+      {
+        value: responsePayload?.data?.user?.roleId,
+        source: 'data.user.roleId',
+      },
+      { value: responsePayload?.role, source: 'role' },
+    ];
+    const match = candidates.find(candidate => candidate.value);
+    const normalized = normalizeOtpRoleId(match?.value);
+    return {
+      role: normalized || '',
+      source: match?.source || 'unknown',
+    };
+  };
 
   // ✅ Handle OTP change
   const handleOtpChange = (text, index) => {
@@ -109,9 +142,15 @@ const OTPData = ({ route }) => {
     try {
       const payload = {
         mobile,
-        role: roleId,
+        role: otpApiRole,
       };
 
+      console.log('🔁 Resend OTP context:', {
+        mobile,
+        routeRoleId: roleId,
+        normalizedRole,
+        requestRole: otpApiRole,
+      });
       const response = await apiService.SendOtp(payload);
 
       if (response?.success) {
@@ -160,14 +199,10 @@ const OTPData = ({ route }) => {
       const payload = {
         mobile,
         otp: enteredOtp,
-        role: roleId,
+        role: otpApiRole,
       };
 
-      console.log('📤 OTP Verify Payload:', payload);
-
       const response = await apiService.SendVerifyOtp(payload);
-
-      console.log('✅ OTP Verify Response:', response);
 
       if (!response?.success) {
         showAlert({
@@ -191,10 +226,13 @@ const OTPData = ({ route }) => {
       }
 
       // ✅ Use the role from backend, NOT the selected role
-      const actualRole = userData?.role?.toLowerCase() || roleId;
+      const resolvedRole = resolveResponseRole(response);
+      const actualRole = resolvedRole.role || normalizedRole;
+      const selectedRole = normalizedRole;
+      const isRoleMatch = actualRole === selectedRole;
 
       // ✅ Validate if user's actual role matches the selected role
-      if (actualRole !== roleId.toLowerCase()) {
+      if (!isRoleMatch) {
         showAlert({
           type: 'error',
           title: t('error'),
@@ -252,6 +290,13 @@ const OTPData = ({ route }) => {
       return;
     } catch (error) {
       console.log('❌ OTP verify error:', error);
+      console.log('❌ OTP verify error details:', {
+        routeRoleId: roleId,
+        normalizedRole,
+        requestRole: otpApiRole,
+        status: error?.response?.status,
+        backendMessage: error?.response?.data?.message,
+      });
 
       showAlert({
         type: 'error',
@@ -349,7 +394,7 @@ const OTPData = ({ route }) => {
 
         <Image
           source={{
-            uri: 'https://th.bing.com/th/id/OIG1.sGIyrNmTqoWI.CyRdMbt?pid=ImgGn',
+            uri: imageUrl,
           }}
           style={styles.bottomImage}
           resizeMode="cover"

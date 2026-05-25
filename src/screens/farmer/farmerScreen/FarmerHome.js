@@ -1,4 +1,4 @@
-﻿import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -11,18 +11,66 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import LatestNotifications from '../../../components/LatestNotifications';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import notifee, { EventType } from '@notifee/react-native';
 import messaging from '@react-native-firebase/messaging';
 import LanguageSwitcher from '../../../common/reusableComponent/LanguageSwitcher';
 import FloatingAIAssistant from '../../../animations/FloatingAIAssistant';
 import AdvertisementSlider from '../../../components/AdvertisementSlider';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
+
+/* 🔹 Animated Action Card Component */
+const AnimatedActionCard = ({ item, onPress, t }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={[styles.actionCard, { transform: [{ scale: scaleAnim }] }]}>
+      <TouchableOpacity
+        style={styles.actionCardInner}
+        onPress={() => onPress(item.key)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <LinearGradient
+          colors={['#4A7C35', '#2B4D21', '#4b5e2a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.actionIconContainer}
+        >
+          <Icon name={item.icon} size={22} color="#FFFFFF" />
+        </LinearGradient>
+        <Text style={styles.actionCardText}>
+          {t(item.key).replace(' ', '\n')}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 /* 🔹 Waving Hand Component */
 const WavingHand = () => {
@@ -74,6 +122,8 @@ const QUICK_ACTIONS = [
   { id: '2', key: 'my_crop', icon: 'leaf' },
   { id: '3', key: 'crop_doctor', icon: 'medkit' },
   { id: '4', key: 'my_orders.title', icon: 'receipt' },
+  { id: '5', key: 'farmer_diary.title', icon: 'book' },
+  { id: '6', key: 'farmer_inquiry.title', icon: 'help-circle' },
 ];
 
 const FarmerHome = () => {
@@ -138,6 +188,8 @@ const FarmerHome = () => {
     if (key === 'chatbot_label') navigation.navigate('ChatBot');
     if (key === 'community') navigation.navigate('Community');
     if (key === 'mandi_prices') navigation.navigate('MandiPricesScreen');
+    if (key === 'farmer_diary.title') navigation.navigate('FarmerDiary');
+    if (key === 'farmer_inquiry.title') navigation.navigate('FarmerInquiry');
   };
 
   return (
@@ -194,26 +246,25 @@ const FarmerHome = () => {
           <Text style={styles.sectionTitle}>{t('quick_actions')}</Text>
         </View>
 
-        <View style={styles.quickActionsGrid}>
-          {QUICK_ACTIONS.map(item => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.actionCard}
-              onPress={() => handleActionPress(item.key)}
-            >
-              <View style={styles.actionIconContainer}>
-                <Icon
-                  name={item.icon}
-                  size={28}
-                  color={FARMER_COLORS.surface}
-                />
-              </View>
-              <Text style={styles.actionCardText}>{t(item.key)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <LinearGradient
+          colors={['#f0f7e6', '#e8f5d8', '#f4f9ed']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.quickActionsContainer}
+        >
+          <View style={styles.quickActionsGrid}>
+            {QUICK_ACTIONS.map(item => (
+              <AnimatedActionCard
+                key={item.id}
+                item={item}
+                onPress={handleActionPress}
+                t={t}
+              />
+            ))}
+          </View>
+        </LinearGradient>
 
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, { marginTop: 20 }]}>
           <Text style={styles.sectionTitle}>
             {t('latest_notifications', 'Latest Notifications')}
           </Text>
@@ -312,12 +363,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   adWrapper: {
-    marginTop: 24,
+    marginTop: 10,
     marginBottom: 8,
   },
   sectionHeader: {
     paddingHorizontal: 20,
-    marginTop: 32,
+    marginTop: 0,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -326,46 +377,64 @@ const styles = StyleSheet.create({
     color: FARMER_COLORS.textPrimary,
     letterSpacing: 0.3,
   },
+  quickActionsContainer: {
+    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 16,
+    elevation: 8,
+    shadowColor: '#8EAB53',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    borderWidth: 1,
+    borderColor: 'rgba(142, 171, 83, 0.2)',
+  },
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 20,
-    gap: 16,
+    gap: 8,
+    justifyContent: 'space-between',
   },
   actionCard: {
-    width: '47%',
-    aspectRatio: 1.3,
-    backgroundColor: FARMER_COLORS.surface,
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'space-between',
-    elevation: 1,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.06,
+    width: '31%',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    elevation: 6,
+    shadowColor: '#4A7C35',
+    shadowOpacity: 0.2,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    borderWidth: 1,
-    borderColor: 'rgba(142, 171, 83, 0.12)',
+    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 2,
+    borderColor: 'rgba(142, 171, 83, 0.35)',
+    backdropFilter: 'blur(10px)',
+  },
+  actionCardInner: {
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   actionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: FARMER_COLORS.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: FARMER_COLORS.accent,
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    shadowColor: '#2B4D21',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   actionCardText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: FARMER_COLORS.textPrimary,
     letterSpacing: 0.2,
-    lineHeight: 20,
+    lineHeight: 16,
+    textAlign: 'center',
   },
   notificationsWrapper: {
     marginHorizontal: 20,

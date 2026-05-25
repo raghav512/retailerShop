@@ -86,7 +86,7 @@ const StaffInventory = () => {
                 onError={() => console.log('Image load error')}
               />
             ) : (
-              <Text style={styles.icon}>📦</Text>
+              <Icon name="cube-outline" size={32} color={STAFF_COLORS.primary} />
             )}
           </View>
 
@@ -157,7 +157,15 @@ const StaffInventory = () => {
       {/* HEADER */}
       <View style={styles.headerSpacer} />
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Icon name="arrow-back" size={24} color={STAFF_COLORS.textOnPrimary} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('inventory.title')}</Text>
+        <View style={styles.placeholder} />
       </View>
 
       <ScrollView
@@ -182,7 +190,7 @@ const StaffInventory = () => {
             scrollEnabled={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>📦</Text>
+                <Icon name="cube-outline" size={64} color={STAFF_COLORS.textSecondary} style={styles.emptyIcon} />
                 <Text style={styles.emptyText}>No products yet</Text>
                 <Text style={styles.emptySubText}>
                   Add your first product using the button above
@@ -218,13 +226,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     elevation: 2,
     shadowColor: STAFF_COLORS.primaryDark,
     shadowOpacity: 0.12,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholder: {
+    width: 40,
   },
   headerTitle: {
     color: STAFF_COLORS.textOnPrimary,
@@ -272,9 +293,9 @@ const styles = StyleSheet.create({
     borderColor: STAFF_COLORS.tintMid,
   },
   iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 72,
+    height: 72,
+    borderRadius: 18,
     backgroundColor: STAFF_COLORS.tintCard,
     justifyContent: 'center',
     alignItems: 'center',
@@ -282,13 +303,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: STAFF_COLORS.tintMid,
-  },
-  icon: {
-    fontSize: 24,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   productImage: {
-    width: 56,
-    height: 56,
+    width: 72,
+    height: 72,
     resizeMode: 'cover',
   },
   details: {
@@ -366,9 +389,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyIcon: {
-    fontSize: 56,
     marginBottom: 16,
-    opacity: 0.4,
+    opacity: 0.3,
   },
   emptyText: {
     fontSize: 16,

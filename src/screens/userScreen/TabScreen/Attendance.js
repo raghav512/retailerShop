@@ -13,10 +13,13 @@ import {
   ActivityIndicator,
   Linking,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Geolocation from '@react-native-community/geolocation';
 import { useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
 
@@ -48,6 +51,7 @@ const Attendance = ({ navigation }) => {
     status: null,
   });
   const [activityHistory, setActivityHistory] = useState([]);
+  const [isActivityExpanded, setIsActivityExpanded] = useState(false);
   const [loading, setLoading] = useState({
     checkIn: false,
     checkOut: false,
@@ -133,7 +137,7 @@ const Attendance = ({ navigation }) => {
           setActivityHistory(history);
         }
       });
-    }, [])
+    }, []),
   );
 
   // Request permission on screen load
@@ -344,23 +348,43 @@ const Attendance = ({ navigation }) => {
   };
 
   const renderDayItem = ({ item }) => {
+    const scaleAnim = new Animated.Value(1);
     const isSelected = item.date === selectedDate;
     const isToday = item.date === todayDate;
 
+    const handlePressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.92,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
     return (
-      <TouchableOpacity
-        onPress={() => setSelectedDate(item.date)}
-        style={[styles.dayItem, isSelected && styles.dayItemSelected]}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.dayNumber, isSelected && styles.dayTextSelected]}>
-          {String(item.date).padStart(2, '0')}
-        </Text>
-        <Text style={[styles.dayName, isSelected && styles.dayTextSelected]}>
-          {item.day}
-        </Text>
-        {isToday && !isSelected && <View style={styles.todayDot} />}
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          onPress={() => setSelectedDate(item.date)}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[styles.dayItem, isSelected && styles.dayItemSelected]}
+          activeOpacity={1}
+        >
+          <Text style={[styles.dayNumber, isSelected && styles.dayTextSelected]}>
+            {String(item.date).padStart(2, '0')}
+          </Text>
+          <Text style={[styles.dayName, isSelected && styles.dayTextSelected]}>
+            {item.day}
+          </Text>
+          {isToday && !isSelected && <View style={styles.todayDot} />}
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
@@ -421,7 +445,7 @@ const Attendance = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <View style={styles.statusBadge}>
-              <Text style={styles.badgeIcon}>📥</Text>
+              <Icon name="log-in" size={16} color="#10B981" />
               <Text style={styles.badgeText}>Check In</Text>
             </View>
             {loading.checkIn ? (
@@ -451,7 +475,7 @@ const Attendance = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <View style={[styles.statusBadge, styles.statusBadgeOut]}>
-              <Text style={styles.badgeIcon}>📤</Text>
+              <Icon name="log-out" size={16} color="#F59E0B" />
               <Text style={styles.badgeText}>Check Out</Text>
             </View>
             {loading.checkOut ? (
@@ -477,14 +501,28 @@ const Attendance = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
       />
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{t('home.attendance')}</Text>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
 
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('home.attendance')}</Text>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* ── Fixed Height Calendar Wrapper ── */}
         <View style={styles.calendarWrapper}>
           <FlatList
@@ -529,86 +567,106 @@ const Attendance = ({ navigation }) => {
 
         {/* TASK 4 — Your Activity Section */}
         <View style={styles.activitySection}>
-          <View style={styles.activityHeader}>
-            <Text style={styles.activityTitle}>Your Activity</Text>
-            <TouchableOpacity onPress={() => {}}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {loading.history ? (
-            <ActivityIndicator
-              size="small"
-              color={STAFF_COLORS.primary}
-              style={styles.activityLoader}
+          <TouchableOpacity
+            style={styles.activityHeader}
+            onPress={() => setIsActivityExpanded(!isActivityExpanded)}
+            activeOpacity={0.7}
+          >
+            <View>
+              <Text style={styles.activityTitle}>Your Activity</Text>
+              <Text style={styles.activitySubtitle}>See 7 days attendance</Text>
+            </View>
+            <Icon
+              name={isActivityExpanded ? 'chevron-up' : 'chevron-down'}
+              size={24}
+              color={STAFF_COLORS.textPrimary}
             />
-          ) : activityHistory.length === 0 ? (
-            <Text style={styles.noActivityText}>No activity records found</Text>
-          ) : (
-            activityHistory.flatMap((record, recordIndex) => {
-              const entries = [];
+          </TouchableOpacity>
 
-              // Check In entry
-              if (record.checkIn) {
-                const checkInDate = new Date(record.checkIn);
-                entries.push({
-                  key: `${recordIndex}-in`,
-                  type: 'Check In',
-                  icon: '📥',
-                  date: checkInDate.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  }),
-                  time: checkInDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                  }),
-                  timestamp: checkInDate.getTime(),
-                });
-              }
+          {isActivityExpanded && (
+            <>
+              {loading.history ? (
+                <ActivityIndicator
+                  size="small"
+                  color={STAFF_COLORS.primary}
+                  style={styles.activityLoader}
+                />
+              ) : activityHistory.length === 0 ? (
+                <Text style={styles.noActivityText}>
+                  No activity records found
+                </Text>
+              ) : (
+                activityHistory
+                  .flatMap((record, recordIndex) => {
+                    const entries = [];
 
-              // Check Out entry
-              if (record.checkOut) {
-                const checkOutDate = new Date(record.checkOut);
-                entries.push({
-                  key: `${recordIndex}-out`,
-                  type: 'Check Out',
-                  icon: '📤',
-                  date: checkOutDate.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  }),
-                  time: checkOutDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                  }),
-                  timestamp: checkOutDate.getTime(),
-                });
-              }
+                    // Check In entry
+                    if (record.checkIn) {
+                      const checkInDate = new Date(record.checkIn);
+                      entries.push({
+                        key: `${recordIndex}-in`,
+                        type: 'Check In',
+                        iconName: 'log-in',
+                        iconColor: '#10B981',
+                        iconBg: '#ECFDF5',
+                        date: checkInDate.toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        }),
+                        time: checkInDate.toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        }),
+                        timestamp: checkInDate.getTime(),
+                      });
+                    }
 
-              return entries;
-            })
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 10)
-            .map(entry => (
-              <View key={entry.key} style={styles.activityItem}>
-                <View style={styles.activityIcon}>
-                  <Text style={styles.activityIconText}>{entry.icon}</Text>
-                </View>
-                <View style={styles.activityDetails}>
-                  <Text style={styles.activityType}>{entry.type}</Text>
-                  <Text style={styles.activityDate}>{entry.date}</Text>
-                </View>
-                <View style={styles.activityRight}>
-                  <Text style={styles.activityTime}>{entry.time}</Text>
-                  <Text style={styles.activityStatus}>On time</Text>
-                </View>
-              </View>
-            ))
+                    // Check Out entry
+                    if (record.checkOut) {
+                      const checkOutDate = new Date(record.checkOut);
+                      entries.push({
+                        key: `${recordIndex}-out`,
+                        type: 'Check Out',
+                        iconName: 'log-out',
+                        iconColor: '#EF4444',
+                        iconBg: '#FEF2F2',
+                        date: checkOutDate.toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        }),
+                        time: checkOutDate.toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        }),
+                        timestamp: checkOutDate.getTime(),
+                      });
+                    }
+
+                    return entries;
+                  })
+                  .sort((a, b) => b.timestamp - a.timestamp)
+                  .slice(0, 10)
+                  .map(entry => (
+                    <View key={entry.key} style={styles.activityItem}>
+                      <View style={[styles.activityIcon, {backgroundColor: entry.iconBg}]}>
+                        <Icon name={entry.iconName} size={20} color={entry.iconColor} />
+                      </View>
+                      <View style={styles.activityDetails}>
+                        <Text style={styles.activityType}>{entry.type}</Text>
+                        <Text style={styles.activityDate}>{entry.date}</Text>
+                      </View>
+                      <View style={styles.activityRight}>
+                        <Text style={styles.activityTime}>{entry.time}</Text>
+                        <Text style={styles.activityStatus}>On time</Text>
+                      </View>
+                    </View>
+                  ))
+              )}
+            </>
           )}
         </View>
       </ScrollView>
@@ -621,106 +679,154 @@ export default Attendance;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: STAFF_COLORS.tint,
+    backgroundColor: '#F9FAFB',
+  },
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 8,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingTop: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: STAFF_COLORS.textPrimary,
-    marginBottom: 16,
   },
 
   // ✅ Fixed height — calendar neeche wali content ko push nahi karega
   calendarWrapper: {
-    height: 90,
+    height: 94,
   },
   calendarContent: {
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   dayItem: {
-    width: 48,
-    height: 72,
-    marginRight: 8,
+    width: 52,
+    height: 76,
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   dayItemSelected: {
     backgroundColor: STAFF_COLORS.primary,
+    borderColor: STAFF_COLORS.primary,
+    elevation: 4,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
   dayNumber: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
+    color: '#111827',
+    letterSpacing: 0.2,
   },
   dayName: {
-    fontSize: 11,
-    marginTop: 4,
-    color: STAFF_COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 5,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   dayTextSelected: {
     color: '#FFFFFF',
   },
   todayDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: STAFF_COLORS.primary,
-    marginTop: 4,
+    marginTop: 5,
   },
 
   // TASK 2 — Today Attendance Card
   attendanceCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 18,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
-    marginBottom: 12,
+    color: '#111827',
+    marginBottom: 14,
+    letterSpacing: 0.2,
   },
   attendanceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 14,
   },
   actionCard: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    backgroundColor: '#FAFAFA',
-    borderRadius: 8,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    minHeight: 120,
+    borderColor: '#E5E7EB',
+    minHeight: 130,
     justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   actionCardDisabled: {
-    opacity: 0.5,
-    backgroundColor: '#F5F5F5',
+    opacity: 0.6,
+    backgroundColor: '#F3F4F6',
   },
   attendanceCol: {
     flex: 1,
@@ -729,34 +835,40 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginBottom: 8,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginBottom: 10,
+    elevation: 1,
+    shadowColor: '#10B981',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    gap: 6,
   },
   statusBadgeOut: {
-    backgroundColor: '#FFF3E0',
-  },
-  badgeIcon: {
-    fontSize: 14,
-    marginRight: 4,
+    backgroundColor: '#FEF3C7',
+    shadowColor: '#F59E0B',
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
+    fontWeight: '600',
+    color: '#374151',
+    letterSpacing: 0.2,
   },
   timeText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
-    color: STAFF_COLORS.textPrimary,
-    marginBottom: 4,
+    color: '#111827',
+    marginBottom: 5,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
   statusText: {
     fontSize: 12,
-    color: STAFF_COLORS.textSecondary,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   loader: {
     marginVertical: 16,
@@ -765,46 +877,58 @@ const styles = StyleSheet.create({
   // TASK 3 — Apply For Leave Button
   applyLeaveButton: {
     backgroundColor: STAFF_COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 20,
-    marginTop: 16,
+    marginTop: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    minHeight: 56,
+    elevation: 5,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
   },
   applyLeaveText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 
   // TASK 4 — Your Activity Section
   activitySection: {
     marginTop: 24,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   activityHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
   },
   activityTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
+    color: '#111827',
+    letterSpacing: 0.2,
+  },
+  activitySubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#6B7280',
+    marginTop: 3,
   },
   viewAllText: {
     fontSize: 14,
@@ -816,42 +940,37 @@ const styles = StyleSheet.create({
   },
   noActivityText: {
     fontSize: 14,
-    color: STAFF_COLORS.textSecondary,
+    color: '#6B7280',
     textAlign: 'center',
-    marginVertical: 20,
+    marginVertical: 24,
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF9E6',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-  },
-  activityIconText: {
-    fontSize: 18,
+    marginRight: 14,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   activityDetails: {
     flex: 1,
@@ -859,12 +978,14 @@ const styles = StyleSheet.create({
   activityType: {
     fontSize: 15,
     fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
-    marginBottom: 4,
+    color: '#111827',
+    marginBottom: 5,
+    letterSpacing: 0.2,
   },
   activityDate: {
     fontSize: 13,
-    color: STAFF_COLORS.textSecondary,
+    color: '#6B7280',
+    fontWeight: '400',
   },
   activityRight: {
     alignItems: 'flex-end',
@@ -872,11 +993,13 @@ const styles = StyleSheet.create({
   activityTime: {
     fontSize: 15,
     fontWeight: '600',
-    color: STAFF_COLORS.textPrimary,
-    marginBottom: 4,
+    color: '#111827',
+    marginBottom: 5,
+    letterSpacing: 0.2,
   },
   activityStatus: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#10B981',
+    fontWeight: '500',
   },
 });

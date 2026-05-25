@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar } from "react-native";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import DatePicker from 'react-native-date-picker';
@@ -10,6 +10,7 @@ import { FARMER_COLORS } from '../../../colorsList/ColorList';
 const EditCrop = ({ route, navigation }) => {
   const { crop } = route.params;
   const [cropName, setCropName] = useState(crop.cropName);
+  const [variety, setVariety] = useState(crop.variety || "");
   const [area, setArea] = useState(crop.area?.toString() || "");
   const [unit, setUnit] = useState(crop.unit || "acre");
   const [sowingDate, setSowingDate] = useState(crop.sowingDate ? new Date(crop.sowingDate) : new Date());
@@ -27,10 +28,14 @@ const EditCrop = ({ route, navigation }) => {
     try {
       const payload = {
         cropName: cropName.trim(),
+        variety: variety.trim(),
         area: area,
         unit: unit,
         sowingDate: sowingDate.toISOString().split('T')[0],
       };
+
+      console.log('🔄 EDIT CROP PAYLOAD:', JSON.stringify(payload, null, 2));
+      console.log('🔄 Variety value:', variety);
 
       await apiService.updateCropById(crop._id, payload);
       showAlert({ type: 'success', title: t('success'), message: t('edit_crop.success') });
@@ -62,6 +67,15 @@ const EditCrop = ({ route, navigation }) => {
           value={cropName}
           onChangeText={setCropName}
           placeholder={t('edit_crop.crop_name_placeholder')}
+          placeholderTextColor="#9CA3AF"
+        />
+
+        <Text style={styles.label}>Variety</Text>
+        <TextInput
+          style={styles.input}
+          value={variety}
+          onChangeText={setVariety}
+          placeholder="Enter crop variety"
           placeholderTextColor="#9CA3AF"
         />
 

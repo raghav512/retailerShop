@@ -18,3 +18,11 @@ export const getUserData = async () => {
   const user = await AsyncStorage.getItem('userData');
   return JSON.parse(user);
 };
+
+export const getAppLanguage = async () => {
+  return AsyncStorage.getItem('APP_LANGUAGE');
+};
+
+export const setAppLanguage = async lang => {
+  await AsyncStorage.setItem('APP_LANGUAGE', lang);
+};

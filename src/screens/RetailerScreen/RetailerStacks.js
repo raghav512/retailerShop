@@ -12,6 +12,7 @@ import RetailerDocuments from './RetailerTabs/RetailerDocuments';
 import RetailerProfile from './RetailerTabs/RetailerProfile';
 import RetailerProductDetails from './RetailerTabs/RetailerProductDetail.js';
 import RetailerCart from './RetailerTabs/RetailerCart';
+import BroadcastsScreen from './RetailerTabs/BroadcastsScreen';
 import BroadcastDetailsScreen from './RetailerTabs/BroadcastDetailsScreen';
 
 // Profile Screens
@@ -33,6 +34,10 @@ export const RetailerStackHome = () => {
     <Suspense fallback={<LoadingIndicator />}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="RetailerHome" component={RetailerHome} />
+        <Stack.Screen
+          name="BroadcastsScreen"
+          component={BroadcastsScreen}
+        />
         <Stack.Screen
           name="BroadcastDetailsScreen"
           component={BroadcastDetailsScreen}

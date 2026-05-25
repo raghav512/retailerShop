@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,15 +20,34 @@ import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const THEME = FPO_COLORS.primary; // Distributor Steel Blue
 
+const reverseGeocode = async (latitude, longitude) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+      { headers: { 'User-Agent': 'BeejseBazar' } }
+    );
+    const data = await response.json();
+    const address = data.address;
+    const city = address.city || address.town || address.village || address.county || '';
+    const state = address.state || '';
+    return city && state ? `${city}, ${state}` : city || state || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  }
+};
+
 const FarmerListingDetails = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const { listing } = route.params || {};
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({ approve: false, reject: false });
+  const locationText = listing?.userId?.village || 'N/A';
 
   const handleStatusUpdate = async status => {
-    setLoading(true);
+    const loadingKey = status === 'approved' ? 'approve' : 'reject';
+    setLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       await apiService.updateCropListing(listing._id, { status });
       
@@ -47,7 +67,7 @@ const FarmerListingDetails = () => {
           'Failed to update status',
       });
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
   };
 
@@ -72,31 +92,37 @@ const FarmerListingDetails = () => {
       })
     : 'Unknown Date';
 
-  const images = listing?.cropImages || [];
-
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {t('farmer_listing_details.title') || 'Listing Details'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark, FPO_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>
+              {t('farmer_listing_details.title') || 'Listing Details'}
+            </Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -126,6 +152,18 @@ const FarmerListingDetails = () => {
                 <Text style={styles.infoValue}>
                   {crop} {variety ? `(${variety})` : ''}
                 </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <View style={styles.smallIconBox}>
+                <Icon name="location-outline" size={16} color="#6B7280" />
+              </View>
+              <View>
+                <Text style={styles.infoLabel}>Location</Text>
+                <Text style={styles.infoValue}>{locationText}</Text>
               </View>
             </View>
           </View>
@@ -164,39 +202,6 @@ const FarmerListingDetails = () => {
           </View>
         </View>
 
-        {/* IMAGES CARD */}
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}>
-              <Icon name="images" size={16} color={THEME} />
-            </View>
-            <Text style={styles.sectionTitle}>
-              {t('farmer_listing_details.images') || 'Images'} ({images.length})
-            </Text>
-          </View>
-
-          <View style={styles.imageGrid}>
-            {images.length > 0 ? (
-              images.map((img, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: img.url || img }}
-                  style={styles.cropImage}
-                  resizeMode="cover"
-                />
-              ))
-            ) : (
-              <View style={styles.noImageContainer}>
-                <Icon name="image-outline" size={40} color="#D1D5DB" />
-                <Text style={styles.noImageText}>
-                  {t('farmer_listing_details.no_images') ||
-                    'No images provided'}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
         {/* UPDATE STATUS CARD */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
@@ -212,7 +217,7 @@ const FarmerListingDetails = () => {
             <TouchableOpacity
               style={[styles.statusOption, { borderColor: '#10B981' }]}
               onPress={() => handleStatusUpdate('approved')}
-              disabled={loading}
+              disabled={loading.approve || loading.reject}
               activeOpacity={0.7}
             >
               <View style={[styles.statusIcon, { backgroundColor: '#D1FAE5' }]}>
@@ -226,13 +231,13 @@ const FarmerListingDetails = () => {
                   {t('status.approved') || 'Mark as verified and accepted'}
                 </Text>
               </View>
-              {loading && <ActivityIndicator size="small" color="#10B981" />}
+              {loading.approve && <ActivityIndicator size="small" color="#10B981" />}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.statusOption, { borderColor: '#EF4444' }]}
               onPress={() => handleStatusUpdate('rejected')}
-              disabled={loading}
+              disabled={loading.approve || loading.reject}
               activeOpacity={0.7}
             >
               <View style={[styles.statusIcon, { backgroundColor: '#FEE2E2' }]}>
@@ -246,7 +251,7 @@ const FarmerListingDetails = () => {
                   {t('status.rejected') || 'Decline this listing application'}
                 </Text>
               </View>
-              {loading && <ActivityIndicator size="small" color="#EF4444" />}
+              {loading.reject && <ActivityIndicator size="small" color="#EF4444" />}
             </TouchableOpacity>
           </View>
         </View>
@@ -261,32 +266,31 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
 
   scrollContent: { padding: 16, paddingBottom: 40 },
 
@@ -372,32 +376,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   totalAmount: { fontSize: 20, fontWeight: '800', color: '#059669' },
-
-  /* IMAGES */
-  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  cropImage: {
-    width: '31%',
-    aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-  },
-  noImageContainer: {
-    width: '100%',
-    padding: 30,
-    backgroundColor: '#FAFAFA',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    borderStyle: 'dashed',
-  },
-  noImageText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 12,
-    fontWeight: '500',
-  },
 
   /* ACTIONS */
   statusOptions: { marginTop: 4 },

@@ -6,6 +6,8 @@ import {
   View,
   StatusBar,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import AllPosts from './FpoAllPosts';
 import MyPosts from './FpoPosts';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +17,7 @@ const THEME = FPO_COLORS.primary; // Distributor Steel Blue
 
 const FpoCommunity = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
 
   return (
@@ -25,6 +28,21 @@ const FpoCommunity = () => {
         translucent={true}
       />
       <View style={styles.headerSpacer} />
+
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Icon name="arrow-back" size={24} color={FPO_COLORS.textOnPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {t('community_screen.community')}
+        </Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
 
       {/* FLOATING PILL TOGGLE */}
       <View style={styles.toggleContainer}>
@@ -81,7 +99,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F6F8',
   },
-  headerSpacer: { height: 6, backgroundColor: '#F4F6F8' },
+  headerSpacer: { height: 0, backgroundColor: THEME },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+    backgroundColor: THEME,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 6,
+    shadowColor: THEME,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: FPO_COLORS.textOnPrimary,
+    letterSpacing: 0.3,
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
 
   toggleContainer: {
     paddingHorizontal: 20,

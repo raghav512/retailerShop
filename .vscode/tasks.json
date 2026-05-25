@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Android (run-android)",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"react-native",
+				"run-android"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

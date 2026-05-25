@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../../Redux/apiService';
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
@@ -33,6 +34,10 @@ const BroadcastsScreen = ({ navigation }) => {
 
     const fetchBroadcasts = async (pageNum = 1, isRefresh = false) => {
         try {
+            console.log('\n🔍 ========== FARMER BROADCAST FETCH START ==========');
+            console.log('📄 Page:', pageNum);
+            console.log('🔄 Is Refresh:', isRefresh);
+            
             if (pageNum === 1) {
                 setLoading(true);
             } else {
@@ -40,22 +45,57 @@ const BroadcastsScreen = ({ navigation }) => {
             }
 
             const response = await apiService.getAllBroadcasts(pageNum, 20);
+            
+            console.log('\n📦 FULL API RESPONSE:');
+            console.log(JSON.stringify(response, null, 2));
+            console.log('\n✅ Response Success:', response?.success);
+            console.log('📊 Response Data Length:', response?.data?.length || 0);
+            console.log('📄 Pagination:', JSON.stringify(response?.pagination, null, 2));
+            
+            if (response?.data && response.data.length > 0) {
+                console.log('\n📢 BROADCASTS RECEIVED:');
+                response.data.forEach((broadcast, index) => {
+                    console.log(`\n--- Broadcast ${index + 1} ---`);
+                    console.log('ID:', broadcast._id);
+                    console.log('Title:', broadcast.title);
+                    console.log('Target Role:', broadcast.targetRole);
+                    console.log('Created At:', broadcast.createdAt);
+                    console.log('Sent At:', broadcast.sentAt);
+                });
+            } else {
+                console.log('\n⚠️ NO BROADCASTS RECEIVED FROM BACKEND');
+                console.log('Response data is empty or undefined');
+            }
 
             if (response?.success) {
                 const newBroadcasts = response.data || [];
                 const { pages, page: currentPage } = response.pagination || {};
+                
+                console.log('\n🔢 Setting broadcasts count:', newBroadcasts.length);
 
                 if (isRefresh || pageNum === 1) {
                     setBroadcasts(newBroadcasts);
+                    console.log('✅ Broadcasts SET (replaced)');
                 } else {
                     setBroadcasts(prev => [...prev, ...newBroadcasts]);
+                    console.log('✅ Broadcasts APPENDED');
                 }
 
                 setHasMore(currentPage < pages);
                 setPage(pageNum);
+                console.log('📄 Has More Pages:', currentPage < pages);
+            } else {
+                console.log('\n❌ Response success is FALSE');
             }
+            
+            console.log('🔍 ========== FARMER BROADCAST FETCH END ==========\n');
         } catch (error) {
-            console.error('❌ Error fetching broadcasts:', error);
+            console.error('\n❌ ========== ERROR FETCHING BROADCASTS ==========');
+            console.error('Error Message:', error.message);
+            console.error('Error Response:', error.response?.data);
+            console.error('Error Status:', error.response?.status);
+            console.error('Full Error:', error);
+            console.error('❌ ================================================\n');
             // Stop infinite scrolling if the API is failing
             setHasMore(false);
         } finally {
@@ -166,20 +206,35 @@ const BroadcastsScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+            <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
             
-            {/* Header */}
-            <View style={styles.headerSpacer} />
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backBtn}
-                    onPress={() => navigation.goBack()}
-                    activeOpacity={0.7}
+            {/* Curved Header */}
+            <View style={styles.headerContainer}>
+                <LinearGradient
+                    colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientHeader}
                 >
-                    <Icon name="arrow-back" size={24} color="#1F2937" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('broadcasts.title', 'Broadcasts')}</Text>
-                <View style={{ width: 40 }} />
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backBtn}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.7}
+                        >
+                            <Icon name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
+                        <View style={styles.headerCenter}>
+                            <Text style={styles.headerTitle}>{t('broadcasts.title', 'Broadcasts')}</Text>
+                        </View>
+                        <View style={{ width: 42 }} />
+                    </View>
+                </LinearGradient>
+                
+                {/* Curved Bottom */}
+                <View style={styles.curveContainer}>
+                    <View style={styles.curve} />
+                </View>
             </View>
 
             <FlatList
@@ -210,38 +265,35 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F4F6F8',
     },
-    headerSpacer: {
-        height: 6,
-        backgroundColor: "#ffffff",
+    /* GRADIENT HEADER */
+    gradientHeader: {
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        paddingBottom: 12,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingVertical: 16,
-        backgroundColor: "#ffffff",
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-        elevation: 8,
-        shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 5 },
-        zIndex: 10,
+        paddingVertical: 14,
     },
     backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#F3F4F6',
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         alignItems: 'center',
         justifyContent: 'center',
     },
+    headerCenter: {
+        flex: 1,
+        alignItems: 'center',
+    },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#1F2937",
+        fontSize: 20,
+        fontWeight: "800",
+        color: "#fff",
     },
     loaderContainer: {
         flex: 1,

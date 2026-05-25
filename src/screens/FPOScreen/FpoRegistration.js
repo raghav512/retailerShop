@@ -83,7 +83,7 @@ const FpoRegistration = () => {
     }
 
     const payload = {
-      role: 'Distributor',
+      role: 'Retailer',
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       phone: form.phone.trim(),
@@ -318,10 +318,10 @@ const FpoRegistration = () => {
             />
           </View>
 
-          <Text style={styles.label}>Distributor / Shop Name</Text>
+          <Text style={styles.label}>Retailer / Shop Name</Text>
           <View style={styles.inputBox}>
             <TextInput
-              placeholder="Enter Distributor name"
+              placeholder="Enter Retailer name"
               style={styles.input}
               value={form.shopName}
               onChangeText={v => handleChange('shopName', v)}

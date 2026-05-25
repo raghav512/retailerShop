@@ -54,53 +54,72 @@ const RetailerOrders = ({ navigation }) => {
 
       const { url, token } = await apiService.downloadReceipt(receiptId);
       const fileName = `Receipt_${order.orderId || receiptId}.pdf`;
-
+      
+      // Use fetch with blob response to download the PDF
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server returned error instead of PDF:', errorText);
+        throw new Error(`Server Error (${response.status}): ${errorText}`);
+      }
+      
+      // Check if response is JSON (error) or PDF (blob)
+      const contentType = response.headers.get('content-type');
+      console.log('✅ Response content-type:', contentType);
+      
+      if (contentType && contentType.includes('application/json')) {
+        const jsonData = await response.json();
+        console.error('❌ Server returned JSON instead of PDF:', jsonData);
+        throw new Error('Server returned JSON instead of PDF. Please check the backend API.');
+      }
+      
+      // Convert response to blob
+      const blob = await response.blob();
+      console.log('✅ Receipt blob created, size:', blob.size);
+      
+      // Save to file using RNBlobUtil
       const downloadDir = RNBlobUtil.fs.dirs.DownloadDir;
       const filePath = `${downloadDir}/${fileName}`;
+      
+      // Read blob as base64 and write to file
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64Data = reader.result.split(',')[1];
+        await RNBlobUtil.fs.writeFile(filePath, base64Data, 'base64');
+        console.log('✅ Receipt saved to:', filePath);
 
-      const res = await RNBlobUtil.config({
-        path: filePath,
-        addAndroidDownloads: {
-          useDownloadManager: false,
-          notification: true,
-          title: fileName,
-          description: 'Receipt downloaded',
-          mime: 'application/pdf',
-          mediaScannable: true,
-          path: filePath,
-        },
-      }).fetch('GET', url, { Authorization: `Bearer ${token}` });
-
-      const status = res.info().status;
-      if (status !== 200 && status !== 201) {
-        const textError = await res.text();
-        console.error('❌ Server returned error instead of PDF:', textError);
-        throw new Error(`Server Error (${status}): ${textError}`);
-      }
-
-      console.log('✅ Receipt downloaded to:', res.path());
-
-      showAlert({
-        type: 'success',
-        title: t('retailer_orders.downloaded'),
-        message: t('retailer_orders.download_success', { fileName }),
-        buttons: [
-          { text: 'OK' },
-          {
-            text: t('retailer_orders.open_pdf'),
-            onPress: () => {
-              if (Platform.OS === 'android') {
-                RNBlobUtil.android.actionViewIntent(
-                  res.path(),
-                  'application/pdf',
-                );
-              } else {
-                RNBlobUtil.ios.previewDocument(res.path());
-              }
+        showAlert({
+          type: 'success',
+          title: t('retailer_orders.downloaded'),
+          message: t('retailer_orders.download_success', { fileName }),
+          buttons: [
+            { text: 'OK' },
+            {
+              text: t('retailer_orders.open_pdf'),
+              onPress: () => {
+                if (Platform.OS === 'android') {
+                  RNBlobUtil.android.actionViewIntent(
+                    filePath,
+                    'application/pdf',
+                  );
+                } else {
+                  RNBlobUtil.ios.previewDocument(filePath);
+                }
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      };
+      reader.onerror = () => {
+        throw new Error('Failed to read blob');
+      };
     } catch (error) {
       console.error('❌ Download error:', error.message);
       showAlert({

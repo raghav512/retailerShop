@@ -7,20 +7,68 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import apiService from '../../../Redux/apiService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const THEME = FPO_COLORS.primary; // Distributor Steel Blue
+
+const reverseGeocode = async (latitude, longitude) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+      { headers: { 'User-Agent': 'BeejseBazar' } }
+    );
+    const data = await response.json();
+    const address = data.address;
+    const city = address.city || address.town || address.village || address.county || '';
+    const state = address.state || '';
+    return city && state ? `${city}, ${state}` : city || state || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  }
+};
 
 const FarmerListing = () => {
   const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [locationCache, setLocationCache] = useState({});
   const navigation = useNavigation();
+
+  const getLocationText = async (location) => {
+    if (!location) return 'N/A';
+    
+    let latitude, longitude;
+    
+    // Handle GeoJSON format: { type: "Point", coordinates: [lng, lat] }
+    if (location.type === 'Point' && Array.isArray(location.coordinates)) {
+      [longitude, latitude] = location.coordinates;
+    }
+    // Handle array format: [lng, lat]
+    else if (Array.isArray(location) && location.length >= 2) {
+      [longitude, latitude] = location;
+    }
+    else {
+      return 'N/A';
+    }
+    
+    const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+    
+    if (locationCache[cacheKey]) {
+      return locationCache[cacheKey];
+    }
+    
+    const address = await reverseGeocode(latitude, longitude);
+    setLocationCache(prev => ({ ...prev, [cacheKey]: address }));
+    return address;
+  };
 
   useEffect(() => {
     fetchListing();
@@ -36,7 +84,23 @@ const FarmerListing = () => {
     try {
       setLoading(true);
       const response = await apiService.getCropListings();
-      setList(response.data || response || []);
+      const listings = response.data || response || [];
+      
+      // Sort by date - latest first (descending order)
+      const sortedListings = listings.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.harvestDate || 0);
+        const dateB = new Date(b.createdAt || b.harvestDate || 0);
+        return dateB - dateA; // Latest first
+      });
+      
+      // Preload locations
+      for (const item of sortedListings) {
+        if (item.location && Array.isArray(item.location)) {
+          await getLocationText(item.location);
+        }
+      }
+      
+      setList(sortedListings);
     } catch (error) {
       console.log('LISTING API ERROR 👉', error);
     } finally {
@@ -61,17 +125,20 @@ const FarmerListing = () => {
       t('farmer_listing_details.unknown') ||
       'Unknown Farmer';
     const code = item._id?.slice(-5).toUpperCase();
-    const crop = item.cropName;
-    const quantity = `${item.quantity} ${
+    const crop = item.cropName || 'N/A';
+    const quantity = `${item.quantity || 0} ${
       t('farmer_listing_details.quintal') || 'Quintals'
     }`;
-    const amount = `₹${item.price}`;
+    const amount = `₹${item.price || 0}`;
     const date = new Date(item.createdAt).toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
     });
     const statusStyle = getStatusStyle(item.status);
+    const imageUrl = item.cropImages?.[0]?.url || null;
+    
+    const locationText = item.userId?.village || 'N/A';
 
     return (
       <TouchableOpacity
@@ -81,6 +148,14 @@ const FarmerListing = () => {
           navigation.navigate('FarmerListingDetails', { listing: item })
         }
       >
+        {imageUrl && (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.cropImage}
+            resizeMode="cover"
+          />
+        )}
+
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
@@ -109,6 +184,11 @@ const FarmerListing = () => {
           </View>
         </View>
 
+        <View style={styles.locationRow}>
+          <Icon name="location" size={14} color="#6B7280" />
+          <Text style={styles.locationText}>{locationText}</Text>
+        </View>
+
         <View style={styles.footer}>
           <View style={styles.farmerRow}>
             <Icon name="person" size={14} color="#6B7280" />
@@ -123,26 +203,34 @@ const FarmerListing = () => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {t('farmer_listing') || 'Farmer Listings'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark, FPO_COLORS.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>
+              {t('farmer_listing') || 'Farmer Listings'}
+            </Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       {/* LIST */}
       {loading ? (
@@ -174,32 +262,43 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    paddingVertical: 14,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
 
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: {
@@ -223,6 +322,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07,
     shadowRadius: 12,
+    overflow: 'hidden',
+  },
+
+  cropImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    marginBottom: 16,
+    backgroundColor: '#F3F4F6',
   },
 
   cardHeader: {
@@ -274,6 +382,18 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#4B5563',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   farmerRow: { flexDirection: 'row', alignItems: 'center' },
   farmerName: {

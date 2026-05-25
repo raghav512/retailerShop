@@ -86,12 +86,12 @@ android {
 
     namespace "com.retailmanagementshop"
     defaultConfig {
-        applicationId "com.retailmanagementshop"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.4.1"
-    }
+    applicationId "com.retailmanagementshop"
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0.1"
+}
     signingConfigs {
         release {
             storeFile file('marjeevi-release.keystore')

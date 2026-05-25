@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
+import { normalizeOtpRoleId, toOtpApiRole } from '../../../utils/otpRole';
 
 const FPOLogin = () => {
   const navigation = useNavigation();
@@ -28,17 +29,11 @@ const FPOLogin = () => {
   const [otpLoading, setOtpLoading] = useState(false);
 
   // 🔹 Role handling
-  const roleId = route.params?.roleId || 'distributor';
+  const roleId = normalizeOtpRoleId('retailer') || 'Retailer';
+  const otpApiRole = toOtpApiRole(roleId) || 'Retailer';
 
   // 🔹 Role name mapping
-  const roleName =
-    roleId === 'distributor'
-      ? t('role_fpo')
-      : roleId === 'staff'
-      ? t('role_staff')
-      : roleId === 'farmer'
-      ? t('role_farmer')
-      : t('role_user');
+  const roleName = t('role_fpo');
 
   // 🔹 Validations
   // const isValidGST = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gst.trim());
@@ -66,14 +61,10 @@ const FPOLogin = () => {
       //   : { gst: gst.trim() };
 
       // Add role if needed by your API
-      payload.role = roleId;
-
-      console.log('Sending OTP with payload:', payload);
+      payload.role = otpApiRole;
 
       // Call SendOtp API
       const response = await apiService.SendOtp(payload);
-
-      console.log('OTP response:', response);
 
       // Check if OTP was sent successfully
       if (
@@ -85,9 +76,8 @@ const FPOLogin = () => {
         // Navigate to OTPData page with necessary params
         navigation.navigate('OTPData', {
           mobile: mobile.trim(),
-          // ...(loginType === "mobile" ? { mobile: mobile.trim() } : { gst: gst.trim() }),
           roleId: roleId,
-          loginType: loginType, // Pass which type was used
+          loginType: loginType,
           fromScreen: 'FPOLogin',
         });
 
@@ -134,21 +124,23 @@ const FPOLogin = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=90' }}
+        source={{
+          uri: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=90',
+        }}
         style={styles.container}
         resizeMode="cover"
       >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.iconCircle}>
-          <Icon name="business-outline" size={28} color="#fff" />
+        {/* HEADER */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Icon name="business-outline" size={28} color="#fff" />
+          </View>
+          <Text style={styles.title}>{t('fpo_login', { role: roleName })}</Text>
+          <Text style={styles.subtitle}>{t('fpo_login_subtitle')}</Text>
         </View>
-        <Text style={styles.title}>{t('fpo_login', { role: roleName })}</Text>
-        <Text style={styles.subtitle}>{t('fpo_login_subtitle')}</Text>
-      </View>
 
-      {/* TOGGLE - Mobile/GST */}
-      {/* 
+        {/* TOGGLE - Mobile/GST */}
+        {/* 
       <View style={styles.toggleRow}>
         <TouchableOpacity
           style={[
@@ -194,40 +186,40 @@ const FPOLogin = () => {
       </View>
       */}
 
-      {/* FORM */}
-      <View style={styles.form}>
-        {/* Dynamic field based on login type */}
-        {/* {loginType === "mobile" ? ( */}
-        <>
-          <Text style={styles.label}>{t('mobile_number')}</Text>
-          <View
-            style={[
-              styles.inputBox,
-              mobile.length > 0 && !isValidMobile && styles.errorInput,
-            ]}
-          >
-            <Icon
-              name="call-outline"
-              size={18}
-              color="#6B7280"
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              placeholder={t('enter_mobile')}
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              maxLength={10}
-              value={mobile}
-              onChangeText={setMobile}
-              style={styles.inputField}
-              editable={!otpLoading}
-            />
-            {mobile.length > 0 && !isValidMobile && (
-              <Icon name="alert-circle-outline" size={18} color="red" />
-            )}
-          </View>
-        </>
-        {/* ) : (
+        {/* FORM */}
+        <View style={styles.form}>
+          {/* Dynamic field based on login type */}
+          {/* {loginType === "mobile" ? ( */}
+          <>
+            <Text style={styles.label}>{t('mobile_number')}</Text>
+            <View
+              style={[
+                styles.inputBox,
+                mobile.length > 0 && !isValidMobile && styles.errorInput,
+              ]}
+            >
+              <Icon
+                name="call-outline"
+                size={18}
+                color="#6B7280"
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                placeholder={t('enter_mobile')}
+                placeholderTextColor="#9CA3AF"
+                keyboardType="numeric"
+                maxLength={10}
+                value={mobile}
+                onChangeText={setMobile}
+                style={styles.inputField}
+                editable={!otpLoading}
+              />
+              {mobile.length > 0 && !isValidMobile && (
+                <Icon name="alert-circle-outline" size={18} color="red" />
+              )}
+            </View>
+          </>
+          {/* ) : (
           <>
             <Text style={styles.label}>{t("gst_number")}</Text>
             <View style={[
@@ -251,29 +243,29 @@ const FPOLogin = () => {
           </>
         )} */}
 
-        {/* LOGIN BUTTON - Now sends OTP */}
-        <TouchableOpacity
-          style={[
-            styles.loginBtn,
-            (!canLogin || otpLoading) && styles.disabledBtn,
-          ]}
-          disabled={!canLogin || otpLoading}
-          onPress={handleLogin}
-        >
-          {otpLoading ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <ActivityIndicator size="small" color="#fff" />
-              <Text style={[styles.loginText, { marginLeft: 8 }]}>
-                {t('sending_otp')}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.loginText}>{t('login_with_otp')}</Text>
-          )}
-        </TouchableOpacity>
+          {/* LOGIN BUTTON - Now sends OTP */}
+          <TouchableOpacity
+            style={[
+              styles.loginBtn,
+              (!canLogin || otpLoading) && styles.disabledBtn,
+            ]}
+            disabled={!canLogin || otpLoading}
+            onPress={handleLogin}
+          >
+            {otpLoading ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={[styles.loginText, { marginLeft: 8 }]}>
+                  {t('sending_otp')}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.loginText}>{t('login_with_otp')}</Text>
+            )}
+          </TouchableOpacity>
 
-        {/* REGISTER LINK */}
-        {/*
+          {/* REGISTER LINK */}
+          {/*
         <View style={styles.registerRow}>
           <Text>{t("dont_have_account")} </Text>
           <TouchableOpacity
@@ -284,7 +276,7 @@ const FPOLogin = () => {
           </TouchableOpacity>
         </View>
         */}
-      </View>
+        </View>
       </ImageBackground>
     </SafeAreaView>
   );

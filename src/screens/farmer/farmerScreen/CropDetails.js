@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import IonIcon from "react-native-vector-icons/Ionicons";
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from "../../../Redux/apiService";
 import { FARMER_COLORS } from '../../../colorsList/ColorList';
 
@@ -287,6 +288,14 @@ const CropDetails = ({ route, navigation }) => {
     fetchAll();
   }, [cropId]);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('🔄 Screen focused - Refreshing crop data');
+      fetchAll();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const fetchAll = async () => {
     try {
       setLoading(true);
@@ -294,6 +303,8 @@ const CropDetails = ({ route, navigation }) => {
       const cropRes = await apiService.getUserCropsByUserId();
       const found = cropRes?.data?.find((c) => c._id === cropId);
       if (found) {
+        console.log('🌾 Crop Details:', JSON.stringify(found, null, 2));
+        console.log('🌾 Variety:', found.variety);
         setCrop({
           ...found,
           farmName:
@@ -337,15 +348,30 @@ const CropDetails = ({ route, navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-        <View style={styles.headerSpacer} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Icon name="arrow-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Crop</Text>
-          <View style={styles.headerRight} />
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
+        
+        {/* Gradient Header */}
+        <LinearGradient
+          colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientHeader}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <IonIcon name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>My Crop</Text>
+            </View>
+            <View style={{ width: 42 }} />
+          </View>
+        </LinearGradient>
+        
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={THEME} />
           <Text style={styles.loadingText}>Loading crop info...</Text>
@@ -356,20 +382,32 @@ const CropDetails = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+      <StatusBar barStyle="light-content" backgroundColor={FARMER_COLORS.primary} translucent={false} />
 
-      {/* ── Header ── */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Icon name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Crop</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FARMER_COLORS.primary, FARMER_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <IonIcon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{crop?.cropName || "My Crop"}</Text>
+            {crop?.variety && (
+              <Text style={styles.headerVariety}>- {crop.variety}</Text>
+            )}
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -381,7 +419,12 @@ const CropDetails = ({ route, navigation }) => {
             <Icon name="grass" size={36} color={THEME} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroName}>{crop?.cropName || "Crop"}</Text>
+            <View style={styles.heroNameRow}>
+              <Text style={styles.heroName}>{crop?.cropName || "Crop"}</Text>
+              {crop?.variety && (
+                <Text style={styles.heroVariety}>- {crop.variety}</Text>
+              )}
+            </View>
             <View style={styles.heroFarmRow}>
               <Icon name="location-on" size={14} color={THEME} />
               <Text style={styles.heroFarm}>{crop?.farmName}</Text>
@@ -500,45 +543,50 @@ const CropDetails = ({ route, navigation }) => {
 
 /* ─── styles ─── */
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-    backgroundColor: "#ffffff",
-  },
   container: {
     flex: 1,
     backgroundColor: "#F4F6F8",
+  },
+  /* GRADIENT HEADER */
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    zIndex: 10,
+    paddingVertical: 14,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
   },
-  headerRight: {
-    width: 40,
+  headerVariety: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    fontStyle: "italic",
+    opacity: 0.9,
   },
   loadingContainer: {
     flex: 1,
@@ -579,11 +627,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
+  heroNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 4,
+  },
   heroName: {
     fontSize: 20,
     fontWeight: "800",
     color: THEME_DARK,
-    marginBottom: 4,
+  },
+  heroVariety: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: THEME,
+    fontStyle: "italic",
   },
   heroFarmRow: {
     flexDirection: "row",

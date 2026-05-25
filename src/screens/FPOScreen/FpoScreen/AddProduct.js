@@ -8,10 +8,13 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  SafeAreaView,
 } from 'react-native';
+import Video from 'react-native-video';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import DatePicker from 'react-native-date-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import apiService from '../../../Redux/apiService';
@@ -21,25 +24,23 @@ import { FPO_COLORS } from '../../../colorsList/ColorList';
 
 const THEME = FPO_COLORS.primary;
 
+// Restrict units to allowed set
 const UNITS = [
-  { id: '1', labelKey: 'bag',    value: 'bag'    },
-  { id: '2', labelKey: 'packet', value: 'packet' },
-  { id: '3', labelKey: 'box',    value: 'box'    },
-  { id: '4', labelKey: 'bottle', value: 'bottle' },
-  { id: '5', labelKey: 'can',    value: 'can'    },
-  { id: '6', labelKey: 'ml',     value: 'ml'     },
-  { id: '7', labelKey: 'gm',     value: 'gm'     },
+  { id: '1', labelKey: 'ml', value: 'ml' },
+  { id: '2', labelKey: 'litre', value: 'litre' },
+  { id: '3', labelKey: 'kg', value: 'kg' },
+  { id: '4', labelKey: 'mg', value: 'mg' },
 ];
 
 const CATEGORIES = [
   { id: '1', labelKey: 'fertilizers', value: 'fertilizers' },
-  { id: '2', labelKey: 'seeds',       value: 'seeds'       },
-  { id: '3', labelKey: 'insecticides',value: 'insecticides'},
-  { id: '4', labelKey: 'organic',     value: 'organic'     },
-  { id: '5', labelKey: 'pgr',         value: 'pgr'         },
+  { id: '2', labelKey: 'seeds', value: 'seeds' },
+  { id: '3', labelKey: 'insecticides', value: 'insecticides' },
+  { id: '4', labelKey: 'organic', value: 'organic' },
+  { id: '5', labelKey: 'pgr', value: 'pgr' },
   { id: '6', labelKey: 'animal_feed', value: 'animal_feed' },
-  { id: '7', labelKey: 'fungicides',  value: 'fungicides'  },
-  { id: '8', labelKey: 'herbicides',  value: 'herbicides'  },
+  { id: '7', labelKey: 'fungicides', value: 'fungicides' },
+  { id: '8', labelKey: 'herbicides', value: 'herbicides' },
 ];
 
 const AddProduct = () => {
@@ -56,93 +57,224 @@ const AddProduct = () => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const [form, setForm] = useState({
-    productName: '', brand: '', description: '',
-    productImages: [], productVideos: [], productCategory: '',
-    targetCrops: '', productTechnicalDetails: '', howToUse: '', productBenefits: '',
+    productName: '',
+    brand: '',
+    description: '',
+    productImages: [],
+    productVideos: [],
+    productCategory: '',
+    targetCrops: '',
+    productTechnicalDetails: '',
+    howToUse: '',
+    productBenefits: '',
   });
 
   const [variants, setVariants] = useState([
-    { parameter: '', unit: '', mrp: '', quantity: '', purchaseDate: '', expiryDate: '' },
+    {
+      parameter: '',
+      unit: '',
+      mrp: '',
+      quantity: '',
+      purchaseDate: '',
+      expiryDate: '',
+    },
   ]);
 
-  const handleChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const handleChange = (key, value) =>
+    setForm(prev => ({ ...prev, [key]: value }));
 
   /* ── Image Handlers ── */
   const pickImageFromGallery = async () => {
-    if (selectedImages.length >= 5) { showAlert({ type: 'warning', title: t('error'), message: t('add_product.max_5_images') }); return; }
+    if (selectedImages.length >= 5) {
+      showAlert({
+        type: 'warning',
+        title: t('error'),
+        message: t('add_product.max_5_images'),
+      });
+      return;
+    }
     const image = await imagePickerService.openGallery();
-    if (image) { const n = [...selectedImages, image]; setSelectedImages(n); handleChange('productImages', imagePickerService.toBase64Array(n)); }
+    if (image) {
+      const n = [...selectedImages, image];
+      setSelectedImages(n);
+      handleChange('productImages', imagePickerService.toBase64Array(n));
+    }
   };
   const pickImageFromCamera = async () => {
-    if (selectedImages.length >= 5) { showAlert({ type: 'warning', title: t('error'), message: t('add_product.max_5_images') }); return; }
+    if (selectedImages.length >= 5) {
+      showAlert({
+        type: 'warning',
+        title: t('error'),
+        message: t('add_product.max_5_images'),
+      });
+      return;
+    }
     const image = await imagePickerService.openCamera();
-    if (image) { const n = [...selectedImages, image]; setSelectedImages(n); handleChange('productImages', imagePickerService.toBase64Array(n)); }
+    if (image) {
+      const n = [...selectedImages, image];
+      setSelectedImages(n);
+      handleChange('productImages', imagePickerService.toBase64Array(n));
+    }
   };
-  const removeImage = index => { const n = selectedImages.filter((_, i) => i !== index); setSelectedImages(n); handleChange('productImages', imagePickerService.toBase64Array(n)); };
+  const removeImage = index => {
+    const n = selectedImages.filter((_, i) => i !== index);
+    setSelectedImages(n);
+    handleChange('productImages', imagePickerService.toBase64Array(n));
+  };
 
   /* ── Video Handlers ── */
   const pickVideo = async () => {
-    if (selectedVideos.length >= 3) { showAlert({ type: 'warning', title: t('error'), message: t('add_product.max_3_videos') }); return; }
+    if (selectedVideos.length >= 3) {
+      showAlert({
+        type: 'warning',
+        title: t('error'),
+        message: t('add_product.max_3_videos'),
+      });
+      return;
+    }
     const result = await imagePickerService.openVideoGallery();
-    if (result) { const n = [...selectedVideos, result]; setSelectedVideos(n); handleChange('productVideos', await imagePickerService.toBase64VideoArray(n)); }
+    if (result) {
+      const n = [...selectedVideos, result];
+      setSelectedVideos(n);
+      handleChange(
+        'productVideos',
+        await imagePickerService.toBase64VideoArray(n),
+      );
+    }
   };
-  const removeVideo = async index => { const n = selectedVideos.filter((_, i) => i !== index); setSelectedVideos(n); handleChange('productVideos', await imagePickerService.toBase64VideoArray(n)); };
+  const removeVideo = async index => {
+    const n = selectedVideos.filter((_, i) => i !== index);
+    setSelectedVideos(n);
+    handleChange(
+      'productVideos',
+      await imagePickerService.toBase64VideoArray(n),
+    );
+  };
 
   /* ── Variant Handlers ── */
-  const addVariant = () => setVariants([...variants, { parameter: '', unit: '', mrp: '', quantity: '', purchaseDate: '', expiryDate: '' }]);
-  const removeVariant = index => { if (variants.length > 1) setVariants(variants.filter((_, i) => i !== index)); };
-  const updateVariant = (index, key, value) => { const u = [...variants]; u[index][key] = value; setVariants(u); };
+  const addVariant = () =>
+    setVariants([
+      ...variants,
+      {
+        parameter: '',
+        unit: '',
+        mrp: '',
+        quantity: '',
+        purchaseDate: '',
+        expiryDate: '',
+      },
+    ]);
+  const removeVariant = index => {
+    if (variants.length > 1)
+      setVariants(variants.filter((_, i) => i !== index));
+  };
+  const updateVariant = (index, key, value) => {
+    const u = [...variants];
+    u[index][key] = value;
+    setVariants(u);
+  };
 
   /* ── Save ── */
   const handleSave = async () => {
-    if (!form.productName || !form.brand || !form.description || !form.productCategory) {
-      showAlert({ type: 'warning', title: t('error'), message: t('add_product.fill_required_fields') }); return;
+    if (
+      !form.productName ||
+      !form.brand ||
+      !form.description ||
+      !form.productCategory
+    ) {
+      showAlert({
+        type: 'warning',
+        title: t('error'),
+        message: t('add_product.fill_required_fields'),
+      });
+      return;
     }
-    const cropsArray = form.targetCrops ? form.targetCrops.split(',').map(c => c.trim()).filter(Boolean) : [];
+    const cropsArray = form.targetCrops
+      ? form.targetCrops
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean)
+      : [];
     const payload = { ...form, targetCrops: cropsArray, products: variants };
     setLoading(true);
     try {
       await apiService.FPOproduct(payload);
       navigation.navigate('Performance');
-    } catch (error) { console.log(error); }
-    finally { setLoading(false); }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={FPO_COLORS.primary} translucent={false} />
+      
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={[FPO_COLORS.primary, FPO_COLORS.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('add_product.title')}</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
-      {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('add_product.title')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
         {/* ── MEDIA SECTION ── */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="image" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('add_product.product_image')} ({selectedImages.length}/5)</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="image" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('add_product.product_image')} ({selectedImages.length}/5)
+            </Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageScroll}
+          >
             {selectedImages.map((img, index) => (
               <View key={index} style={styles.imageWrapper}>
                 <Image source={{ uri: img.uri }} style={styles.productImage} />
-                <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(index)}>
+                <TouchableOpacity
+                  style={styles.removeImageBtn}
+                  onPress={() => removeImage(index)}
+                >
                   <Icon name="close-circle" size={24} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             ))}
             {selectedImages.length < 5 && (
-              <TouchableOpacity onPress={() => setShowImagePicker(true)} style={styles.addImageBtn} activeOpacity={0.7}>
+              <TouchableOpacity
+                onPress={() => setShowImagePicker(true)}
+                style={styles.addImageBtn}
+                activeOpacity={0.7}
+              >
                 <Icon name="camera-outline" size={28} color={THEME} />
-                <Text style={styles.imagePlaceholderText}>{t('add_product.select_image')}</Text>
+                <Text style={styles.imagePlaceholderText}>
+                  {t('add_product.select_image')}
+                </Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -150,116 +282,254 @@ const AddProduct = () => {
           <View style={styles.sectionDivider} />
 
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="videocam" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('add_product.product_videos')} ({selectedVideos.length}/3)</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="videocam" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('add_product.product_videos')} ({selectedVideos.length}/3)
+            </Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-            {selectedVideos.map((vid, index) => (
-              <View key={index} style={styles.videoThumb}>
-                <Icon name="videocam" size={30} color={THEME} />
-                <Text style={styles.videoName} numberOfLines={1}>{vid.fileName || `${t('add_product.video')} ${index + 1}`}</Text>
-                <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeVideo(index)}>
-
-                  <Icon name="close-circle" size={24} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            ))}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageScroll}
+          >
+            {selectedVideos.map((vid, index) => {
+              const videoUri = vid?.uri || vid?.url || vid?.path || vid;
+              return (
+                <View key={index} style={styles.videoThumb}>
+                  <Video
+                    source={{ uri: videoUri }}
+                    style={styles.videoPreview}
+                    paused={true}
+                    muted={true}
+                    resizeMode="cover"
+                    repeat={false}
+                  />
+                  <View style={styles.videoLabel}>
+                    <Text style={styles.videoName} numberOfLines={1}>
+                      {vid.fileName || `${t('add_product.video')} ${index + 1}`}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.removeImageBtn}
+                    onPress={() => removeVideo(index)}
+                  >
+                    <Icon name="close-circle" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
             {selectedVideos.length < 3 && (
-              <TouchableOpacity style={styles.addImageBtn} onPress={pickVideo} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.addImageBtn}
+                onPress={pickVideo}
+                activeOpacity={0.8}
+              >
                 <Icon name="videocam-outline" size={28} color={THEME} />
-                <Text style={styles.imagePlaceholderText}>{t('add_product.add_video')}</Text>
+                <Text style={styles.imagePlaceholderText}>
+                  {t('add_product.add_video')}
+                </Text>
               </TouchableOpacity>
             )}
           </ScrollView>
         </View>
 
-        <ImagePickerModal visible={showImagePicker} onClose={() => setShowImagePicker(false)} onCamera={pickImageFromCamera} onGallery={pickImageFromGallery} />
+        <ImagePickerModal
+          visible={showImagePicker}
+          onClose={() => setShowImagePicker(false)}
+          onCamera={pickImageFromCamera}
+          onGallery={pickImageFromGallery}
+        />
 
         {/* ── PRODUCT INFO ── */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="cube" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('add_product.product_info')}</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="cube" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('add_product.product_info')}
+            </Text>
           </View>
 
-
-
           <Text style={styles.label}>{t('add_product.product_name')} *</Text>
-          <TextInput style={styles.input} placeholder={t('add_product.product_name_placeholder')} placeholderTextColor="#9CA3AF" value={form.productName} onChangeText={v => handleChange('productName', v)} />
+          <TextInput
+            style={styles.input}
+            placeholder={t('add_product.product_name_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            value={form.productName}
+            onChangeText={v => handleChange('productName', v)}
+          />
 
           <Text style={styles.label}>{t('add_product.brand')} *</Text>
-          <TextInput style={styles.input} placeholder={t('add_product.brand_placeholder')} placeholderTextColor="#9CA3AF" value={form.brand} onChangeText={v => handleChange('brand', v)} />
+          <TextInput
+            style={styles.input}
+            placeholder={t('add_product.brand_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            value={form.brand}
+            onChangeText={v => handleChange('brand', v)}
+          />
 
           <Text style={styles.label}>{t('add_product.description')}</Text>
-          <TextInput style={styles.textArea} placeholder={t('add_product.description_placeholder')} placeholderTextColor="#9CA3AF" multiline numberOfLines={4} value={form.description} onChangeText={v => handleChange('description', v)} />
-
+          <TextInput
+            style={styles.textArea}
+            placeholder={t('add_product.description_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={4}
+            value={form.description}
+            onChangeText={v => handleChange('description', v)}
+          />
         </View>
 
         {/* ── CATEGORY & CROPS ── */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="pricetag" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('add_product.category_crops')}</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="pricetag" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('add_product.category_crops')}
+            </Text>
           </View>
 
-
-          <Text style={styles.label}>{t('add_product.product_category')} *</Text>
-          <TouchableOpacity style={styles.select} onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}>
-            <Text style={[styles.selectText, form.productCategory && { color: '#1F2937' }]}>
-              {form.productCategory ? t(`product_categories.${CATEGORIES.find(c => c.value === form.productCategory)?.labelKey}`) : t('add_product.select_category')}
+          <Text style={styles.label}>
+            {t('add_product.product_category')} *
+          </Text>
+          <TouchableOpacity
+            style={styles.select}
+            onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+          >
+            <Text
+              style={[
+                styles.selectText,
+                form.productCategory && { color: '#1F2937' },
+              ]}
+            >
+              {form.productCategory
+                ? t(
+                    `product_categories.${
+                      CATEGORIES.find(c => c.value === form.productCategory)
+                        ?.labelKey
+                    }`,
+                  )
+                : t('add_product.select_category')}
             </Text>
 
-            <Icon name={showCategoryDropdown ? 'chevron-up-outline' : 'chevron-down-outline'} size={18} color={THEME} />
+            <Icon
+              name={
+                showCategoryDropdown
+                  ? 'chevron-up-outline'
+                  : 'chevron-down-outline'
+              }
+              size={18}
+              color={THEME}
+            />
           </TouchableOpacity>
           {showCategoryDropdown && (
             <View style={styles.dropdown}>
               {CATEGORIES.map(cat => (
-                <TouchableOpacity key={cat.id} style={styles.option} onPress={() => { handleChange('productCategory', cat.value); setShowCategoryDropdown(false); }}>
-                  <Text style={styles.optionText}>{t(`product_categories.${cat.labelKey}`)}</Text>
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.option}
+                  onPress={() => {
+                    handleChange('productCategory', cat.value);
+                    setShowCategoryDropdown(false);
+                  }}
+                >
+                  <Text style={styles.optionText}>
+                    {t(`product_categories.${cat.labelKey}`)}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
           <Text style={styles.label}>{t('add_product.target_crops')}</Text>
-          <TextInput style={styles.input} placeholder={t('add_product.target_crops_placeholder')} placeholderTextColor="#9CA3AF" value={form.targetCrops} onChangeText={v => handleChange('targetCrops', v)} />
+          <TextInput
+            style={styles.input}
+            placeholder={t('add_product.target_crops_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            value={form.targetCrops}
+            onChangeText={v => handleChange('targetCrops', v)}
+          />
         </View>
 
         {/* ── TECHNICAL DETAILS ── */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}><Icon name="document-text" size={16} color={THEME} /></View>
-            <Text style={styles.sectionTitle}>{t('add_product.technical_details')}</Text>
+            <View style={styles.sectionIcon}>
+              <Icon name="document-text" size={16} color={THEME} />
+            </View>
+            <Text style={styles.sectionTitle}>
+              {t('add_product.technical_details')}
+            </Text>
           </View>
 
           <Text style={styles.label}>{t('add_product.technical_details')}</Text>
-          <TextInput style={styles.textArea} placeholder={t('add_product.technical_details_placeholder')} placeholderTextColor="#9CA3AF" multiline numberOfLines={3} value={form.productTechnicalDetails} onChangeText={v => handleChange('productTechnicalDetails', v)} />
+          <TextInput
+            style={styles.textArea}
+            placeholder={t('add_product.technical_details_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+            value={form.productTechnicalDetails}
+            onChangeText={v => handleChange('productTechnicalDetails', v)}
+          />
 
           <Text style={styles.label}>{t('add_product.how_to_use')}</Text>
-          <TextInput style={styles.textArea} placeholder={t('add_product.how_to_use_placeholder')} placeholderTextColor="#9CA3AF" multiline numberOfLines={3} value={form.howToUse} onChangeText={v => handleChange('howToUse', v)} />
+          <TextInput
+            style={styles.textArea}
+            placeholder={t('add_product.how_to_use_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+            value={form.howToUse}
+            onChangeText={v => handleChange('howToUse', v)}
+          />
 
           <Text style={styles.label}>{t('add_product.product_benefits')}</Text>
-          <TextInput style={styles.textArea} placeholder={t('add_product.product_benefits_placeholder')} placeholderTextColor="#9CA3AF" multiline numberOfLines={3} value={form.productBenefits} onChangeText={v => handleChange('productBenefits', v)} />
+          <TextInput
+            style={styles.textArea}
+            placeholder={t('add_product.product_benefits_placeholder')}
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+            value={form.productBenefits}
+            onChangeText={v => handleChange('productBenefits', v)}
+          />
         </View>
 
         {/* ── VARIANTS ── */}
         <View style={styles.sectionCard}>
-          <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
+          <View
+            style={[styles.sectionHeader, { justifyContent: 'space-between' }]}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={styles.sectionIcon}><Icon name="layers" size={16} color={THEME} /></View>
-              <Text style={styles.sectionTitle}>{t('add_product.product_variants')}</Text>
+              <View style={styles.sectionIcon}>
+                <Icon name="layers" size={16} color={THEME} />
+              </View>
+              <Text style={styles.sectionTitle}>
+                {t('add_product.product_variants')}
+              </Text>
             </View>
-            <TouchableOpacity onPress={addVariant} style={styles.addVariantBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              onPress={addVariant}
+              style={styles.addVariantBtn}
+              activeOpacity={0.8}
+            >
               <Icon name="add" size={18} color={THEME} />
               <Text style={styles.addVariantText}>{t('add_product.add')}</Text>
             </TouchableOpacity>
-
           </View>
 
           {variants.map((variant, index) => (
             <View key={index} style={styles.variantCard}>
               <View style={styles.variantCardHeader}>
-                <Text style={styles.variantLabel}>{t('add_product.variant')} {index + 1}</Text>
+                <Text style={styles.variantLabel}>
+                  {t('add_product.variant')} {index + 1}
+                </Text>
 
                 {variants.length > 1 && (
                   <TouchableOpacity onPress={() => removeVariant(index)}>
@@ -270,161 +540,435 @@ const AddProduct = () => {
 
               <View style={styles.row}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>{t('add_product.sku')}</Text>
-                  <TextInput style={styles.input} placeholder={t('add_product.sku_placeholder')} placeholderTextColor="#9CA3AF" keyboardType="numeric" value={variant.parameter} onChangeText={v => updateVariant(index, 'parameter', v)} />
-                </View>
-                <View style={{ flex: 1 }}>
                   <Text style={styles.label}>{t('add_product.unit')}</Text>
-                  <TouchableOpacity style={styles.select} onPress={() => setShowUnit(showUnit === index ? null : index)}>
-                    <Text style={styles.selectText}>{variant.unit ? t(`product_units.${UNITS.find(u => u.value === variant.unit)?.labelKey}`) : t('add_product.select')}</Text>
+                  <TouchableOpacity
+                    style={styles.select}
+                    onPress={() =>
+                      setShowUnit(showUnit === index ? null : index)
+                    }
+                  >
+                    <Text style={styles.selectText}>
+                      {variant.unit
+                        ? t(
+                            `product_units.${
+                              UNITS.find(u => u.value === variant.unit)
+                                ?.labelKey
+                            }`,
+                          )
+                        : t('add_product.select')}
+                    </Text>
                     <Icon name="chevron-down-outline" size={18} color={THEME} />
                   </TouchableOpacity>
                   {showUnit === index && (
                     <View style={styles.dropdown}>
                       {UNITS.map(item => (
-                        <TouchableOpacity key={item.id} style={styles.option} onPress={() => { updateVariant(index, 'unit', item.value); setShowUnit(null); }}>
-                          <Text style={styles.optionText}>{t(`product_units.${item.labelKey}`)}</Text>
+                        <TouchableOpacity
+                          key={item.id}
+                          style={styles.option}
+                          onPress={() => {
+                            updateVariant(index, 'unit', item.value);
+                            setShowUnit(null);
+                          }}
+                        >
+                          <Text style={styles.optionText}>
+                            {t(`product_units.${item.labelKey}`)}
+                          </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Parameter</Text>
+                  <TextInput
+                    style={[styles.input, styles.variantInput]}
+                    placeholder="Enter Parameter"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                    value={variant.parameter}
+                    onChangeText={v => updateVariant(index, 'parameter', v)}
+                  />
                 </View>
               </View>
 
               <View style={styles.row}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>{t('add_product.mrp')}</Text>
-                  <TextInput style={styles.input} placeholder={t('add_product.mrp_placeholder')} placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" value={variant.mrp} onChangeText={v => updateVariant(index, 'mrp', v)} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t('add_product.mrp_placeholder')}
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="decimal-pad"
+                    value={variant.mrp}
+                    onChangeText={v => updateVariant(index, 'mrp', v)}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>{t('add_product.quantity')}</Text>
-                  <TextInput style={styles.input} placeholder={t('add_product.quantity_placeholder')} placeholderTextColor="#9CA3AF" keyboardType="number-pad" value={variant.quantity} onChangeText={v => updateVariant(index, 'quantity', v)} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t('add_product.quantity_placeholder')}
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="number-pad"
+                    value={variant.quantity}
+                    onChangeText={v => updateVariant(index, 'quantity', v)}
+                  />
                 </View>
               </View>
 
               <Text style={styles.label}>{t('add_product.purchase_date')}</Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setOpenPurchase(index)}>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setOpenPurchase(index)}
+              >
                 <Icon name="calendar-outline" size={18} color={THEME} />
-                <Text style={[styles.dateText, variant.purchaseDate && styles.dateTextFilled]}>{variant.purchaseDate || t('add_product.date_format')}</Text>
+                <Text
+                  style={[
+                    styles.dateText,
+                    variant.purchaseDate && styles.dateTextFilled,
+                  ]}
+                >
+                  {variant.purchaseDate || t('add_product.date_format')}
+                </Text>
               </TouchableOpacity>
 
               <Text style={styles.label}>{t('add_product.expiry_date')}</Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setOpenExpiry(index)}>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setOpenExpiry(index)}
+              >
                 <Icon name="calendar-outline" size={18} color={THEME} />
-                <Text style={[styles.dateText, variant.expiryDate && styles.dateTextFilled]}>{variant.expiryDate || t('add_product.date_format')}</Text>
+                <Text
+                  style={[
+                    styles.dateText,
+                    variant.expiryDate && styles.dateTextFilled,
+                  ]}
+                >
+                  {variant.expiryDate || t('add_product.date_format')}
+                </Text>
               </TouchableOpacity>
 
-              <DatePicker modal open={openPurchase === index} date={variant.purchaseDate ? new Date(variant.purchaseDate) : new Date()} mode="date"
-                onConfirm={date => { setOpenPurchase(false); updateVariant(index, 'purchaseDate', date.toISOString().split('T')[0]); }}
-                onCancel={() => setOpenPurchase(false)} />
-              <DatePicker modal open={openExpiry === index} date={variant.expiryDate ? new Date(variant.expiryDate) : new Date()} mode="date"
-                onConfirm={date => { setOpenExpiry(false); updateVariant(index, 'expiryDate', date.toISOString().split('T')[0]); }}
-                onCancel={() => setOpenExpiry(false)} />
+              <DatePicker
+                modal
+                open={openPurchase === index}
+                date={
+                  variant.purchaseDate
+                    ? new Date(variant.purchaseDate)
+                    : new Date()
+                }
+                mode="date"
+                onConfirm={date => {
+                  setOpenPurchase(false);
+                  updateVariant(
+                    index,
+                    'purchaseDate',
+                    date.toISOString().split('T')[0],
+                  );
+                }}
+                onCancel={() => setOpenPurchase(false)}
+              />
+              <DatePicker
+                modal
+                open={openExpiry === index}
+                date={
+                  variant.expiryDate ? new Date(variant.expiryDate) : new Date()
+                }
+                mode="date"
+                onConfirm={date => {
+                  setOpenExpiry(false);
+                  updateVariant(
+                    index,
+                    'expiryDate',
+                    date.toISOString().split('T')[0],
+                  );
+                }}
+                onCancel={() => setOpenExpiry(false)}
+              />
             </View>
           ))}
         </View>
 
         {/* SAVE */}
-        <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.7 }]} activeOpacity={0.85} onPress={handleSave} disabled={loading}>
-          <Icon name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.saveText}>{loading ? t('add_product.saving') : t('add_product.save')}</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, loading && { opacity: 0.7 }]}
+          activeOpacity={0.85}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          <Icon
+            name="checkmark-circle"
+            size={22}
+            color="#fff"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.saveText}>
+            {loading ? t('add_product.saving') : t('add_product.save')}
+          </Text>
         </TouchableOpacity>
-
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default AddProduct;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
-
-  /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16,
-    backgroundColor: '#ffffff', borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
-    elevation: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 }, zIndex: 10, justifyContent: 'space-between',
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: '#F4F6F8' 
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  gradientHeader: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: { 
+    fontSize: 20, 
+    fontWeight: '800', 
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
   scroll: { padding: 16, paddingBottom: 40 },
 
   /* SECTION CARD */
   sectionCard: {
-    backgroundColor: '#ffffff', borderRadius: 24, padding: 20, marginBottom: 20,
-    elevation: 4, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  sectionIcon: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#EBF3F6', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: '#EBF3F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
   sectionDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 16 },
 
   /* INPUTS */
   label: { fontSize: 13, color: '#4B5563', marginBottom: 6, fontWeight: '600' },
   input: {
-    height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 14, marginBottom: 14, fontSize: 15, color: '#1F2937', backgroundColor: '#FAFAFA',
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    fontSize: 15,
+    color: '#1F2937',
+    backgroundColor: '#FAFAFA',
   },
   textArea: {
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: '#1F2937', backgroundColor: '#FAFAFA', marginBottom: 14, textAlignVertical: 'top',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#1F2937',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 14,
+    textAlignVertical: 'top',
+  },
+  variantInput: {
+    fontSize: 13,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    height: 44,
   },
   dateInput: {
-    height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 14, marginBottom: 14, backgroundColor: '#FAFAFA',
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    backgroundColor: '#FAFAFA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   dateText: { fontSize: 15, color: '#9CA3AF' },
   dateTextFilled: { color: '#1F2937' },
   select: {
-    height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 14, backgroundColor: '#FAFAFA',
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    backgroundColor: '#FAFAFA',
   },
   selectText: { fontSize: 15, color: '#9CA3AF', flex: 1 },
   row: { flexDirection: 'row', gap: 12 },
 
   /* DROPDOWN */
   dropdown: {
-    backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#E5E7EB',
-    borderRadius: 16, marginTop: -8, marginBottom: 14,
-    elevation: 6, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    marginTop: -8,
+    marginBottom: 14,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  option: { paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 0.5, borderColor: '#F3F4F6' },
+  option: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderColor: '#F3F4F6',
+  },
   optionText: { fontSize: 14, color: '#1F2937', fontWeight: '500' },
 
   /* MEDIA */
   imageScroll: { marginBottom: 10 },
-  imageWrapper: { width: 100, height: 100, marginRight: 10, position: 'relative', borderRadius: 16, overflow: 'hidden' },
+  imageWrapper: {
+    width: 100,
+    height: 100,
+    marginRight: 10,
+    position: 'relative',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   addImageBtn: {
-    width: 100, height: 100, borderRadius: 16, borderWidth: 2, borderColor: '#E5E7EB',
-    borderStyle: 'dashed', backgroundColor: '#FAFAFA', justifyContent: 'center', alignItems: 'center',
+    width: 100,
+    height: 100,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    backgroundColor: '#FAFAFA',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  removeImageBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: '#ffffff', borderRadius: 12 },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+  },
   productImage: { width: 100, height: 100, resizeMode: 'cover' },
-  imagePlaceholderText: { fontSize: 11, color: THEME, marginTop: 4, fontWeight: '600' },
-  videoThumb: {
-    width: 100, height: 100, borderRadius: 16, borderWidth: 1.5, borderColor: '#E5E7EB',
-    backgroundColor: '#EBF3F6', justifyContent: 'center', alignItems: 'center',
-    marginRight: 10, position: 'relative', paddingHorizontal: 8,
+  imagePlaceholderText: {
+    fontSize: 11,
+    color: THEME,
+    marginTop: 4,
+    fontWeight: '600',
   },
-  videoName: { fontSize: 10, color: '#374151', marginTop: 4, textAlign: 'center' },
+  videoThumb: {
+    width: 100,
+    height: 100,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#EBF3F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    position: 'relative',
+    paddingHorizontal: 0,
+    overflow: 'hidden',
+  },
+  videoPreview: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  videoLabel: {
+    position: 'absolute',
+    left: 4,
+    right: 4,
+    bottom: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  videoName: {
+    fontSize: 10,
+    color: '#ffffff',
+    textAlign: 'center',
+  },
 
   /* VARIANTS */
-  addVariantBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EBF3F6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  addVariantBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EBF3F6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
   addVariantText: { fontSize: 13, color: THEME, fontWeight: '700' },
-  variantCard: { backgroundColor: '#FAFAFA', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1.5, borderColor: '#E5E7EB' },
-  variantCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  variantCard: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  variantCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   variantLabel: { fontSize: 14, fontWeight: '700', color: THEME },
 
   /* SAVE */
   saveBtn: {
-    backgroundColor: '#1F2937', height: 56, borderRadius: 24, flexDirection: 'row',
-    justifyContent: 'center', alignItems: 'center', marginTop: 4,
-    elevation: 6, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
+    backgroundColor: '#1F2937',
+    height: 56,
+    borderRadius: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   saveText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
 });

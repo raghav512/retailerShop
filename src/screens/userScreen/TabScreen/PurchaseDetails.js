@@ -13,6 +13,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/Ionicons";
+import i18n from "../../../i18n";
 import apiService from "../../../Redux/apiService";
 import ReactNativeBlobUtil from "react-native-blob-util";
 import { showAlert } from "../../../common/reusableComponent/CustomAlert";
@@ -21,9 +22,32 @@ import { STAFF_COLORS } from '../../../colorsList/ColorList';
 const PurchaseDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { t } = useTranslation();
+  const { t, ready, i18n: i18nInstance } = useTranslation();
   const { purchaseId } = route.params || {};
  
+  // Debug: Check i18n status
+  useEffect(() => {
+    console.log('🌐 i18n ready:', ready);
+    console.log('🌐 Current language:', i18nInstance.language);
+    console.log('🌐 Test translation:', t('purchase.details'));
+    console.log('🌐 Resources loaded:', i18nInstance.hasResourceBundle('en', 'translation'));
+    console.log('🌐 Purchase key exists:', i18nInstance.exists('purchase.details'));
+  }, [ready, i18nInstance.language]);
+ 
+  // Safe translation function with fallback
+  const safeT = (key, fallback, options = {}) => {
+    if (!ready || !i18nInstance.exists(key)) {
+      // If fallback contains interpolation, replace it
+      if (fallback && typeof fallback === 'string' && options) {
+        return Object.keys(options).reduce((str, optKey) => {
+          return str.replace(new RegExp(`{{${optKey}}}`, 'g'), options[optKey]);
+        }, fallback);
+      }
+      return fallback || key;
+    }
+    return t(key, options);
+  };
+
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -35,8 +59,8 @@ const PurchaseDetails = () => {
       setLoading(false);
       showAlert({
         type: "error",
-        title: t("common.error"),
-        message: t("purchase.error_missing_id"),
+        title: safeT("common.error", "Error"),
+        message: safeT("purchase.error_missing_id", "Purchase ID is missing"),
       });
       navigation.goBack();
     }
@@ -60,14 +84,14 @@ const PurchaseDetails = () => {
       if (fetchedPurchase) {
         setPurchase(fetchedPurchase);
       } else {
-        showAlert({ type: "error", title: t("common.error"), message: t("purchase.error_empty_data") });
+        showAlert({ type: "error", title: safeT("common.error", "Error"), message: safeT("purchase.error_empty_data", "No purchase data found") });
       }
     } catch (error) {
       console.error("Error fetching purchase details:", error);
       showAlert({
         type: "error",
-        title: t("common.error"),
-        message: t("purchase.error_failed_load"),
+        title: safeT("common.error", "Error"),
+        message: safeT("purchase.error_failed_load", "Failed to load purchase details"),
       });
     } finally {
       setLoading(false);
@@ -90,7 +114,7 @@ const PurchaseDetails = () => {
           useDownloadManager: true,
           notification: true,
           path: filePath,
-          description: t("purchase.downloading_receipt"),
+          description: safeT("purchase.downloading_receipt", "Downloading receipt..."),
           mime: "application/pdf",
           title: fileName,
         },
@@ -104,16 +128,16 @@ const PurchaseDetails = () => {
       } else {
         showAlert({
           type: "success",
-          title: t("common.success"),
-          message: t("purchase.receipt_downloaded", { path: filePath }),
+          title: safeT("common.success", "Success"),
+          message: safeT("purchase.receipt_saved", "Receipt saved to Downloads"),
         });
       }
     } catch (error) {
       console.error("Error downloading receipt:", error);
       showAlert({
         type: "error",
-        title: t("common.error"),
-        message: t("purchase.error_failed_download"),
+        title: safeT("common.error", "Error"),
+        message: safeT("purchase.error_failed_download", "Failed to download receipt"),
       });
     } finally {
       setDownloading(false);
@@ -131,14 +155,14 @@ const PurchaseDetails = () => {
   if (!purchase) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>{t("purchase.no_data")}</Text>
+        <Text>{safeT("purchase.no_data", "No purchase data available")}</Text>
       </View>
     );
   }
  
   const farmerName = purchase.farmer && purchase.farmer.firstName
     ? `${purchase.farmer.firstName} ${purchase.farmer.lastName || ""}`
-    : purchase.farmerName || t("purchase.unknown_farmer");
+    : purchase.farmerName || safeT("purchase.unknown_farmer", "Unknown Farmer");
  
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -146,31 +170,31 @@ const PurchaseDetails = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("purchase.details")}</Text>
+        <Text style={styles.headerTitle}>{safeT("purchase.details", "Purchase Details")}</Text>
         <View style={{ width: 24 }} />
       </View>
  
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("purchase.farmer_details")}</Text>
+          <Text style={styles.sectionTitle}>{safeT("purchase.farmer_details", "Farmer Details")}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.name_colon")}</Text>
+            <Text style={styles.label}>{safeT("purchase.name_colon", "Name:")}</Text>
             <Text style={styles.value}>{farmerName}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.date_colon")}</Text>
+            <Text style={styles.label}>{safeT("purchase.date_colon", "Date:")}</Text>
             <Text style={styles.value}>
               {new Date(purchase.procurementDate || purchase.createdAt).toLocaleDateString()}
             </Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.receipt_code")}</Text>
-            <Text style={styles.value}>{purchase._id ? purchase._id.slice(-6).toUpperCase() : t("common.not_available")}</Text>
+            <Text style={styles.label}>{safeT("purchase.receipt_code", "Receipt Code:")}</Text>
+            <Text style={styles.value}>{purchase._id ? purchase._id.slice(-6).toUpperCase() : safeT("common.not_available", "Not Available")}</Text>
           </View>
         </View>
  
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("purchase.crops_purchased")}</Text>
+          <Text style={styles.sectionTitle}>{safeT("purchase.crops_purchased", "Crops Purchased")}</Text>
           {purchase.crops && purchase.crops.length > 0 ? (
             purchase.crops.map((crop, index) => (
               <View key={index} style={styles.cropRow}>
@@ -178,44 +202,44 @@ const PurchaseDetails = () => {
                   <Text style={styles.cropName}>{crop.cropName} {crop.variety ? `(${crop.variety})` : ""}</Text>
                 </View>
                 <View style={styles.cropDetails}>
-                  <Text style={styles.cropQty}>{crop.quantity} {t("purchase.unit_quintal")}</Text>
+                  <Text style={styles.cropQty}>{crop.quantity} {safeT("purchase.unit_quintal", "Quintal")}</Text>
                   <Text style={styles.cropRate}>₹{crop.rate}</Text>
                 </View>
               </View>
             ))
           ) : (
-            <Text style={styles.value}>{t("purchase.no_crops_found")}</Text>
+            <Text style={styles.value}>{safeT("purchase.no_crops_found", "No crops found")}</Text>
           )}
         </View>
  
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("purchase.additional_details")}</Text>
+          <Text style={styles.sectionTitle}>{safeT("purchase.additional_details", "Additional Details")}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.center_colon")}</Text>
-            <Text style={styles.value}>{purchase.procurementCenter || t("common.not_available")}</Text>
+            <Text style={styles.label}>{safeT("purchase.center_colon", "Center:")}</Text>
+            <Text style={styles.value}>{purchase.procurementCenter || safeT("common.not_available", "Not Available")}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.godown_colon")}</Text>
-            <Text style={styles.value}>{purchase.godown || t("common.not_available")}</Text>
+            <Text style={styles.label}>{safeT("purchase.godown_colon", "Godown:")}</Text>
+            <Text style={styles.value}>{purchase.godown || safeT("common.not_available", "Not Available")}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.vehicle_colon")}</Text>
-            <Text style={styles.value}>{purchase.vehicle || t("common.not_available")}</Text>
+            <Text style={styles.label}>{safeT("purchase.vehicle_colon", "Vehicle:")}</Text>
+            <Text style={styles.value}>{purchase.vehicle || safeT("common.not_available", "Not Available")}</Text>
           </View>
           <View style={[styles.row, { alignItems: 'flex-start' }]}>
-            <Text style={styles.label}>{t("purchase.remarks_colon")}</Text>
-            <Text style={[styles.value, { flex: 1, textAlign: 'right', marginLeft: 16 }]}>{purchase.remarks || t("common.not_available")}</Text>
+            <Text style={styles.label}>{safeT("purchase.remarks_colon", "Remarks:")}</Text>
+            <Text style={[styles.value, { flex: 1, textAlign: 'right', marginLeft: 16 }]}>{purchase.remarks || safeT("common.not_available", "Not Available")}</Text>
           </View>
         </View>
  
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("purchase.summary")}</Text>
+          <Text style={styles.sectionTitle}>{safeT("purchase.summary", "Summary")}</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.previous_dues")}</Text>
+            <Text style={styles.label}>{safeT("purchase.previous_dues", "Previous Dues:")}</Text>
             <Text style={styles.value}>₹{purchase.previousDues || 0}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>{t("purchase.total_amount_colon")}</Text>
+            <Text style={styles.label}>{safeT("purchase.total_amount_colon", "Total Amount:")}</Text>
             <Text style={styles.amount}>₹{purchase.totalAmount || 0}</Text>
           </View>
         </View>
@@ -231,7 +255,7 @@ const PurchaseDetails = () => {
           ) : (
             <>
               <Icon name="download-outline" size={20} color="#fff" />
-              <Text style={styles.btnText}>{t("purchase.download_receipt")}</Text>
+              <Text style={styles.btnText}>{safeT("purchase.download_receipt", "Download Receipt")}</Text>
             </>
           )}
         </TouchableOpacity>

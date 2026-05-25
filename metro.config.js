@@ -8,12 +8,25 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  */
 const path = require('path');
 
+const defaultConfig = getDefaultConfig(__dirname);
+
 const config = {
   resolver: {
     blockList: [
       /node_modules\/@react-native-firebase\/.*\/android\/build\/.*/,
     ],
+    assetExts: defaultConfig.resolver.assetExts,
+    sourceExts: defaultConfig.resolver.sourceExts,
+  },
+  watchFolders: [path.resolve(__dirname)],
+  // Disable Watchman on Windows — fall back to Node.js fs.watch
+  watcher: {
+    watchman: null,
+    healthCheck: {
+      enabled: true,
+      timeout: 30000,
+    },
   },
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+module.exports = mergeConfig(defaultConfig, config);

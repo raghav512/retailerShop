@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAccessToken, getUserData } from './Storage';
 import { API_BASE_URL } from '../config';
+import { toOtpApiRole } from '../utils/otpRole';
 
 /* ================= AXIOS INSTANCE ================= */
 export const BASE_URL = API_BASE_URL;
@@ -14,6 +15,8 @@ const apiClient = axios.create({
   },
 });
 
+export const api = apiClient;
+
 console.log('🚀 API Client Base URL:', apiClient.defaults.baseURL);
 
 /* ================= REQUEST INTERCEPTOR ================= */
@@ -25,14 +28,33 @@ apiClient.interceptors.request.use(
       config.baseURL + config.url,
     );
 
+    // ========== STEP 3: AXIOS REQUEST TRACE ==========
+    if (config.url === '/api/order/place') {
+      console.log('========== AXIOS TRACE ==========');
+      console.log('METHOD:', config.method);
+      console.log('URL:', config.url);
+      console.log('AXIOS DATA:', JSON.stringify(config.data, null, 2));
+      console.log('AXIOS paymentMethod:', config?.data?.paymentMethod);
+      console.log('==================================');
+    }
+
     const token = await getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Don't set Content-Type for FormData - let axios handle it
+    // Ensure multipart header for React Native FormData
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      config.headers['Content-Type'] = 'multipart/form-data';
+      console.log(
+        '📤 FormData detected - Content-Type set to multipart/form-data',
+      );
+      console.log(
+        '📤 FormData keys:',
+        typeof config.data.keys === 'function'
+          ? Array.from(config.data.keys())
+          : 'unavailable',
+      );
     }
 
     return config;
@@ -66,8 +88,34 @@ const getUserId = async () => {
   return user?.id;
 };
 
+const normalizeOtpRole = role => {
+  const canonicalRole = toOtpApiRole(role);
+  if (canonicalRole) {
+    return canonicalRole;
+  }
+
+  const rawRole = role?.toString().trim();
+  return rawRole || '';
+};
+
 /* ================= API SERVICES ================= */
 const apiService = {
+  /* ---------- LOGOUT ---------- */
+  logoutUser: async () => {
+    try {
+      console.log('🔓 Calling backend logout API...');
+      const res = await apiClient.post('/api/user/logout');
+      console.log(
+        '✅ Backend logout successful - FCM token removed:',
+        res.data,
+      );
+      return res.data;
+    } catch (error) {
+      console.error('❌ Backend logout failed:', error.message);
+      throw error;
+    }
+  },
+
   /* ---------- NOTIFICATION ---------- */
   sendFcmTokenToBackend: async fcmToken => {
     try {
@@ -101,14 +149,44 @@ const apiService = {
   },
   getAllBroadcasts: async (page = 1, limit = 20) => {
     try {
-      console.log(`📢 Fetching broadcasts - page: ${page}, limit: ${limit}`);
+      console.log('\n📡 ========== API SERVICE: GET ALL BROADCASTS ==========');
+      console.log(`📄 Requesting: page=${page}, limit=${limit}`);
+      console.log(
+        `🔗 URL: ${apiClient.defaults.baseURL}/api/broadcast?page=${page}&limit=${limit}`,
+      );
+
+      // Check if token exists
+      const token = await getAccessToken();
+      console.log('🔑 Token exists:', !!token);
+      if (token) {
+        console.log('🔑 Token preview:', token.substring(0, 30) + '...');
+      }
+
       const res = await apiClient.get(
         `/api/broadcast?page=${page}&limit=${limit}`,
       );
-      console.log('✅ Broadcasts fetched:', res.data);
+
+      console.log('\n✅ API RESPONSE RECEIVED:');
+      console.log('Status:', res.status);
+      console.log('Success:', res.data?.success);
+      console.log('Data Count:', res.data?.data?.length || 0);
+      console.log('Pagination:', JSON.stringify(res.data?.pagination, null, 2));
+      console.log('\nFull Response Data:');
+      console.log(JSON.stringify(res.data, null, 2));
+      console.log('📡 ========== END API SERVICE ==========\n');
+
       return res.data;
     } catch (error) {
-      console.error('❌ Failed to fetch broadcasts:', error.message);
+      console.error('\n❌ ========== API SERVICE ERROR ==========');
+      console.error('Error Message:', error.message);
+      console.error('Error Code:', error.code);
+      console.error('Response Status:', error.response?.status);
+      console.error(
+        'Response Data:',
+        JSON.stringify(error.response?.data, null, 2),
+      );
+      console.error('Request URL:', error.config?.url);
+      console.error('❌ ========================================\n');
       throw error;
     }
   },
@@ -372,8 +450,15 @@ const apiService = {
   },
 
   GetStaffPurches: async () => {
-    const res = await apiClient.get('/api/purchase/getPurchases');
-    return res?.data?.data;
+    try {
+      const res = await apiClient.get('/api/purchase/getPurchases');
+      return res?.data?.data || [];
+    } catch (error) {
+      if (error.message === 'Network Error') {
+        return [];
+      }
+      throw error;
+    }
   },
 
   getPurchaseById: async id => {
@@ -388,8 +473,26 @@ const apiService = {
   },
 
   getAllFarmers: async () => {
-    const res = await apiClient.get('/api/user/getAllFarmers');
-    return res?.data?.data;
+    try {
+      console.log('📋 API: Fetching all farmers from /api/user/getAllFarmers');
+      const res = await apiClient.get('/api/user/getAllFarmers');
+      console.log(
+        '✅ API: Farmers response:',
+        JSON.stringify(res.data, null, 2),
+      );
+
+      // Handle different response structures
+      if (res.data?.data) {
+        return res.data.data;
+      } else if (Array.isArray(res.data)) {
+        return res.data;
+      } else {
+        return res?.data?.data || [];
+      }
+    } catch (error) {
+      console.error('❌ API: getAllFarmers error:', error.message);
+      throw error;
+    }
   },
 
   //farmer
@@ -412,7 +515,10 @@ const apiService = {
 
   addToCart: async payload => {
     console.log('📦 ADD TO CART - Payload:', JSON.stringify(payload, null, 2));
-    const res = await apiClient.post('/api/cart/add', payload);
+    const config = payload?.farmerId
+      ? { params: { farmerId: payload.farmerId } }
+      : undefined;
+    const res = await apiClient.post('/api/cart/add', payload, config);
     console.log(
       '✅ ADD TO CART - Response:',
       JSON.stringify(res.data, null, 2),
@@ -420,9 +526,10 @@ const apiService = {
     return res.data;
   },
 
-  getCart: async () => {
+  getCart: async farmerId => {
     try {
-      const res = await apiClient.get('/api/cart/get-cart');
+      const config = farmerId ? { params: { farmerId } } : undefined;
+      const res = await apiClient.get('/api/cart/get-cart', config);
       console.log(
         '📦 CART - Full response:',
         JSON.stringify(res.data, null, 2),
@@ -444,36 +551,165 @@ const apiService = {
     return res.data;
   },
 
-  deleteCartItem: async itemId => {
+  deleteCartItem: async (itemId, farmerId) => {
     console.log('🗑️ DELETE - Item ID:', itemId);
-    const res = await apiClient.delete(`/api/cart/remove/${itemId}`);
+    const config = farmerId ? { params: { farmerId } } : undefined;
+    const res = await apiClient.delete(`/api/cart/remove/${itemId}`, config);
     console.log('✅ DELETE - Response:', JSON.stringify(res.data, null, 2));
     return res.data;
   },
 
-  clearCart: async () => {
-    const res = await apiClient.delete('/api/cart/remove-all');
+  clearCart: async farmerId => {
+    const config = farmerId ? { params: { farmerId } } : undefined;
+    const res = await apiClient.delete('/api/cart/remove-all', config);
     return res.data;
   },
 
-  placeOrder: async (paymentMethod = 'cash') => {
-    const res = await apiClient.post('/api/order/place', { paymentMethod });
-    return res.data;
+  placeOrder: async (payload = { paymentMethod: 'cash' }) => {
+    // ========== STEP 2: API SERVICE TRACE ==========
+    console.log('========== API SERVICE TRACE ==========');
+    console.log('REQUEST URL:', '/api/order/place');
+
+    // Handle both old format (string) and new format (object)
+    const requestData =
+      typeof payload === 'string' ? { paymentMethod: payload } : payload;
+
+    console.log('REQUEST BODY:', JSON.stringify(requestData, null, 2));
+    console.log('paymentMethod:', requestData?.paymentMethod);
+    console.log(
+      'itemImages:',
+      requestData?.itemImages ? 'Present' : 'Not present',
+    );
+    console.log('======================================');
+
+    const appendFormField = (formData, key, value) => {
+      if (value === undefined || value === null) {
+        return;
+      }
+      if (typeof value === 'string') {
+        formData.append(key, value);
+        return;
+      }
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        formData.append(key, String(value));
+        return;
+      }
+      formData.append(key, JSON.stringify(value));
+    };
+
+    const placeOrderConfig = requestData?.farmerId
+      ? { params: { farmerId: requestData.farmerId } }
+      : undefined;
+
+    // If itemImages are present, use FormData
+    if (
+      requestData.itemImages &&
+      Object.keys(requestData.itemImages).length > 0
+    ) {
+      const formData = new FormData();
+
+      Object.entries(requestData).forEach(([key, value]) => {
+        if (key === 'itemImages') {
+          return;
+        }
+        appendFormField(formData, key, value);
+      });
+
+      // Add images for each item
+      Object.entries(requestData.itemImages).forEach(([itemId, imageData]) => {
+        if (imageData.base64) {
+          formData.append(`itemImages[${itemId}]`, imageData.base64);
+        }
+      });
+
+      console.log('Using FormData for image upload');
+      const formConfig = {
+        timeout: 300000,
+        ...(placeOrderConfig || {}),
+      };
+      const res = await apiClient.post(
+        '/api/order/place',
+        formData,
+        formConfig,
+      );
+
+      console.log('========== API SERVICE RESPONSE ==========');
+      console.log('Response Status:', res.status);
+      console.log('Response Data:', JSON.stringify(res.data, null, 2));
+      console.log('===========================================');
+
+      return res.data;
+    } else {
+      // Use JSON for orders without images
+      const res = await apiClient.post(
+        '/api/order/place',
+        requestData,
+        placeOrderConfig,
+      );
+
+      console.log('========== API SERVICE RESPONSE ==========');
+      console.log('Response Status:', res.status);
+      console.log('Response Data:', JSON.stringify(res.data, null, 2));
+      console.log('===========================================');
+
+      return res.data;
+    }
   },
 
   downloadReceipt: async receiptId => {
+    // ========== STEP 6: RECEIPT DOWNLOAD TRACE ==========
+    console.log('========== RECEIPT DOWNLOAD TRACE ==========');
+    console.log('Receipt ID:', receiptId);
+
     const token = await getAccessToken();
     const url = `${BASE_URL}/api/order/downloadReceipt/${receiptId}`;
+
+    console.log('🧭 [downloadReceipt] preparing download request:', {
+      receiptId,
+      url,
+      hasToken: !!token,
+    });
+    console.log('=============================================');
+
     return { url, token };
   },
 
   getAllReceipts: async () => {
+    // ========== STEP 6: GET ALL RECEIPTS TRACE ==========
+    console.log('========== GET ALL RECEIPTS TRACE ==========');
+
     const res = await apiClient.get('/api/order/allReceipts');
+
+    console.log('All Receipts Response:', JSON.stringify(res.data, null, 2));
+    if (res.data?.data && res.data.data.length > 0) {
+      console.log(
+        'First Receipt Sample:',
+        JSON.stringify(res.data.data[0], null, 2),
+      );
+      console.log(
+        'First Receipt Payment Method:',
+        res.data.data[0]?.paymentMethod,
+      );
+    }
+    console.log('=============================================');
+
     return res.data;
   },
 
   getAllOrders: async () => {
     const res = await apiClient.get('/api/order/allOrders');
+    console.log('========== GET ALL ORDERS TRACE ==========');
+    console.log('All Orders Response:', JSON.stringify(res.data, null, 2));
+    if (res.data?.data && res.data.data.length > 0) {
+      console.log(
+        'First Order Sample:',
+        JSON.stringify(res.data.data[0], null, 2),
+      );
+    }
+    console.log('==========================================');
+    console.log('GET ALL ORDERS:', {
+      count: res?.data?.data?.length || 0,
+    });
     return res.data;
   },
 
@@ -512,14 +748,34 @@ const apiService = {
     return res.data;
   },
 
+  getAllActiveFarms: async () => {
+    try {
+      console.log('📡 Fetching all active farms...');
+      const res = await apiClient.get('/api/farm/getAllFarms');
+      console.log('✅ All active farms fetched:', res.data);
+      // Return the data array from the response
+      return res.data?.data || res.data || [];
+    } catch (error) {
+      console.error('❌ Error fetching all active farms:', error.message);
+      throw error;
+    }
+  },
+
   /* ---------- CROP ---------- */
   addCrop: async payload => {
+    console.log(
+      '🌾 Adding crop with payload:',
+      JSON.stringify(payload, null, 2),
+    );
     const res = await apiClient.post('/api/crop/addCrop', payload);
+    console.log('✅ Crop added successfully:', res.data);
     return res.data;
   },
 
   updateCropById: async (id, payload) => {
+    console.log('🔄 Updating crop:', id, JSON.stringify(payload, null, 2));
     const res = await apiClient.put(`/api/crop/updateCrop/${id}`, payload);
+    console.log('✅ Crop updated successfully:', res.data);
     return res.data;
   },
 
@@ -563,6 +819,10 @@ const apiService = {
 
   updateOrderStatus: async (id, payload) => {
     try {
+      const traceId = `order-status-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+
       if (!id) {
         throw new Error('Order ID is required');
       }
@@ -573,49 +833,76 @@ const apiService = {
         throw new Error('Invalid order status');
       }
 
-      console.log('🔄 Updating order status:', id, payload);
+      const requestBody =
+        typeof payload === 'string'
+          ? { status }
+          : {
+              ...payload,
+              status,
+            };
 
-      const requestBody = typeof payload === 'string' ? { status } : payload;
+      console.log('🧭 [updateOrderStatus] trace:start', {
+        traceId,
+        orderId: id,
+        incomingPayload: payload,
+      });
+
+      if (requestBody.sell === true) {
+        const paymentMethod = requestBody.paymentMethod;
+
+        if (!paymentMethod) {
+          throw new Error('paymentMethod is required when selling order.');
+        }
+      }
+
+      console.log('🧭 [updateOrderStatus] trace:requestBody', {
+        traceId,
+        orderId: id,
+        requestBody,
+      });
 
       const response = await apiClient.put(
         `/api/order/updateOrderStatus/${id}`,
         requestBody,
       );
 
-      console.log('✅ Order status updated:', response.data);
+      console.log('🧭 [updateOrderStatus] trace:response', {
+        traceId,
+        orderId: id,
+        statusCode: response.status,
+        data: response.data,
+      });
       return response.data;
     } catch (error) {
-      console.error(
-        '❌ updateOrderStatus error:',
-        error.response?.data || error.message,
-      );
+      console.error('🧭 [updateOrderStatus] trace:error', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url,
+        payload: error.config?.data,
+      });
       throw error;
     }
   },
 
   /* ---------- OTP ---------- */
   SendOtp: async payload => {
-    if (payload.role) {
-      payload.role =
-        payload.role.toLowerCase() === 'Distributor'
-          ? 'Distributor'
-          : payload.role.charAt(0).toUpperCase() +
-            payload.role.slice(1).toLowerCase();
+    const requestPayload = { ...payload };
+    if (requestPayload.role) {
+      const normalizedRole = normalizeOtpRole(requestPayload.role);
+      requestPayload.role = normalizedRole;
     }
-    const res = await apiClient.post('/api/otp/send-otp', payload);
+    const res = await apiClient.post('/api/otp/send-otp', requestPayload);
     return res.data;
   },
 
   /* ---------- Verify OTP ---------- */
   SendVerifyOtp: async payload => {
-    if (payload.role) {
-      payload.role =
-        payload.role.toLowerCase() === 'Distributor'
-          ? 'Distributor'
-          : payload.role.charAt(0).toUpperCase() +
-            payload.role.slice(1).toLowerCase();
+    const requestPayload = { ...payload };
+    if (requestPayload.role) {
+      requestPayload.role = normalizeOtpRole(requestPayload.role);
     }
-    const res = await apiClient.post('/api/otp/verify-otp', payload);
+    const res = await apiClient.post('/api/otp/verify-otp', requestPayload);
     return res.data;
   },
 
@@ -626,7 +913,24 @@ const apiService = {
   },
 
   MyOrders: async () => {
+    // ========== STEP 4: MY ORDERS API TRACE ==========
+    console.log('========== MY ORDERS API TRACE ==========');
+
     const res = await apiClient.get('/api/order/myOrders');
+
+    console.log('My Orders Response:', JSON.stringify(res.data, null, 2));
+    if (res.data?.data && res.data.data.length > 0) {
+      console.log(
+        'First Order Sample:',
+        JSON.stringify(res.data.data[0], null, 2),
+      );
+      console.log(
+        'First Order Payment Method:',
+        res.data.data[0]?.paymentMethod,
+      );
+    }
+    console.log('=========================================');
+
     return res.data.data; // ✅ return only orders array
   },
 
@@ -687,17 +991,50 @@ const apiService = {
   /* ---------- CROP CALENDAR ---------- */
   getAllCropsCalendar: async () => {
     const res = await apiClient.get('/api/crop-calendar/');
+
+    console.log('📅 All crops calendar response:', res.data);
     return res.data;
   },
 
-  getCropCalendarByName: async cropName => {
-    const res = await apiClient.get(`/api/crop-calendar/${cropName}`);
-    return res.data;
+  getCropCalendarByName: async (cropName, variety = null) => {
+    try {
+      let url = `/api/crop-calendar/${cropName}`;
+      if (variety && variety.trim()) {
+        url += `?variety=${encodeURIComponent(variety.trim())}`;
+      }
+      console.log('🌾 Fetching crop calendar:', url);
+      const res = await apiClient.get(url);
+      console.log(
+        '🌾 CROP CALENDAR RESPONSE:',
+        JSON.stringify(res.data, null, 2),
+      );
+      return res.data;
+    } catch (error) {
+      if (error.message === 'Network Error') {
+        console.error(
+          '⚠️ Cannot connect to server. Check if backend is running.',
+        );
+      }
+      throw error;
+    }
   },
 
   getCropCalendarById: async cropId => {
     const res = await apiClient.get(`/api/crop/${cropId}/calendar`);
     return res.data;
+  },
+
+  /* ---------- CROP ANALYTICS ---------- */
+  getCropAnalytics: async () => {
+    try {
+      console.log('📊 Fetching crop analytics...');
+      const res = await apiClient.get('/api/crop/analytics');
+      console.log('✅ Crop analytics fetched:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ getCropAnalytics error:', error.message);
+      throw error;
+    }
   },
 
   /* ---------- MANDI PRICES ---------- */
@@ -724,6 +1061,38 @@ const apiService = {
   submitRetailerInquiry: async payload => {
     try {
       console.log('📝 Submitting retailer inquiry:', payload);
+      const hasImageData =
+        payload.inquiryPhoto &&
+        typeof payload.inquiryPhoto === 'object' &&
+        payload.inquiryPhoto.uri;
+
+      if (hasImageData) {
+        const formData = new FormData();
+
+        Object.keys(payload).forEach(key => {
+          if (key !== 'inquiryPhoto') {
+            const value = payload[key];
+            formData.append(key, value == null ? '' : String(value));
+          }
+        });
+
+        formData.append('inquiryPhoto', payload.inquiryPhoto);
+
+        console.log('📤 Sending multipart form data with inquiry photo');
+        console.log('🖼️ Image details:', {
+          uri: payload.inquiryPhoto.uri,
+          type: payload.inquiryPhoto.type,
+          name: payload.inquiryPhoto.name,
+        });
+
+        const res = await apiClient.post('/api/inquiry/add', formData, {
+          timeout: 300000,
+        });
+
+        console.log('✅ Inquiry submitted successfully:', res.data);
+        return res.data;
+      }
+
       const res = await apiClient.post('/api/inquiry/add', payload);
       console.log('✅ Inquiry submitted successfully:', res.data);
       return res.data;
@@ -758,6 +1127,64 @@ const apiService = {
   },
 
   /* ---------- STAFF INQUIRY ---------- */
+  submitStaffInquiry: async payload => {
+    try {
+      console.log('📝 Submitting staff inquiry:', payload);
+
+      // Check if payload contains image file object
+      const hasImageData =
+        (payload.inquiryPhoto &&
+          typeof payload.inquiryPhoto === 'object' &&
+          payload.inquiryPhoto.uri) ||
+        (payload.photo &&
+          typeof payload.photo === 'object' &&
+          payload.photo.uri);
+
+      if (hasImageData) {
+        // Create FormData for multipart upload
+        const formData = new FormData();
+
+        const photoFile = payload.inquiryPhoto || payload.photo;
+
+        // Add all fields except photo to FormData
+        Object.keys(payload).forEach(key => {
+          if (key !== 'photo' && key !== 'inquiryPhoto') {
+            const value = payload[key];
+            formData.append(key, value == null ? '' : String(value));
+          }
+        });
+
+        // Add the image file to FormData
+        formData.append('inquiryPhoto', photoFile);
+
+        console.log('📤 Sending multipart form data with image');
+        console.log('🖼️ Image details:', {
+          uri: photoFile.uri,
+          type: photoFile.type,
+          name: photoFile.name,
+        });
+
+        const res = await apiClient.post('/api/inquiry/add', formData, {
+          timeout: 300000, // 5 minutes for image uploads
+        });
+
+        console.log('✅ Staff inquiry submitted successfully:', res.data);
+        return res.data;
+      } else {
+        // Send as JSON if no image
+        console.log('📤 Sending JSON data without image');
+        const { inquiryPhoto, photo, ...jsonPayload } = payload;
+        const res = await apiClient.post('/api/inquiry/add', jsonPayload);
+        console.log('✅ Staff inquiry submitted successfully:', res.data);
+        return res.data;
+      }
+    } catch (error) {
+      console.error('❌ submitStaffInquiry error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
   getAllInquiries: async () => {
     try {
       console.log('📋 Fetching all inquiries');
@@ -986,13 +1413,29 @@ const apiService = {
 
   getMyAttendance: async () => {
     try {
-      console.log('📊 Fetching my attendance history');
+      console.log('📡 Fetching My Attendance');
+      console.log('📡 Endpoint:', '/api/attendance/my-attendance');
+
+      const token = await getAccessToken();
+      console.log('📤 Headers:', {
+        Authorization: token ? `Bearer ${token.substring(0, 20)}...` : 'none',
+        'Content-Type': 'application/json',
+      });
+
       const res = await apiClient.get('/api/attendance/my-attendance');
-      console.log('✅ Attendance history fetched:', res.data);
+
+      console.log('✅ Attendance Response:', res.data);
+      console.log('📊 Attendance Raw Data:', JSON.stringify(res.data, null, 2));
+      console.log(
+        '📊 Response Array Length:',
+        Array.isArray(res.data?.data) ? res.data.data.length : 0,
+      );
+
       return res.data;
     } catch (error) {
-      console.error('❌ getMyAttendance error:', error.message);
+      console.error('❌ Attendance API Error:', error.message);
       console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
       throw error;
     }
   },
@@ -1098,6 +1541,205 @@ const apiService = {
       return res.data;
     } catch (error) {
       console.error('❌ completeTask error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /* ---------- FARMER DIARY ---------- */
+  addIncome: async payload => {
+    try {
+      console.log('💰 Adding income entry:', payload);
+
+      // Only send necessary fields: category, date, amount
+      const cleanPayload = {
+        userId: payload.userId,
+        category: payload.category,
+        date: payload.date,
+        amount: payload.amount || payload.saleValue,
+      };
+
+      console.log('💰 Clean payload (only necessary fields):', cleanPayload);
+      const res = await apiClient.post('/api/khata/income/add', cleanPayload);
+      console.log('✅ Income entry added successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ addIncome error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  getIncomesByUserId: async userId => {
+    try {
+      console.log('📊 Fetching incomes for user:', userId);
+      const res = await apiClient.get(`/api/khata/income/${userId}`);
+      console.log('✅ Incomes fetched successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ getIncomesByUserId error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  deleteIncomeByDate: async (userId, date) => {
+    try {
+      console.log('🗑️ Deleting income for user:', userId, 'date:', date);
+      const res = await apiClient.delete(`/api/khata/income/${userId}`, {
+        data: { date },
+      });
+      console.log('✅ Income deleted successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ deleteIncomeByDate error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  deleteIncomeById: async incomeId => {
+    try {
+      console.log('🗑️ Deleting income by ID:', incomeId);
+      const res = await apiClient.delete(`/api/khata/income/${incomeId}`);
+      console.log('✅ Income deleted successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ deleteIncomeById error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  updateIncomeById: async (incomeId, payload) => {
+    try {
+      console.log('✏️ Updating income by ID:', incomeId, payload);
+      const res = await apiClient.put(`/api/khata/income/${incomeId}`, payload);
+      console.log('✅ Income updated successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ updateIncomeById error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  addExpense: async payload => {
+    try {
+      console.log('💸 Adding expense entry:', payload);
+      const res = await apiClient.post('/api/khata/expense/add', payload);
+      console.log('✅ Expense entry added successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ addExpense error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  getExpensesByUserId: async userId => {
+    try {
+      console.log('📊 Fetching expenses for user:', userId);
+      const res = await apiClient.get(`/api/khata/expense/${userId}`);
+      console.log('✅ Expenses fetched successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ getExpensesByUserId error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  deleteExpenseByDate: async (userId, date) => {
+    try {
+      console.log('🗑️ Deleting expense for user:', userId, 'date:', date);
+      const res = await apiClient.delete(`/api/khata/expense/${userId}`, {
+        data: { date },
+      });
+      console.log('✅ Expense deleted successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ deleteExpenseByDate error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  deleteExpenseById: async expenseId => {
+    try {
+      console.log('🗑️ Deleting expense by ID:', expenseId);
+      const res = await apiClient.delete(`/api/khata/expense/${expenseId}`);
+      console.log('✅ Expense deleted successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ deleteExpenseById error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  updateExpenseById: async (expenseId, payload) => {
+    try {
+      console.log('✏️ Updating expense by ID:', expenseId, payload);
+      const res = await apiClient.put(
+        `/api/khata/expense/${expenseId}`,
+        payload,
+      );
+      console.log('✅ Expense updated successfully:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ updateExpenseById error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  getLedgerDetails: async (userId, startDate, endDate) => {
+    try {
+      console.log('📊 Fetching ledger details:', {
+        userId,
+        startDate,
+        endDate,
+      });
+      const res = await apiClient.get(
+        `/api/khata/ledger/${userId}?startDate=${startDate}&endDate=${endDate}`,
+      );
+      console.log('✅ Ledger details fetched:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ getLedgerDetails error:', error.message);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /* ---------- FARMER ORDERS ---------- */
+  getFarmerOrders: async farmerId => {
+    try {
+      console.log(`📦 Fetching orders for farmer: ${farmerId}`);
+      const res = await apiClient.get(`/api/order/farmer/${farmerId}/orders`);
+      console.log('✅ Farmer orders fetched:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('❌ getFarmerOrders error:', error.message);
+      throw error;
+    }
+  },
+
+  downloadLedgerPdf: async (userId, startDate, endDate) => {
+    try {
+      console.log('📄 Downloading ledger PDF:', {
+        userId,
+        startDate,
+        endDate,
+      });
+      const res = await apiClient.get(
+        `/api/khata/ledger/pdf/${userId}?startDate=${startDate}&endDate=${endDate}`,
+      );
+      console.log('✅ Ledger PDF downloaded successfully');
+      return res.data;
+    } catch (error) {
+      console.error('❌ downloadLedgerPdf error:', error.message);
       console.error('❌ Error response:', error.response?.data);
       throw error;
     }

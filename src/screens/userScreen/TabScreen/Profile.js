@@ -11,6 +11,7 @@ import {
   Image,
   ActivityIndicator,
   Platform,
+  Animated,
 } from 'react-native';
 import { showAlert } from '../../../common/reusableComponent/CustomAlert';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -22,6 +23,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { API_BASE_URL } from '../../../config';
 import { getAccessToken } from '../../../Redux/Storage';
+
 import { STAFF_COLORS } from '../../../colorsList/ColorList';
 
 // const SETTINGS = [
@@ -34,30 +36,41 @@ import { STAFF_COLORS } from '../../../colorsList/ColorList';
 const Profile = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageNew, setProfileImageNew] = useState(null);
 
   /* ---------- PROFILE DATA ---------- */
-
-  const accountDetails = profile
-    ? [
-        {
-          id: '1',
-          key: 'phone',
-          value: profile.phone || '-',
-          icon: 'call-outline',
-        },
-        {
-          id: '2',
-          key: 'email',
-          value: profile.emailId || '-',
-          icon: 'mail-outline',
-        },
-      ]
-    : [];
+  // This will re-render when language changes because it depends on t() and i18n.language
+  const accountDetails = React.useMemo(() => {
+    if (!profile) return [];
+    return [
+      {
+        id: '1',
+        key: 'phone',
+        label: t('profile.account.phone'),
+        value: profile.phone || '-',
+        icon: 'call-outline',
+      },
+      {
+        id: '2',
+        key: 'email',
+        label: t('profile.account.email'),
+        value: profile.emailId || '-',
+        icon: 'mail-outline',
+      },
+      {
+        id: '3',
+        key: 'attendance',
+        label: t('profile.account.attendance'),
+        value: t('profile.account.view_attendance'),
+        icon: 'calendar-outline',
+        action: () => navigation.navigate('StaffAttendance'),
+      },
+    ];
+  }, [profile, t, i18n.language]);
 
   const fetchProfile = async () => {
     try {
@@ -175,20 +188,55 @@ const Profile = () => {
 
   /* ---------- RENDERERS ---------- */
 
-  const renderAccount = ({ item, index }) => (
-    <View style={styles.row}>
-      <View style={styles.iconBox}>
-        <Icon name={item.icon} size={22} color={STAFF_COLORS.primary} />
-      </View>
-      <View style={styles.rowText}>
-        <Text style={styles.label}>{t(`profile.account.${item.key}`)}</Text>
-        <Text style={styles.value}>{item.value}</Text>
-      </View>
-    </View>
-  );
+  const renderAccount = ({ item, index }) => {
+    const AccountRow = () => {
+      const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+      const handlePressIn = () => {
+        Animated.spring(scaleAnim, {
+          toValue: 0.97,
+          useNativeDriver: true,
+        }).start();
+      };
+
+      const handlePressOut = () => {
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 3,
+          useNativeDriver: true,
+        }).start();
+      };
+
+      return (
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity 
+            style={styles.row}
+            onPress={item.action}
+            onPressIn={item.action ? handlePressIn : undefined}
+            onPressOut={item.action ? handlePressOut : undefined}
+            disabled={!item.action}
+            activeOpacity={1}
+          >
+            <View style={styles.iconBox}>
+              <Icon name={item.icon} size={22} color={STAFF_COLORS.primary} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.label}>{item.label}</Text>
+              <Text style={[styles.value, item.action && styles.actionValue]}>{item.value}</Text>
+            </View>
+            {item.action && (
+              <Icon name="chevron-forward-outline" size={20} color={STAFF_COLORS.primary} />
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      );
+    };
+
+    return <AccountRow />;
+  };
 
   const renderSetting = ({ item }) => (
-    <TouchableOpacity style={styles.settingRow} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.settingRow} activeOpacity={0.7}>
       <View style={styles.settingLeft}>
         <View style={styles.settingIcon}>
           <Icon name={item.icon} size={18} color="#6B7280" />
@@ -204,25 +252,39 @@ const Profile = () => {
   /* ---------- UI ---------- */
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={STAFF_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={() => navigation.navigate('EditProfile')}
-          activeOpacity={0.8}
-        >
-          <Icon name="create-outline" size={20} color="#1F2937" />
-        </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('EditProfile')}
+            activeOpacity={0.7}
+          >
+            <Icon name="create-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        <View style={styles.avatar} onPress={pickImage} activeOpacity={0.8}>
+      {/* PROFILE INFO */}
+      <View style={styles.profileSection}>
+        <TouchableOpacity style={styles.avatar} onPress={pickImage} activeOpacity={0.8}>
           {uploading ? (
             <ActivityIndicator color={STAFF_COLORS.primary} />
           ) : profileImageNew?.uri || profileImage ? (
@@ -233,11 +295,14 @@ const Profile = () => {
           ) : (
             <Icon
               name="person-outline"
-              size={32}
+              size={36}
               color={STAFF_COLORS.primary}
             />
           )}
-        </View>
+          <View style={styles.cameraIcon}>
+            <Icon name="camera" size={14} color="#fff" />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.name}>
           {profile?.firstName} {profile?.lastName}
         </Text>
@@ -277,7 +342,7 @@ const Profile = () => {
           <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -288,140 +353,200 @@ export default Profile;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F4F6F8',
+    backgroundColor: '#F9FAFB',
   },
 
   /* HEADER */
-  headerSpacer: {
-    height: 6,
-    backgroundColor: '#ffffff',
+  headerContainer: {
+    backgroundColor: STAFF_COLORS.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingBottom: 16,
+    elevation: 8,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
   header: {
-    backgroundColor: '#ffffff',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 24,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    position: 'relative',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
   editBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FEF9E7',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  avatarImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-  },
-  cameraIcon: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-  },
-  name: {
-    color: '#1F2937',
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  role: {
-    color: STAFF_COLORS.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
 
-  /* CONTENT */
-  content: {
-    padding: 16,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#4B5563',
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  card: {
+  /* PROFILE SECTION */
+  profileSection: {
     backgroundColor: '#ffffff',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 24,
-    elevation: 4,
+    alignItems: 'center',
+    paddingVertical: 28,
+    marginHorizontal: 18,
+    marginTop: 18,
+    borderRadius: 20,
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    overflow: 'visible',
+    borderWidth: 4,
+    borderColor: STAFF_COLORS.primary,
+    elevation: 6,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: STAFF_COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+
+  name: {
+    color: '#111827',
+    fontSize: 21,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  role: {
+    color: STAFF_COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 6,
+    letterSpacing: 0.2,
+  },
+
+  /* CONTENT */
+  content: {
+    padding: 18,
+    paddingTop: 24,
+    paddingBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 12,
+    marginLeft: 4,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
   },
 
   /* ROW */
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 4,
   },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: '#FEF9E7',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
+    elevation: 2,
+    shadowColor: STAFF_COLORS.primary,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   rowText: {
     flex: 1,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   value: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginTop: 2,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  actionValue: {
+    color: STAFF_COLORS.primary,
   },
   separator: {
-    height: 16,
+    height: 18,
   },
 
   /* SETTINGS */
@@ -429,44 +554,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   settingIcon: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   settingText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#111827',
+    letterSpacing: 0.2,
   },
 
   /* LOGOUT */
   logoutBtn: {
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 16,
-    borderRadius: 24,
+    backgroundColor: '#DC2626',
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   logoutText: {
-    color: '#DC2626',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
+    letterSpacing: 0.3,
   },
 });

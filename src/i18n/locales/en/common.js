@@ -35,6 +35,41 @@ export default {
   data_sent_success: 'Data successfully sent to backend ✅',
   backend_error: 'Backend error, check console',
 
+  // Common messages
+  error: 'Error',
+  ok: 'OK',
+  cancel: 'Cancel',
+  not_available: 'Not Available',
+
+  // Purchase related
+  purchase: {
+    error_failed_load: 'Failed to load purchase details',
+    error_missing_id: 'Purchase ID is missing',
+    error_empty_data: 'No purchase data found',
+    downloading_receipt: 'Downloading receipt...',
+    receipt_downloaded: 'Receipt downloaded at: {{path}}',
+    error_failed_download: 'Failed to download receipt',
+    no_data: 'No purchase data available',
+    unknown_farmer: 'Unknown Farmer',
+    details: 'Purchase Details',
+    farmer_details: 'Farmer Details',
+    name_colon: 'Name:',
+    date_colon: 'Date:',
+    receipt_code: 'Receipt Code:',
+    crops_purchased: 'Crops Purchased',
+    unit_quintal: 'Quintal',
+    no_crops_found: 'No crops found',
+    additional_details: 'Additional Details',
+    center_colon: 'Center:',
+    godown_colon: 'Godown:',
+    vehicle_colon: 'Vehicle:',
+    remarks_colon: 'Remarks:',
+    summary: 'Summary',
+    previous_dues: 'Previous Dues:',
+    total_amount_colon: 'Total Amount:',
+    download_receipt: 'Download Receipt',
+  },
+
   /* OTP SCREEN */
   verify_email: 'Verify your Email',
   otp_sent_to: 'We sent an OTP to:',

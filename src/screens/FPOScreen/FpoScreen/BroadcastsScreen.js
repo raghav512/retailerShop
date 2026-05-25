@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../../Redux/apiService';
 import { useTranslation } from 'react-i18next';
 import { FPO_COLORS } from '../../../colorsList/ColorList';
@@ -92,19 +93,21 @@ const BroadcastsScreen = ({ navigation }) => {
       </Text>
 
       <View style={styles.cardFooter}>
-        <View style={styles.badge}>
-          <Icon
-            name="people"
-            size={12}
-            color={THEME}
-            style={{ marginRight: 4 }}
-          />
-          <Text style={styles.badgeText}>
-            {item.targetRole === 'all'
-              ? 'For Everyone'
-              : `For ${capitalize(item.targetRole)}s`}
-          </Text>
-        </View>
+        {item.targetRole !== 'retailer' && (
+          <View style={styles.badge}>
+            <Icon
+              name="people"
+              size={12}
+              color={THEME}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={styles.badgeText}>
+              {item.targetRole === 'all'
+                ? 'For Everyone'
+                : `For ${capitalize(item.targetRole)}s`}
+            </Text>
+          </View>
+        )}
         <Icon name="chevron-forward" size={18} color="#9CA3AF" />
       </View>
     </TouchableOpacity>
@@ -137,26 +140,38 @@ const BroadcastsScreen = ({ navigation }) => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {t('broadcasts') || 'Broadcasts'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <LinearGradient
+        colors={[
+          FPO_COLORS.primary,
+          FPO_COLORS.primaryDark,
+          FPO_COLORS.primaryLight,
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>
+              {t('broadcasts') || 'Broadcasts'}
+            </Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       {/* CONTENT */}
       {loading ? (
@@ -218,32 +233,43 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    paddingVertical: 14,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
 
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 

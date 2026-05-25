@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
 import { RETAILER_COLORS } from '../../../colorsList/ColorList';
+import { normalizeOtpRoleId, toOtpApiRole } from '../../../utils/otpRole';
 
 const RetailerLogin = () => {
   const navigation = useNavigation();
@@ -26,7 +27,8 @@ const RetailerLogin = () => {
   const [otpLoading, setOtpLoading] = useState(false);
 
   // 🔹 Role handling
-  const roleId = route.params?.roleId || 'retailer';
+  const roleId = normalizeOtpRoleId(route.params?.roleId || 'retailer') || 'retailer';
+  const otpApiRole = toOtpApiRole(roleId) || 'Retailer';
 
   // 🔹 Role name mapping
   const roleName =
@@ -57,7 +59,7 @@ const RetailerLogin = () => {
       const payload = { mobile: mobile.trim() };
 
       // Add role if needed by your API
-      payload.role = roleId;
+      payload.role = otpApiRole;
 
       console.log('Sending OTP with payload:', payload);
 

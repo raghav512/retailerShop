@@ -115,44 +115,58 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={RETAILER_COLORS.primary}
+        translucent={false}
       />
 
-      <View style={styles.headerSpacer} />
-      <View style={styles.navHeader}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
           activeOpacity={0.7}
         >
-          <Icon
-            name="arrow-back"
-            size={24}
-            color={RETAILER_COLORS.textPrimary}
-          />
+          <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.navTitle} numberOfLines={1}>
+        <Text style={styles.headerTitle} numberOfLines={1}>
           {t('broadcasts.detail_title')}
         </Text>
-        <View style={styles.backBtn} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {imageUrl && (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            resizeMode="cover"
-          />
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          </View>
         )}
 
-        <View style={styles.content}>
-          <Text style={styles.title}>{broadcast.title}</Text>
-          <Text style={styles.timestamp}>
-            {formatFullDate(broadcast.sentAt || broadcast.createdAt)}
-          </Text>
+        <View style={styles.contentCard}>
+          <View style={styles.titleSection}>
+            <View style={styles.iconBadge}>
+              <Icon name="megaphone" size={20} color={RETAILER_COLORS.primary} />
+            </View>
+            <Text style={styles.title}>{broadcast.title}</Text>
+          </View>
+
+          <View style={styles.metaRow}>
+            <Icon
+              name="time-outline"
+              size={16}
+              color={RETAILER_COLORS.textSecondary}
+            />
+            <Text style={styles.timestamp}>
+              {formatFullDate(broadcast.sentAt || broadcast.createdAt)}
+            </Text>
+          </View>
 
           <View style={styles.divider} />
 
@@ -166,116 +180,136 @@ const BroadcastDetailsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: RETAILER_COLORS.background,
+    backgroundColor: '#F5F7FA',
   },
   loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: RETAILER_COLORS.background,
+    backgroundColor: '#F5F7FA',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: RETAILER_COLORS.background,
+    backgroundColor: '#F5F7FA',
+    paddingHorizontal: 32,
   },
   errorText: {
     fontSize: 16,
-    color: RETAILER_COLORS.textSecondary,
-    marginBottom: 20,
+    color: '#6B7280',
+    marginBottom: 24,
     textAlign: 'center',
-    paddingHorizontal: 20,
+    lineHeight: 24,
   },
   backButtonInline: {
     backgroundColor: RETAILER_COLORS.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   backButtonText: {
-    color: RETAILER_COLORS.textOnPrimary,
+    color: '#fff',
     fontWeight: '700',
     fontSize: 15,
   },
-  headerSpacer: {
-    height: 6,
-    backgroundColor: RETAILER_COLORS.surface,
-  },
-  navHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: RETAILER_COLORS.surface,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
+    paddingVertical: 14,
+    backgroundColor: RETAILER_COLORS.primary,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: RETAILER_COLORS.tintCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navTitle: {
+  headerTitle: {
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
-    color: RETAILER_COLORS.textPrimary,
-    marginHorizontal: 8,
+    color: '#fff',
     textAlign: 'center',
   },
-  image: {
-    width: width,
-    height: 250,
-    backgroundColor: RETAILER_COLORS.tintMid,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  scrollContent: {
+    paddingBottom: 24,
   },
-  content: {
-    padding: 24,
-    backgroundColor: RETAILER_COLORS.surface,
+  imageContainer: {
+    width: width,
+    height: 240,
+    backgroundColor: '#E5E7EB',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  contentCard: {
+    backgroundColor: '#fff',
     marginHorizontal: 16,
-    marginTop: -30,
-    borderRadius: 24,
-    elevation: 4,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 10,
-    marginBottom: 40,
+    shadowRadius: 8,
+  },
+  titleSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: RETAILER_COLORS.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   title: {
-    fontSize: 22,
+    flex: 1,
+    fontSize: 20,
     fontWeight: '800',
-    color: RETAILER_COLORS.textPrimary,
-    marginBottom: 10,
-    lineHeight: 30,
+    color: '#1F2937',
+    lineHeight: 28,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   timestamp: {
-    fontSize: 14,
-    color: RETAILER_COLORS.textSecondary,
-    marginBottom: 16,
+    fontSize: 13,
+    color: '#6B7280',
+    marginLeft: 6,
     fontWeight: '500',
   },
   divider: {
     height: 1,
-    backgroundColor: RETAILER_COLORS.tintMid,
-    marginBottom: 20,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 16,
   },
   description: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: RETAILER_COLORS.textSecondary,
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#4B5563',
+    letterSpacing: 0.2,
   },
 });
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,12 @@ import {
     RefreshControl,
     ActivityIndicator,
     Dimensions,
+    SafeAreaView,
+    StatusBar,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { STAFF_COLORS } from '../../../colorsList/ColorList';
 import apiService from '../../../Redux/apiService';
 
 const { width } = Dimensions.get('window');
@@ -51,7 +56,6 @@ const BroadcastsScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('❌ Error fetching broadcasts:', error);
-            // Stop infinite scrolling if the API is failing
             setHasMore(false);
         } finally {
             setLoading(false);
@@ -119,44 +123,101 @@ const BroadcastsScreen = ({ navigation }) => {
         if (!loadingMore) return null;
         return (
             <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color="#4CAF50" />
+                <ActivityIndicator size="small" color={STAFF_COLORS.primary} />
             </View>
         );
     };
 
     if (loading) {
         return (
-            <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-            </View>
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar
+                    barStyle="light-content"
+                    backgroundColor={STAFF_COLORS.primary}
+                    translucent={false}
+                />
+
+                <LinearGradient
+                    colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.headerGradient}
+                >
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backBtn}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.8}
+                        >
+                            <Icon name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
+
+                        <View style={styles.headerCenter}>
+                            <Text style={styles.headerTitle}>Broadcasts</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color={STAFF_COLORS.primary} />
+                </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <FlatList
-                data={broadcasts}
-                renderItem={renderBroadcastItem}
-                keyExtractor={item => item._id}
-                contentContainerStyle={styles.listContent}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={['#4CAF50']}
-                    />
-                }
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={renderFooter}
-                ListEmptyComponent={renderEmpty}
-                showsVerticalScrollIndicator={false}
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar
+                barStyle="light-content"
+                backgroundColor={STAFF_COLORS.primary}
+                translucent={false}
             />
-        </View>
+
+            <LinearGradient
+                colors={[STAFF_COLORS.primary, STAFF_COLORS.primaryDark, STAFF_COLORS.primaryLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.headerGradient}
+            >
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.backBtn}
+                        onPress={() => navigation.goBack()}
+                        activeOpacity={0.8}
+                    >
+                        <Icon name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>Broadcasts</Text>
+                    </View>
+                </View>
+            </LinearGradient>
+
+            <View style={styles.container}>
+                <FlatList
+                    data={broadcasts}
+                    renderItem={renderBroadcastItem}
+                    keyExtractor={item => item._id}
+                    contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[STAFF_COLORS.primary]}
+                        />
+                    }
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={renderFooter}
+                    ListEmptyComponent={renderEmpty}
+                    showsVerticalScrollIndicator={false}
+                />
+            </View>
+        </SafeAreaView>
     );
 };
 
-/* ================= HELPERS ================= */
 const formatDate = dateString => {
     const date = new Date(dateString);
     const now = new Date();
@@ -183,11 +244,40 @@ const formatDate = dateString => {
 const capitalize = str =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
-/* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  headerSpacer: {
-    height: 6,
-  },
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    headerGradient: {
+        paddingBottom: 12,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+    },
+    headerCenter: {
+        flex: 1,
+        alignItems: 'center',
+        marginHorizontal: 12,
+    },
+    backBtn: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#fff',
+    },
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
@@ -196,7 +286,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
     },
     listContent: {
         padding: 16,
@@ -212,11 +301,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-    },
-    cardImage: {
-        width: '100%',
-        height: 180,
-        backgroundColor: '#e0e0e0',
     },
     cardContent: {
         padding: 16,

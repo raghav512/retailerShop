@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useState, useEffect } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
 import apiService from '../../../Redux/apiService';
 import {
   View,
@@ -42,9 +42,11 @@ const Screen1 = () => {
     village: '',
   });
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+    }, [])
+  );
 
   // Validation functions
   const validateField = (fieldName, value) => {

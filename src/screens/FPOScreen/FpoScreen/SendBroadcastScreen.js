@@ -12,6 +12,7 @@ import {
   PermissionsAndroid,
   StatusBar,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import apiService from '../../../Redux/apiService';
@@ -48,12 +49,17 @@ const SendBroadcastScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [targetRole, setTargetRole] = useState('Farmer');
+  const [targetRole, setTargetRole] = useState('All');
   const [image, setImage] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const ROLES = [
+    {
+      label: 'All',
+      value: 'All',
+      icon: 'globe-outline',
+    },
     {
       label: t('send_broadcast.roles.farmer'),
       value: 'Farmer',
@@ -65,6 +71,16 @@ const SendBroadcastScreen = ({ navigation }) => {
       icon: 'people-outline',
     },
   ];
+
+  console.log('\n🎯 ROLES CONFIGURATION:');
+  console.log(
+    'Available roles:',
+    ROLES.map(r => r.value),
+  );
+  console.log(
+    'Note: Backend must match these exact role values (case-sensitive)',
+  );
+  console.log('Expected: Farmer, Staff, Retailer (capital first letter)\n');
 
   const pickImage = async () => {
     const hasPermission = await requestStoragePermission(t);
@@ -117,7 +133,25 @@ const SendBroadcastScreen = ({ navigation }) => {
         payload.broadcastImage = imageBase64;
       }
 
+      console.log('========================================\n');
+
       const response = await apiService.sendBroadcast(payload);
+
+      console.log(
+        'Recipient Count:',
+        response?.data?.broadcast?.recipientCount,
+      );
+      console.log('Target Role:', response?.data?.broadcast?.targetRole);
+      console.log('\n⚠️ ISSUE ANALYSIS:');
+      console.log('If "All" is selected:');
+      console.log('  - Expected: Farmer + Staff should receive');
+      console.log(
+        '  - Current totalTokens:',
+        response?.data?.stats?.totalTokens,
+      );
+
+      console.log('========================================\n\n');
+
       if (response?.status === 'success' || response?.success) {
         showAlert({
           type: 'success',
@@ -147,24 +181,36 @@ const SendBroadcastScreen = ({ navigation }) => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
+        barStyle="light-content"
+        backgroundColor={FPO_COLORS.primary}
+        translucent={false}
       />
 
       {/* HEADER */}
-      <View style={styles.headerSpacer} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('send_broadcast.title')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <LinearGradient
+        colors={[
+          FPO_COLORS.primary,
+          FPO_COLORS.primaryDark,
+          FPO_COLORS.primaryLight,
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t('send_broadcast.title')}</Text>
+          </View>
+          <View style={{ width: 42 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -225,7 +271,15 @@ const SendBroadcastScreen = ({ navigation }) => {
                 <TouchableOpacity
                   key={role.value}
                   style={[styles.rolePill, isActive && styles.rolePillActive]}
-                  onPress={() => setTargetRole(role.value)}
+                  onPress={() => {
+                    console.log('\n🎯 TARGET AUDIENCE SELECTED');
+                    console.log('Selected Role:', role.value);
+                    console.log('Role Label:', role.label);
+                    console.log('Previous Role:', targetRole);
+                    setTargetRole(role.value);
+                    console.log('New Role Set To:', role.value);
+                    console.log('================================\n');
+                  }}
                   activeOpacity={0.7}
                 >
                   <Icon
@@ -311,32 +365,28 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F4F6F8' },
 
   /* HEADER */
-  headerSpacer: { height: 6, backgroundColor: '#ffffff' },
+  headerGradient: {
+    paddingBottom: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    zIndex: 10,
+    paddingVertical: 14,
   },
+  headerCenter: { flex: 1, alignItems: 'center' },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
 
   scrollContent: { padding: 16, paddingBottom: 40 },
 

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,74 @@ import {
   StatusBar,
   TouchableOpacity,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../../Redux/apiService';
 import LanguageSwitcher from '../../../common/reusableComponent/LanguageSwitcher';
 import { FPO_COLORS, COLORS } from '../../../colorsList/ColorList';
 
+/* ---------------- ANIMATED ACTION CARD ---------------- */
+const AnimatedActionCard = ({ item, onPress, t }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  return (
+    <Animated.View
+      style={[styles.actionCard, { transform: [{ scale: scaleAnim }] }]}
+    >
+      <TouchableOpacity
+        style={styles.actionCardInner}
+        onPress={() => onPress(item.key)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <LinearGradient
+          colors={['#6366F1', '#4338CA', '#312E81']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.actionIconContainer}
+        >
+          <Icon name={item.icon} size={22} color="#FFFFFF" />
+        </LinearGradient>
+        <Text style={styles.actionCardText}>
+          {t(`fpo_home.${item.key}`) || item.key}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 /* ---------------- DATA (API READY) ---------------- */
 
 const ACTIONS = [
-  { id: '1', key: 'add_farmer', icon: 'person-add', bg: FPO_COLORS.primary },
-  { id: '2', key: 'order_details', icon: 'receipt', bg: '#16A34A' },
-  {
-    id: '3',
-    key: 'farmer_listing',
-    icon: 'list',
-    bg: '#9333EA',
-    route: 'FarmerListing',
-  },
-  { id: '4', key: 'all_tasks', icon: 'checkbox-outline', bg: '#0EA5E9' },
-  { id: '5', key: 'Community', icon: 'people-outline', bg: '#F97316' },
+  { id: '2', key: 'order_details', icon: 'receipt' },
+  { id: '3', key: 'farmer_listing', icon: 'list' },
+  { id: '4', key: 'all_tasks', icon: 'checkbox-outline' },
+  { id: '5', key: 'Community', icon: 'people-outline' },
+  { id: '6', key: 'inquiry', icon: 'help-circle-outline' },
+  { id: '7', key: 'attendance_calendar', icon: 'calendar' },
 ];
 
 /* ---------------- SCREEN ---------------- */
@@ -42,12 +88,12 @@ const Home = () => {
   const [expiringProducts, setExpiringProducts] = useState([]);
   const [showAllExpiring, setShowAllExpiring] = useState(false);
 
+  console.log('🔍 Total actions:', actions.length);
+  console.log('🔍 Actions:', actions);
+
   const handleActionPress = useCallback(
     key => {
       switch (key) {
-        case 'add_farmer':
-          navigation.navigate('Screen1', { themeColor: FPO_COLORS.primary });
-          break;
         case 'order_details':
           navigation.navigate('OrderDetails');
           break;
@@ -59,6 +105,12 @@ const Home = () => {
           break;
         case 'Community':
           navigation.navigate('FpoCommunity');
+          break;
+        case 'inquiry':
+          navigation.navigate('InquiryList');
+          break;
+        case 'attendance_calendar':
+          navigation.navigate('AttendanceCalendar');
           break;
       }
     },
@@ -111,20 +163,6 @@ const Home = () => {
 
   /* ---------------- RENDER ITEMS ---------------- */
 
-  const renderStat = useCallback(
-    ({ item }) => (
-      <View style={styles.statCard}>
-        <Text style={styles.statValue}>{item.value}</Text>
-        <Text style={styles.statLabel}>{t(`fpo_home.${item.key}`)}</Text>
-      </View>
-    ),
-    [t],
-  );
-
-  /* Primary & Secondary Actions Split */
-  const primaryActions = actions.slice(0, 2);
-  const secondaryActions = actions.slice(2);
-
   const renderExpiringProduct = useCallback(
     ({ item }) => {
       const daysLeft = item.daysLeft || 0;
@@ -132,18 +170,7 @@ const Home = () => {
       const isUrgent = daysLeft > 0 && daysLeft <= 7;
 
       return (
-        <TouchableOpacity
-          style={styles.expiringCard}
-          onPress={() =>
-            navigation.navigate('ProductDetails', {
-              product: {
-                _id: item.productId,
-                productName: item.productName,
-                brand: item.brand,
-              },
-            })
-          }
-        >
+        <View style={styles.expiringCard}>
           <View style={styles.expiringLeft}>
             <Text style={styles.expiringName}>{item.productName}</Text>
             <Text style={styles.expiringVariant}>
@@ -162,10 +189,10 @@ const Home = () => {
               {isExpired ? t('fpo_home.expired') : `${daysLeft}d`}
             </Text>
           </View>
-        </TouchableOpacity>
+        </View>
       );
     },
-    [navigation, t],
+    [t],
   );
 
   return (
@@ -203,92 +230,90 @@ const Home = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          {/* STATS */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <View style={styles.statIconWrapper}>
-                <Icon name="people" size={26} color={FPO_COLORS.primary} />
-              </View>
-              <Text style={styles.statValue}>{totalFarmers}</Text>
-              <Text style={styles.statLabel}>
-                {t('fpo_home.total_farmers')}
-              </Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIconWrapper}>
-                <Icon name="analytics" size={26} color={FPO_COLORS.primary} />
-              </View>
-              <Text style={styles.statValue}>{activeFarms}</Text>
-              <Text style={styles.statLabel}>
-                {t('fpo_home.active_fields')}
-              </Text>
-            </View>
-          </View>
+          {/* STATS - Compact Cards */}
 
-          {/* EXPLORE SECTION - MATCHES FARMER HOME */}
+          {/* <View style={styles.statsRow}>
+          <View style={styles.statsRow}>
+            <LinearGradient
+              colors={['#EEF2FF', '#E0E7FF', '#F5F7FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.statCard}
+            >
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  navigation.navigate('FarmerTab', { screen: 'Visits' })
+                }
+                style={styles.statCardInner}
+              >
+                <LinearGradient
+                  colors={['#6366F1', '#4338CA', '#312E81']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.statIconWrapper}
+                >
+                  <Icon name="people" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.statValue}>{totalFarmers}</Text>
+                <Text style={styles.statLabel}>
+                  {t('fpo_home.total_farmers')}
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+            <LinearGradient
+              colors={['#EEF2FF', '#E0E7FF', '#F5F7FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.statCard}
+            >
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('AllActiveFarms')}
+                style={styles.statCardInner}
+              >
+                <LinearGradient
+                  colors={['#6366F1', '#4338CA', '#312E81']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.statIconWrapper}
+                >
+                  <Icon name="analytics" size={20} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.statValue}>{activeFarms}</Text>
+                <Text style={styles.statLabel}>
+                  {t('fpo_home.active_fields')}
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+          </View> */}
+
+          {/* QUICK ACTIONS - Compact Grid */}
+
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
               {t('fpo_home.quick_actions')}
             </Text>
           </View>
 
-          <View style={styles.primaryActionsContainer}>
-            {primaryActions.map((item, index) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.primaryCard,
-                  index === 0 ? styles.focusedCard : styles.lightCard,
-                ]}
-                onPress={() => handleActionPress(item.key)}
-              >
-                <View
-                  style={[
-                    styles.primaryIconWrapper,
-                    index === 0 ? styles.focusedIcon : styles.lightIcon,
-                  ]}
-                >
-                  <Icon
-                    name={item.icon}
-                    size={30}
-                    color={
-                      index === 0
-                        ? FPO_COLORS.textOnPrimary
-                        : FPO_COLORS.primary
-                    }
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.primaryCardText,
-                    index === 0
-                      ? { color: FPO_COLORS.textOnPrimary }
-                      : { color: FPO_COLORS.textPrimary },
-                  ]}
-                >
-                  {t(`fpo_home.${item.key}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* SECONDARY ACTIONS GRID */}
-          <View style={styles.secondaryActionsWrapper}>
-            {secondaryActions.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.secondaryItem}
-                onPress={() => handleActionPress(item.key)}
-              >
-                <View style={styles.circularIcon}>
-                  <Icon name={item.icon} size={26} color={FPO_COLORS.primary} />
-                </View>
-                <Text style={styles.secondaryItemText} numberOfLines={2}>
-                  {t(`fpo_home.${item.key}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <LinearGradient
+            colors={['#EEF2FF', '#E0E7FF', '#F5F7FF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.quickActionsContainer}
+          >
+            <View style={styles.quickActionsGrid}>
+              {actions.map(item => (
+                <AnimatedActionCard
+                  key={item.id}
+                  item={item}
+                  onPress={handleActionPress}
+                  t={t}
+                />
+              ))}
+            </View>
+          </LinearGradient>
 
           {/* ASSIGN TASK BUTTON */}
           <TouchableOpacity
@@ -297,10 +322,12 @@ const Home = () => {
           >
             <Icon
               name="clipboard-outline"
-              size={22}
+              size={20}
               color={FPO_COLORS.textOnPrimary}
             />
-            <Text style={styles.assignTaskText}>{t('fpo_home.assign_task')}</Text>
+            <Text style={styles.assignTaskText}>
+              {t('fpo_home.assign_task')}
+            </Text>
           </TouchableOpacity>
 
           {/* EXPIRING PRODUCTS */}
@@ -367,7 +394,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   container: {
-    paddingTop: 8,
+    paddingTop: 0,
   },
 
   headerSpacer: {
@@ -381,8 +408,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 28,
+    paddingTop: 12,
+    paddingBottom: 20,
     backgroundColor: FPO_COLORS.primary,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
@@ -430,151 +457,130 @@ const styles = StyleSheet.create({
   /* STATS - Compact Premium Cards */
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    marginTop: 16,
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+    marginBottom: 12,
+    marginTop: 8,
     gap: 12,
   },
   statCard: {
-    flex: 1,
-    backgroundColor: FPO_COLORS.surface,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: FPO_COLORS.shadow,
-    shadowOpacity: 0.08,
+    width: '41%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#4338CA',
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    borderWidth: 1,
-    borderColor: FPO_COLORS.borderLight,
+    borderWidth: 2,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+  },
+  statCardInner: {
+    padding: 10,
+    alignItems: 'center',
   },
   statIconWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    backgroundColor: FPO_COLORS.tintCard,
+    marginBottom: 6,
+    elevation: 3,
+    shadowColor: '#312E81',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
     borderWidth: 1.5,
-    borderColor: FPO_COLORS.border,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   statValue: {
     color: FPO_COLORS.textPrimary,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
-    lineHeight: 32,
+    lineHeight: 24,
   },
   statLabel: {
     color: FPO_COLORS.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 14,
+    marginTop: 2,
     textAlign: 'center',
     fontWeight: '600',
     letterSpacing: 0.2,
   },
 
-  /* PRIMARY ACTIONS - Compact Hero Cards */
+  /* QUICK ACTIONS - Compact Grid */
   sectionHeader: {
-    paddingHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 16,
+    paddingHorizontal: 40,
+    marginTop: 30,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     color: FPO_COLORS.textPrimary,
-    letterSpacing: 0.2,
-    lineHeight: 24,
+    letterSpacing: 0.3,
   },
-  primaryActionsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  primaryCard: {
-    flex: 1,
+  quickActionsContainer: {
+    marginHorizontal: 20,
     borderRadius: 20,
-    padding: 18,
-    elevation: 4,
-    shadowColor: FPO_COLORS.shadow,
-    shadowOpacity: 0.12,
+    padding: 12,
+    elevation: 6,
+    shadowColor: '#4338CA',
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    height: 130,
-    justifyContent: 'space-between',
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(67, 56, 202, 0.15)',
   },
-  focusedCard: {
-    backgroundColor: FPO_COLORS.primary,
-  },
-  lightCard: {
-    backgroundColor: FPO_COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: FPO_COLORS.border,
-  },
-  primaryIconWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  focusedIcon: {
-    backgroundColor: FPO_COLORS.textOnPrimary + '20',
-  },
-  lightIcon: {
-    backgroundColor: FPO_COLORS.tintCard,
-    borderWidth: 1.5,
-    borderColor: FPO_COLORS.border,
-  },
-  primaryCardText: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-    lineHeight: 18,
-  },
-
-  /* SECONDARY ACTIONS - Compact Grid */
-  secondaryActionsWrapper: {
+  quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 14,
-    marginTop: 20,
-    justifyContent: 'flex-start',
+    gap: 8,
+    justifyContent: 'space-between',
   },
-  secondaryItem: {
-    width: '25%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  circularIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: FPO_COLORS.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 3,
-    shadowColor: FPO_COLORS.shadow,
-    shadowOpacity: 0.08,
+  actionCard: {
+    width: '31%',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
+    elevation: 4,
+    shadowColor: '#4338CA',
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     borderWidth: 1.5,
-    borderColor: FPO_COLORS.border,
+    borderColor: 'rgba(99, 102, 241, 0.25)',
   },
-  secondaryItemText: {
+  actionCardInner: {
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#312E81',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  actionCardText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: FPO_COLORS.textSecondary,
+    fontWeight: '700',
+    color: FPO_COLORS.textPrimary,
+    letterSpacing: 0.2,
+    lineHeight: 16,
     textAlign: 'center',
-    paddingHorizontal: 4,
-    letterSpacing: 0.1,
-    lineHeight: 14,
+    minHeight: 32,
+    includeFontPadding: true,
   },
 
   /* ASSIGN TASK BUTTON */
@@ -584,23 +590,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: FPO_COLORS.primary,
     marginHorizontal: 20,
-    marginTop: 4,
-    marginBottom: 20,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 10,
+    marginTop: 12,
+    marginBottom: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
     elevation: 4,
     shadowColor: FPO_COLORS.primaryDark,
     shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   assignTaskText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: FPO_COLORS.textOnPrimary,
     letterSpacing: 0.2,
-    lineHeight: 20,
   },
 
   /* EXPIRING PRODUCTS - Compact Alert Cards */
@@ -609,8 +614,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 4,
-    marginBottom: 16,
+    marginTop: 0,
+    marginBottom: 12,
   },
   viewAllBtn: {
     paddingHorizontal: 16,
